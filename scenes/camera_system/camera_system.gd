@@ -16,6 +16,14 @@ const STATIC_IDLE: float = 0.07
 const STATIC_STRONG: float = 0.7
 const STRONG_STATIC_TIME: float = 0.5
 
+# Interferencia: cuando un profe entra o sale de la cámara que se está viendo,
+# la imagen se tapa de estática y el estado nuevo recién se ve al aclararse.
+const INTERFERENCE_MIN_TIME: float = 0.5
+const INTERFERENCE_MAX_TIME: float = 1.0
+const STATIC_INTERFERENCE: float = 0.95
+## Parte del tiempo que la estática se queda tapando antes de empezar a aclarar.
+const INTERFERENCE_HOLD_RATIO: float = 0.65
+
 const REC_BLINK_TIME: float = 0.55
 ## Cada cuánto se repinta la etiqueta de depuración.
 const DEBUG_REFRESH_TIME: float = 0.2
@@ -35,6 +43,7 @@ var _camera_buttons: Dictionary = {}  # número de cámara -> Button
 var _map_size: Vector2 = Vector2(640.0, 440.0)
 var _static_tween: Tween = null
 var _debug_elapsed: float = 0.0
+var _interference_active: bool = false
 
 @onready var static_overlay: ColorRect = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
@@ -88,6 +97,7 @@ func close() -> void:
 		return
 	is_open = false
 	visible = false
+	_interference_active = false
 	closed.emit()
 
 
@@ -136,7 +146,7 @@ func _refresh_occupants(room: String) -> void:
 
 ## Las etapas cambian sin que nadie se mueva, así que la etiqueta se repinta sola.
 func _process(delta: float) -> void:
-	if not is_open or not debug_label.visible:
+	if not is_open or _interference_active or not debug_label.visible:
 		return
 	_debug_elapsed += delta
 	if _debug_elapsed < DEBUG_REFRESH_TIME:
@@ -145,9 +155,40 @@ func _process(delta: float) -> void:
 	_refresh_occupants(Rooms.room_of_camera(current_camera))
 
 
-func _on_animatronic_moved(_from_room: String, _to_room: String) -> void:
-	if is_open:
-		_refresh_occupants(Rooms.room_of_camera(current_camera))
+## Si el movimiento toca justo la cámara que se está viendo, interfiere.
+## Si pasa en otra habitación, la etiqueta se actualiza sin más.
+func _on_animatronic_moved(from_room: String, to_room: String) -> void:
+	if not is_open:
+		return
+	var watched_room: String = Rooms.room_of_camera(current_camera)
+	if from_room == watched_room or to_room == watched_room:
+		_play_interference()
+		return
+	if not _interference_active:
+		_refresh_occupants(watched_room)
+
+
+## Tapa la imagen con estática fuerte entre 0.5 y 1 s. Al aclararse, y solo
+## entonces, se muestra el estado nuevo de la cámara.
+func _play_interference() -> void:
+	var material: ShaderMaterial = static_overlay.material as ShaderMaterial
+	if material == null:
+		return
+	if _static_tween != null and _static_tween.is_valid():
+		_static_tween.kill()
+	_interference_active = true
+	material.set_shader_parameter("strength", STATIC_INTERFERENCE)
+	var duration: float = randf_range(INTERFERENCE_MIN_TIME, INTERFERENCE_MAX_TIME)
+	_static_tween = create_tween()
+	_static_tween.tween_interval(duration * INTERFERENCE_HOLD_RATIO)
+	_static_tween.tween_property(material, "shader_parameter/strength", STATIC_IDLE,
+		duration * (1.0 - INTERFERENCE_HOLD_RATIO))
+	_static_tween.tween_callback(_on_interference_cleared)
+
+
+func _on_interference_cleared() -> void:
+	_interference_active = false
+	_refresh_occupants(Rooms.room_of_camera(current_camera))
 
 
 func _set_static_strength(value: float) -> void:
@@ -163,6 +204,7 @@ func _play_strong_static() -> void:
 		return
 	if _static_tween != null and _static_tween.is_valid():
 		_static_tween.kill()
+	_interference_active = false
 	material.set_shader_parameter("strength", STATIC_STRONG)
 	_static_tween = create_tween()
 	_static_tween.tween_property(material, "shader_parameter/strength", STATIC_IDLE, STRONG_STATIC_TIME)

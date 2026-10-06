@@ -118,12 +118,16 @@ func _on_door_toggled(is_closed: bool) -> void:
 func _on_cameras_opened() -> void:
 	PowerManager.set_cameras_open(true)
 	camera_bar.set_pointing_up(false)
+	# Con las cámaras arriba la oficina se queda quieta: si no, el mouse en el
+	# borde la haría girar a espaldas del jugador.
+	office.set_interactive(false)
 	_update_watched_camera()
 
 
 func _on_cameras_closed() -> void:
 	PowerManager.set_cameras_open(false)
 	camera_bar.set_pointing_up(true)
+	office.set_interactive(true)
 	_update_watched_camera()
 
 
