@@ -15,13 +15,20 @@ const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 @onready var usage_bars: Control = $Hud/UsageBars
 @onready var camera_bar: Control = $Hud/CameraBar
 
+var _animatronics: Array[Animatronic] = []
+
 
 func _ready() -> void:
-	office.door_toggled.connect(PowerManager.set_door_closed)
+	_animatronics = _collect_animatronics()
+	for animatronic: Animatronic in _animatronics:
+		animatronic.made_noise.connect(office.show_notice)
 
-	camera_system.set_animatronics(_collect_animatronics())
+	office.door_toggled.connect(_on_door_toggled)
+
+	camera_system.set_animatronics(_animatronics)
 	camera_system.opened.connect(_on_cameras_opened)
 	camera_system.closed.connect(_on_cameras_closed)
+	camera_system.camera_changed.connect(_on_camera_changed)
 	camera_bar.hovered.connect(camera_system.toggle)
 
 	GameManager.night_started.connect(_on_night_started)
@@ -44,7 +51,7 @@ func _collect_animatronics() -> Array[Animatronic]:
 
 func _on_night_started(night: int) -> void:
 	night_label.text = "Noche %d" % night
-	for animatronic: Animatronic in _collect_animatronics():
+	for animatronic: Animatronic in _animatronics:
 		animatronic.start()
 
 
@@ -57,14 +64,35 @@ func _on_power_changed(percent: float) -> void:
 	usage_bars.set_level(PowerManager.usage_level())
 
 
+## La puerta la necesitan la energía y los profes que llegan a ella.
+func _on_door_toggled(is_closed: bool) -> void:
+	PowerManager.set_door_closed(is_closed)
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_door_closed(is_closed)
+
+
 func _on_cameras_opened() -> void:
 	PowerManager.set_cameras_open(true)
 	camera_bar.set_pointing_up(false)
+	_update_watched_camera()
 
 
 func _on_cameras_closed() -> void:
 	PowerManager.set_cameras_open(false)
 	camera_bar.set_pointing_up(true)
+	_update_watched_camera()
+
+
+func _on_camera_changed(_camera: int) -> void:
+	_update_watched_camera()
+
+
+## Les dice a los profes qué cámara está mirando el jugador: a algunos,
+## como Barcosa, vigilarlos los frena.
+func _update_watched_camera() -> void:
+	var camera: int = camera_system.current_camera if camera_system.is_open else Rooms.NO_CAMERA
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_watched_camera(camera)
 
 
 func _on_night_won(_night: int) -> void:
@@ -80,5 +108,5 @@ func _on_game_over(_cause: String) -> void:
 ## Deja de gastar energía y congela a los profes antes de cambiar de pantalla.
 func _end_night() -> void:
 	camera_system.close()
-	for animatronic: Animatronic in _collect_animatronics():
+	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

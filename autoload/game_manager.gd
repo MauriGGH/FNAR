@@ -14,6 +14,8 @@ var is_night_active: bool = false
 var last_game_over_cause: String = ""
 
 var _hour_elapsed: float = 0.0
+# Quién tiene reservado el pasillo ahora mismo, o null si está libre.
+var _hallway_holder: Node = null
 
 
 func _ready() -> void:
@@ -26,6 +28,7 @@ func start_night(night: int = current_night) -> void:
 	current_hour = NightConfig.START_HOUR
 	_hour_elapsed = 0.0
 	last_game_over_cause = ""
+	_hallway_holder = null
 	is_night_active = true
 	PowerManager.reset()
 	PowerManager.set_draining(true)
@@ -41,6 +44,32 @@ func trigger_game_over(cause: String) -> void:
 	PowerManager.set_draining(false)
 	last_game_over_cause = cause
 	game_over.emit(cause)
+
+
+# --- Reserva del pasillo ------------------------------------------------------
+# El pasillo es de uno a la vez: si Barcosa lo está usando, Mamador espera,
+# y al revés. Quien lo reserva es el responsable de liberarlo al terminar.
+
+## Intenta reservar el pasillo. Devuelve false si ya lo tiene otro profe.
+func reserve_hallway(holder: Node) -> bool:
+	if _hallway_holder != null and _hallway_holder != holder:
+		return false
+	_hallway_holder = holder
+	return true
+
+
+## Libera el pasillo, pero solo si de verdad lo tenía este profe.
+func release_hallway(holder: Node) -> void:
+	if _hallway_holder == holder:
+		_hallway_holder = null
+
+
+func is_hallway_free() -> bool:
+	return _hallway_holder == null
+
+
+func hallway_holder() -> Node:
+	return _hallway_holder
 
 
 ## Texto del reloj para el HUD: la hora 0 se muestra como 12 AM.

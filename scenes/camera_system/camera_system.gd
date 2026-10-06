@@ -17,6 +17,8 @@ const STATIC_STRONG: float = 0.7
 const STRONG_STATIC_TIME: float = 0.5
 
 const REC_BLINK_TIME: float = 0.55
+## Cada cuánto se repinta la etiqueta de depuración.
+const DEBUG_REFRESH_TIME: float = 0.2
 
 # Botones del minimapa: grises con borde claro, verde el de la cámara actual.
 const BUTTON_IDLE: Color = Color(0.21, 0.22, 0.25, 0.85)
@@ -32,6 +34,7 @@ var _animatronics: Array[Animatronic] = []
 var _camera_buttons: Dictionary = {}  # número de cámara -> Button
 var _map_size: Vector2 = Vector2(640.0, 440.0)
 var _static_tween: Tween = null
+var _debug_elapsed: float = 0.0
 
 @onready var static_overlay: ColorRect = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
@@ -114,13 +117,33 @@ func _refresh_view() -> void:
 	_refresh_minimap_highlight()
 
 
-## Etiqueta de depuración: quién hay en la habitación que se está viendo.
+## Etiqueta de depuración: quién hay en la habitación que se está viendo, en qué
+## anda cada profe y si el pasillo está reservado. La reemplazarán los sprites.
 func _refresh_occupants(room: String) -> void:
-	var names: PackedStringArray = PackedStringArray()
+	var here: PackedStringArray = PackedStringArray()
 	for animatronic: Animatronic in _animatronics:
 		if animatronic.current_room == room:
-			names.append(animatronic.display_name)
-	debug_label.text = "[F3] aqui: " + (", ".join(names) if not names.is_empty() else "nadie")
+			here.append(animatronic.display_name)
+
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[F3] aqui: " + (", ".join(here) if not here.is_empty() else "nadie"))
+	for animatronic: Animatronic in _animatronics:
+		var info: String = animatronic.debug_text()
+		if not info.is_empty():
+			lines.append("%s: %s" % [animatronic.display_name, info])
+	lines.append("pasillo: " + ("libre" if GameManager.is_hallway_free() else "ocupado"))
+	debug_label.text = "\n".join(lines)
+
+
+## Las etapas cambian sin que nadie se mueva, así que la etiqueta se repinta sola.
+func _process(delta: float) -> void:
+	if not is_open or not debug_label.visible:
+		return
+	_debug_elapsed += delta
+	if _debug_elapsed < DEBUG_REFRESH_TIME:
+		return
+	_debug_elapsed = 0.0
+	_refresh_occupants(Rooms.room_of_camera(current_camera))
 
 
 func _on_animatronic_moved(_from_room: String, _to_room: String) -> void:

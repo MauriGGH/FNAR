@@ -55,10 +55,22 @@ func usage_level() -> int:
 	return mini(level, 4)
 
 
+## Quita energía de golpe: los golpes de Barcosa, el cortaso de Audel o una
+## respuesta mala en la llamada de Ureña.
+func drain(amount: float) -> void:
+	if not is_draining or amount <= 0.0:
+		return
+	_apply_drain(amount)
+
+
 func _process(delta: float) -> void:
 	if not is_draining:
 		return
-	power = maxf(power - drain_per_second() * delta, 0.0)
+	_apply_drain(drain_per_second() * delta)
+
+
+func _apply_drain(amount: float) -> void:
+	power = maxf(power - amount, 0.0)
 	power_changed.emit(power)
 	if is_zero_approx(power):
 		is_draining = false

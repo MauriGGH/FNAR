@@ -30,6 +30,20 @@ theme_override_colors/font_color = Color(0.72, 0.72, 0.74, 1)
 theme_override_font_sizes/font_size = 28
 text = "OFICINA (placeholder)"
 
+[node name="NoticeLabel" type="Label" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 48.0
+offset_top = 340.0
+offset_right = 760.0
+offset_bottom = 384.0
+theme_override_colors/font_color = Color(0.95, 0.86, 0.45, 1)
+theme_override_font_sizes/font_size = 30
+text = "[pasos corriendo]"
+
+[node name="NoticeTimer" type="Timer" parent="."]
+one_shot = true
+
 [node name="DoorRect" type="ColorRect" parent="."]
 layout_mode = 0
 offset_left = 820.0

@@ -13,8 +13,8 @@ const ROOMS: Dictionary = {
 	"oficina": {
 		"display_name": "Oficina",
 		"camera": NO_CAMERA,
-		# Al pasillo norte da la puerta y al pasillo sur el cristal.
-		"links": ["recepcion", "pasillo_norte", "pasillo_sur"],
+		# Al frente, el cristal y la puerta de entrada: las dos dan al pasillo sur.
+		"links": ["recepcion", "pasillo_sur"],
 	},
 	"recepcion": {
 		"display_name": "Recepción",
@@ -43,7 +43,7 @@ const ROOMS: Dictionary = {
 	"pasillo_norte": {
 		"display_name": "Pasillo norte",
 		"camera": 1,
-		"links": ["pasillo_sur", "oficina", "salon_1", "salon_2", "salon_b", "salon_d"],
+		"links": ["pasillo_sur", "salon_1", "salon_2", "salon_b", "salon_d"],
 	},
 	"pasillo_sur": {
 		"display_name": "Pasillo sur",

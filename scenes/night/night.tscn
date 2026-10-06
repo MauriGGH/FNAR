@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/characters/test_profe.gd" id="4_test_profe"]
 [ext_resource type="Script" path="res://scenes/night/usage_bars.gd" id="5_usage_bars"]
 [ext_resource type="Script" path="res://scenes/night/camera_bar.gd" id="6_camera_bar"]
+[ext_resource type="Script" path="res://scripts/characters/barcosa.gd" id="7_barcosa"]
 
 [node name="Night" type="Control"]
 layout_mode = 3
@@ -24,10 +25,14 @@ layout_mode = 1
 
 [node name="Animatronics" type="Node" parent="."]
 
+[node name="Barcosa" type="Node" parent="Animatronics"]
+script = ExtResource("7_barcosa")
+display_name = "Barcosa"
+
 [node name="TestProfe" type="Node" parent="Animatronics"]
 script = ExtResource("4_test_profe")
 display_name = "Profe de prueba"
-ai_level = 12
+ai_level = 0
 move_interval = 3.0
 route = PackedStringArray("estacionamiento", "cafeteria", "escalera_pb", "pasillo_sur")
 

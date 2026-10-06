@@ -9,6 +9,9 @@ extends Node
 ## Avisa que el profe cambió de habitación. from_room queda vacío al empezar.
 signal moved(from_room: String, to_room: String)
 
+## Ruido del profe. Mientras no haya audio, la oficina lo muestra como texto.
+signal made_noise(text: String, duration: float)
+
 @export var display_name: String = "Profe"
 ## Nivel de IA de 0 a 20. En 0 el profe no se mueve en toda la noche.
 @export_range(0, 20) var ai_level: int = 0
@@ -19,6 +22,10 @@ signal moved(from_room: String, to_room: String)
 
 var current_room: String = ""
 var is_active: bool = false
+
+# Lo que está haciendo el jugador. El night.gd lo mantiene al día para todos.
+var watched_camera: int = Rooms.NO_CAMERA  # 0 = no está viendo cámaras
+var door_closed: bool = false
 
 var _route_index: int = 0
 var _elapsed: float = 0.0
@@ -35,6 +42,19 @@ func start() -> void:
 
 func stop() -> void:
 	is_active = false
+
+
+func set_watched_camera(camera: int) -> void:
+	watched_camera = camera
+
+
+func set_door_closed(closed: bool) -> void:
+	door_closed = closed
+
+
+## true si el jugador está viendo justo la cámara de donde está este profe.
+func is_being_watched() -> bool:
+	return watched_camera != Rooms.NO_CAMERA and watched_camera == Rooms.camera_of(current_room)
 
 
 func _process(delta: float) -> void:
@@ -68,6 +88,11 @@ func advance() -> void:
 	if _route_index + 1 >= route.size():
 		return
 	move_to_step(_route_index + 1)
+
+
+## Gancho de depuración: lo que la etiqueta de F3 muestra de este profe.
+func debug_text() -> String:
+	return ""
 
 
 ## Mueve al profe al paso indicado de su ruta y avisa con la señal.
