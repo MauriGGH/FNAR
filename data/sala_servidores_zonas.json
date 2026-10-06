@@ -1,0 +1,353 @@
+{
+  "source_image_size": [
+    1672,
+    941
+  ],
+  "note": "Coordenadas normalizadas (0 a 1). center = centro del puerto, led = posicion del LED del puerto del switch.",
+  "zones": {
+    "PP-01": {
+      "x": 0.3014,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 1 del patch panel",
+      "center": [
+        0.3152,
+        0.2986
+      ]
+    },
+    "PP-02": {
+      "x": 0.3343,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 2 del patch panel",
+      "center": [
+        0.3481,
+        0.2986
+      ]
+    },
+    "PP-03": {
+      "x": 0.3672,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 3 del patch panel",
+      "center": [
+        0.381,
+        0.2986
+      ]
+    },
+    "PP-04": {
+      "x": 0.4007,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 4 del patch panel",
+      "center": [
+        0.4145,
+        0.2986
+      ]
+    },
+    "PP-05": {
+      "x": 0.4342,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 5 del patch panel",
+      "center": [
+        0.448,
+        0.2986
+      ]
+    },
+    "PP-06": {
+      "x": 0.4683,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 6 del patch panel",
+      "center": [
+        0.4821,
+        0.2986
+      ]
+    },
+    "PP-07": {
+      "x": 0.5018,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 7 del patch panel",
+      "center": [
+        0.5156,
+        0.2986
+      ]
+    },
+    "PP-08": {
+      "x": 0.5353,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 8 del patch panel",
+      "center": [
+        0.549,
+        0.2986
+      ]
+    },
+    "PP-09": {
+      "x": 0.5694,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 9 del patch panel",
+      "center": [
+        0.5831,
+        0.2986
+      ]
+    },
+    "PP-10": {
+      "x": 0.6029,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 10 del patch panel",
+      "center": [
+        0.6166,
+        0.2986
+      ]
+    },
+    "PP-11": {
+      "x": 0.637,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 11 del patch panel",
+      "center": [
+        0.6507,
+        0.2986
+      ]
+    },
+    "PP-12": {
+      "x": 0.6705,
+      "y": 0.2763,
+      "w": 0.0275,
+      "h": 0.0446,
+      "clickable": false,
+      "desc": "Puerto 12 del patch panel",
+      "center": [
+        0.6842,
+        0.2986
+      ]
+    },
+    "Gi0/1": {
+      "x": 0.317,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 1 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.3301,
+        0.5962
+      ],
+      "led": [
+        0.3301,
+        0.5611
+      ]
+    },
+    "Gi0/2": {
+      "x": 0.3475,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 2 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.3606,
+        0.5962
+      ],
+      "led": [
+        0.3606,
+        0.5611
+      ]
+    },
+    "Gi0/3": {
+      "x": 0.378,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 3 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.3911,
+        0.5962
+      ],
+      "led": [
+        0.3911,
+        0.5611
+      ]
+    },
+    "Gi0/4": {
+      "x": 0.4085,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 4 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.4217,
+        0.5962
+      ],
+      "led": [
+        0.4217,
+        0.5611
+      ]
+    },
+    "Gi0/5": {
+      "x": 0.439,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 5 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.4522,
+        0.5962
+      ],
+      "led": [
+        0.4522,
+        0.5611
+      ]
+    },
+    "Gi0/6": {
+      "x": 0.4701,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 6 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.4833,
+        0.5962
+      ],
+      "led": [
+        0.4833,
+        0.5611
+      ]
+    },
+    "Gi0/7": {
+      "x": 0.5012,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 7 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.5144,
+        0.5962
+      ],
+      "led": [
+        0.5144,
+        0.5611
+      ]
+    },
+    "Gi0/8": {
+      "x": 0.5299,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 8 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.5431,
+        0.5962
+      ],
+      "led": [
+        0.5431,
+        0.5611
+      ]
+    },
+    "Gi0/9": {
+      "x": 0.5586,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 9 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.5718,
+        0.5962
+      ],
+      "led": [
+        0.5718,
+        0.5611
+      ]
+    },
+    "Gi0/10": {
+      "x": 0.5885,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 10 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.6017,
+        0.5962
+      ],
+      "led": [
+        0.6017,
+        0.5611
+      ]
+    },
+    "Gi0/11": {
+      "x": 0.6154,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 11 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.6286,
+        0.5962
+      ],
+      "led": [
+        0.6286,
+        0.5611
+      ]
+    },
+    "Gi0/12": {
+      "x": 0.6435,
+      "y": 0.577,
+      "w": 0.0263,
+      "h": 0.0383,
+      "clickable": true,
+      "desc": "Puerto 12 del switch (punto donde se suelta el cable)",
+      "center": [
+        0.6567,
+        0.5962
+      ],
+      "led": [
+        0.6567,
+        0.5611
+      ]
+    },
+    "label_sheet": {
+      "x": 0.8104,
+      "y": 0.0691,
+      "w": 0.0748,
+      "h": 0.6482,
+      "clickable": false,
+      "desc": "Hoja de etiquetado pegada al rack (dibujar encima la tabla legible)"
+    }
+  }
+}

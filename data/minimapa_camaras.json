@@ -13,84 +13,157 @@
       "label": "CAM 01",
       "place": "Pasillo norte",
       "x": 295.0,
-      "y": 101.0
+      "y": 101.0,
+      "hit": {
+        "x": 290,
+        "y": 80,
+        "w": 50,
+        "h": 145
+      }
     },
     {
       "id": 2,
       "label": "CAM 02",
       "place": "Pasillo sur",
       "x": 295.0,
-      "y": 301.0
+      "y": 301.0,
+      "hit": {
+        "x": 290,
+        "y": 225,
+        "w": 50,
+        "h": 145
+      }
     },
     {
       "id": 3,
       "label": "CAM 03",
       "place": "Cubículo 2",
       "x": 195.0,
-      "y": 363.0
+      "y": 363.0,
+      "hit": {
+        "x": 190,
+        "y": 345,
+        "w": 50,
+        "h": 45
+      }
     },
     {
       "id": 4,
       "label": "CAM 04",
       "place": "Cubículo 3",
       "x": 245.0,
-      "y": 363.0
+      "y": 363.0,
+      "hit": {
+        "x": 240,
+        "y": 345,
+        "w": 50,
+        "h": 45
+      }
     },
     {
       "id": 5,
       "label": "CAM 05",
       "place": "Escalera al techo",
       "x": 230.0,
-      "y": 313.0
+      "y": 313.0,
+      "hit": {
+        "x": 230,
+        "y": 300,
+        "w": 60,
+        "h": 45
+      }
     },
     {
       "id": 6,
       "label": "CAM 06",
       "place": "Techo",
       "x": 55.0,
-      "y": 299.0
+      "y": 299.0,
+      "hit": {
+        "x": 30,
+        "y": 275,
+        "w": 90,
+        "h": 60
+      }
     },
     {
       "id": 7,
       "label": "CAM 07",
       "place": "Escalera a planta baja",
       "x": 295.0,
-      "y": 413.0
+      "y": 413.0,
+      "hit": {
+        "x": 290,
+        "y": 370,
+        "w": 50,
+        "h": 115
+      }
     },
     {
       "id": 8,
       "label": "CAM 08",
       "place": "Estacionamiento",
       "x": 530.0,
-      "y": 439.0
+      "y": 439.0,
+      "hit": {
+        "x": 480,
+        "y": 405,
+        "w": 140,
+        "h": 80
+      }
     },
     {
       "id": 9,
       "label": "CAM 09",
       "place": "Cafetería sur",
       "x": 390.0,
-      "y": 439.0
+      "y": 439.0,
+      "hit": {
+        "x": 340,
+        "y": 405,
+        "w": 140,
+        "h": 80
+      }
     },
     {
       "id": 10,
       "label": "CAM 10",
       "place": "Salón B",
       "x": 390.0,
-      "y": 106.0
+      "y": 106.0,
+      "hit": {
+        "x": 340,
+        "y": 80,
+        "w": 150,
+        "h": 65
+      }
     },
     {
       "id": 11,
       "label": "CAM 11",
       "place": "Salón E",
       "x": 395.0,
-      "y": 233.0
+      "y": 233.0,
+      "hit": {
+        "x": 340,
+        "y": 210,
+        "w": 150,
+        "h": 65
+      }
     },
     {
       "id": 12,
       "label": "CAM 12",
       "place": "Baños",
       "x": 395.0,
-      "y": 313.0
+      "y": 313.0,
+      "hit": {
+        "x": 340,
+        "y": 275,
+        "w": 150,
+        "h": 85
+      }
     }
-  ]
+  ],
+  "note": "x,y = esquina superior izquierda del boton. hit = rectangulo del cuarto completo que responde al clic."
 }

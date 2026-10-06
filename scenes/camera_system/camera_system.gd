@@ -51,6 +51,7 @@ var current_camera: int = DEFAULT_CAMERA
 
 var _animatronics: Array[Animatronic] = []
 var _camera_buttons: Dictionary = {}  # número de cámara -> Button
+var _camera_areas: Dictionary = {}    # número de cámara -> MinimapArea
 var _map_size: Vector2 = Vector2(640.0, 440.0)
 var _static_tween: Tween = null
 var _debug_elapsed: float = 0.0
@@ -69,6 +70,7 @@ var _camera_signature: String = ""
 @onready var debug_label: Label = $DebugOccupantsLabel
 @onready var minimap_frame: Control = $Minimap
 @onready var minimap_scale: Control = $Minimap/MinimapScale
+@onready var minimap_areas: Control = $Minimap/MinimapScale/CameraAreas
 @onready var minimap_buttons: Control = $Minimap/MinimapScale/CameraButtons
 ## Todo el recuadro es el botón que se mantiene presionado.
 @onready var wind_control: Button = $WindControl
@@ -409,8 +411,9 @@ func _start_rec_blink() -> void:
 
 # --- Minimapa -----------------------------------------------------------------
 
-## Crea un botón por cada entrada de data/minimapa_camaras.json, con su
-## posición, tamaño y etiqueta tal cual vienen en el archivo.
+## Crea, por cada entrada de data/minimapa_camaras.json, el rectángulo del
+## cuarto completo (campo hit) y la etiqueta encima. Las dos cosas responden
+## al clic; si a una cámara le falta el hit, se queda solo con su etiqueta.
 func _build_minimap_buttons() -> void:
 	var file: FileAccess = FileAccess.open(MINIMAP_DATA_PATH, FileAccess.READ)
 	if file == null:
@@ -438,6 +441,7 @@ func _build_minimap_buttons() -> void:
 		_paint_button(button, BUTTON_IDLE, false)
 		button.pressed.connect(switch_to_camera.bind(camera))
 		minimap_buttons.add_child(button)
+		_build_camera_area(camera, entry)
 		# El tamaño va después de entrar al árbol, ya sin el mínimo del tema.
 		button.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 		button.position = Vector2(float(entry.get("x", 0.0)), float(entry.get("y", 0.0)))
@@ -445,6 +449,23 @@ func _build_minimap_buttons() -> void:
 		_camera_buttons[camera] = button
 
 	_refresh_minimap_highlight()
+
+
+## El cuarto completo de la cámara. Va en su propio contenedor, debajo de las
+## etiquetas, así que la etiqueta sigue ganando el clic donde se encima.
+func _build_camera_area(camera: int, entry: Dictionary) -> void:
+	var hit: Dictionary = entry.get("hit", {})
+	if hit.is_empty():
+		return  # Sin hit, solo la etiqueta, como antes.
+	var area: MinimapArea = MinimapArea.new()
+	area.name = "Area%02d" % camera
+	area.camera = camera
+	area.position = Vector2(float(hit.get("x", 0.0)), float(hit.get("y", 0.0)))
+	area.size = Vector2(float(hit.get("w", 0.0)), float(hit.get("h", 0.0)))
+	area.tooltip_text = str(entry.get("place", ""))
+	area.clicked.connect(switch_to_camera)
+	minimap_areas.add_child(area)
+	_camera_areas[camera] = area
 
 
 ## Escala la imagen y los botones juntos para que quepan en el hueco del minimapa.
@@ -458,6 +479,8 @@ func _fit_minimap() -> void:
 
 ## Pinta de verde el botón de la cámara que se está viendo.
 func _refresh_minimap_highlight() -> void:
+	for camera: int in _camera_areas:
+		(_camera_areas[camera] as MinimapArea).set_current(camera == current_camera)
 	for camera: int in _camera_buttons:
 		var button: Button = _camera_buttons[camera]
 		var is_active: bool = camera == current_camera
