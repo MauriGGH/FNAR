@@ -198,6 +198,18 @@ func set_phone_ringing(ringing: bool) -> void:
 		phone_light.set_ringing(ringing)
 
 
+## Un timbrazo: el foquito pega su destello y el teléfono tiembla.
+func pulse_phone_ring() -> void:
+	if phone_light != null:
+		phone_light.pulse()
+
+
+## Durante la llamada la pantallita se queda encendida, fija y más tenue.
+func set_phone_in_call(in_call: bool) -> void:
+	if phone_light != null:
+		phone_light.set_in_call(in_call)
+
+
 ## Pega una foto de Ureña sobre el escritorio. Las fotos se quedan.
 func add_urena_photo() -> void:
 	if _urena_photos >= PHOTO_SPOTS.size():
@@ -297,9 +309,12 @@ func _layout_flashlight() -> void:
 		flashlight_overlay.set_beam(zone_rect(GLASS_ZONE),
 			Vector2(content_size.x * 0.5, content_size.y))
 	if phone_light != null:
-		var phone: Rect2 = zone_rect("phone")
-		phone_light.position = phone.position
-		phone_light.size = phone.size
+		# Cubre todo el contenido: así el foquito y la pantallita se colocan
+		# con las mismas normalizadas de las zonas y escalan con la vista.
+		phone_light.position = Vector2.ZERO
+		phone_light.size = content_size
+		phone_light.set_background(center_image.texture)
+		phone_light.set_phone_rect(zone_rect("phone"))
 
 
 ## Las capas de oscuridad cubren todo el contenido y sus puntos de luz van

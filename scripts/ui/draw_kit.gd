@@ -14,6 +14,8 @@ const SHADOW_LAYERS: int = 3
 const GLOW_LAYERS: int = 6
 ## Hasta dónde llega el resplandor de un LED, en veces su radio.
 const GLOW_REACH: float = 5.5
+## Hasta dónde llega el halo de glow(), en veces el radio.
+const GLOW_SPREAD: float = 2.6
 
 
 ## Degradado vertical de verdad: cuatro vértices, cada uno con su color.
@@ -67,6 +69,50 @@ static func hanging_points(from_point: Vector2, to_point: Vector2,
 		var t: float = float(i) / float(segments)
 		var inverse: float = 1.0 - t
 		points.append(from_point * inverse * inverse + control * 2.0 * inverse * t + to_point * t * t)
+	return points
+
+
+## Resplandor suave y sin borde, pensado para un nodo con mezcla aditiva:
+## solo suma luz, no dibuja ni núcleo ni contorno.
+static func glow(canvas: CanvasItem, center: Vector2, radius: float,
+		color: Color, intensity: float) -> void:
+	if intensity <= 0.01 or radius <= 0.0:
+		return
+	for i: int in GLOW_LAYERS:
+		var fraction: float = float(i) / float(GLOW_LAYERS - 1)
+		# Del halo grande y tenue al punto chico y fuerte.
+		var layer_radius: float = radius * lerpf(GLOW_SPREAD, 0.35, fraction)
+		var alpha: float = 0.09 * intensity * lerpf(0.45, 1.0, fraction)
+		canvas.draw_circle(center, layer_radius, Color(color.r, color.g, color.b, alpha))
+
+
+## Lo mismo pero para una pantallita: el rectángulo encendido y su halo.
+static func glow_rect(canvas: CanvasItem, rect: Rect2, color: Color, intensity: float) -> void:
+	if intensity <= 0.01:
+		return
+	for i: int in GLOW_LAYERS:
+		var fraction: float = float(i) / float(GLOW_LAYERS - 1)
+		var grow: float = lerpf(rect.size.y * GLOW_SPREAD * 0.5, 0.0, fraction)
+		var alpha: float = 0.08 * intensity * lerpf(0.4, 1.0, fraction)
+		canvas.draw_rect(rect.grow(grow), Color(color.r, color.g, color.b, alpha))
+
+
+## Curva de un patch cord: sale del puerto de arriba hacia abajo, hace panza
+## por su peso y vuelve a subir para entrar al puerto de abajo. Las tangentes
+## son casi verticales en los dos extremos, como un cable de verdad
+## enchufado; side inclina la panza para que no queden todos calcados.
+static func cord_points(from_point: Vector2, to_point: Vector2,
+		drop: float, rise: float, side: float, segments: int) -> PackedVector2Array:
+	var first: Vector2 = from_point + Vector2(side, drop)
+	var second: Vector2 = to_point + Vector2(side, rise)
+	var points: PackedVector2Array = PackedVector2Array()
+	for i: int in segments + 1:
+		var t: float = float(i) / float(segments)
+		var inverse: float = 1.0 - t
+		points.append(from_point * inverse * inverse * inverse
+			+ first * 3.0 * inverse * inverse * t
+			+ second * 3.0 * inverse * t * t
+			+ to_point * t * t * t)
 	return points
 
 

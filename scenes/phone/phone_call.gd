@@ -3,17 +3,22 @@ extends Control
 ## El teléfono de la oficina: la ventanita de la llamada, abajo del todo.
 ## Vive en la capa del HUD, así que se sigue viendo con las cámaras arriba.
 ## Sirve para dos cosas: el mensaje de la noche (subtítulos que salen poco a
-## poco) y la llamada de Ureña (tres preguntas de opción múltiple contrarreloj).
+## poco) y la llamada de Ureña, que es una conversación: saluda, suelta tres
+## insinuaciones con tres respuestas contrarreloj cada una, reacciona a lo que
+## conteste el jugador y se despide.
 
 signal ringing_started(seconds: float)
 signal ring_tick()
 signal call_missed()
 signal call_answered()
 signal call_ended()
-## Una respuesta mala o sin contestar en la llamada de Ureña.
-signal wrong_answer()
+## Lo que contestó el jugador a una insinuación de Ureña. El valor es un
+## UrenaQuestions.Answer; sin contestar a tiempo cuenta como seguirle el juego.
+signal answer_given(kind: int)
 
-enum Mode { NONE, MESSAGE, QUESTIONS }
+enum Mode { NONE, MESSAGE, URENA }
+## Por dónde va la llamada de Ureña.
+enum Step { GREETING, LINE, REACTION, FAREWELL }
 
 ## Cada cuánto se repite el aviso de "[ring]".
 const RING_TICK_TIME: float = 1.0
@@ -37,9 +42,17 @@ var _typed: float = 0.0
 var _pause_left: float = 0.0
 
 # Llamada de Ureña.
-var _questions: Array[Dictionary] = []
-var _question_index: int = -1
-var _question_left: float = 0.0
+var _lines_urena: Array[Dictionary] = []
+var _line_urena: int = -1
+var _answer_left: float = 0.0
+var _step: Step = Step.GREETING
+## Lo que Ureña está diciendo fuera de las insinuaciones (saludo, reacción,
+## despedida): se escribe poco a poco y después se queda un momento.
+var _speech: String = ""
+var _speech_typed: float = 0.0
+var _speech_hold: float = 0.0
+## Si le siguió el juego aunque sea una vez, se despide dejando su foto.
+var _played_along: bool = false
 
 @onready var subtitle_label: Label = $Panel/SubtitleLabel
 @onready var caller_label: Label = $Panel/CallerLabel
@@ -83,8 +96,8 @@ func answer() -> void:
 	is_open = true
 	visible = true
 	call_answered.emit()
-	if mode == Mode.QUESTIONS:
-		_next_question()
+	if mode == Mode.URENA:
+		_start_urena()
 	else:
 		_line_index = 0
 		_typed = 0.0
@@ -99,8 +112,10 @@ func hang_up() -> void:
 	is_open = false
 	visible = false
 	mode = Mode.NONE
-	_questions.clear()
-	_question_index = -1
+	_lines_urena.clear()
+	_line_urena = -1
+	options.visible = false
+	timer_label.visible = false
 	call_ended.emit()
 
 
@@ -115,9 +130,9 @@ func queue_message(lines: PackedStringArray, seconds: float) -> void:
 
 
 ## La llamada de Ureña: si no contestas, te mata.
-func queue_questions(questions: Array[Dictionary], seconds: float) -> void:
-	mode = Mode.QUESTIONS
-	_questions = questions
+func queue_urena_call(lines: Array[Dictionary], seconds: float) -> void:
+	mode = Mode.URENA
+	_lines_urena = lines
 	caller_label.text = "UREÑA"
 	start_ringing(seconds, true)
 
@@ -128,8 +143,8 @@ func _process(delta: float) -> void:
 		return
 	if not is_open:
 		return
-	if mode == Mode.QUESTIONS:
-		_process_question(delta)
+	if mode == Mode.URENA:
+		_process_urena(delta)
 	else:
 		_process_message(delta)
 
@@ -167,41 +182,91 @@ func _process_message(delta: float) -> void:
 		_pause_left = LINE_PAUSE
 
 
-# --- Preguntas de Ureña -------------------------------------------------------
+# --- Llamada de Ureña ---------------------------------------------------------
 
-func _next_question() -> void:
-	_question_index += 1
-	if _question_index >= _questions.size():
-		hang_up()
+## Arranca saludando con el nombre del guardia y las tareas que lleva.
+func _start_urena() -> void:
+	_line_urena = -1
+	_played_along = false
+	_say(UrenaQuestions.greeting(GameManager.player_name, GameManager.completed_task_count()),
+		UrenaQuestions.GREETING_HOLD)
+	_step = Step.GREETING
+
+
+## Pone a Ureña a decir algo: se escribe poco a poco y después se queda hold
+## segundos en pantalla. Mientras habla no hay opciones ni reloj.
+func _say(text: String, hold: float) -> void:
+	_speech = text
+	_speech_typed = 0.0
+	_speech_hold = hold
+	subtitle_label.text = ""
+	options.visible = false
+	timer_label.visible = false
+
+
+## La siguiente insinuación, con sus tres respuestas ya barajadas.
+func _next_line() -> void:
+	_line_urena += 1
+	if _line_urena >= _lines_urena.size():
+		_say(UrenaQuestions.farewell(_played_along), UrenaQuestions.FAREWELL_HOLD)
+		_step = Step.FAREWELL
 		return
-	var question: Dictionary = _questions[_question_index]
-	subtitle_label.text = str(question.get("text", ""))
-	_question_left = UrenaQuestions.SECONDS_PER_QUESTION
+	var line: Dictionary = _lines_urena[_line_urena]
+	subtitle_label.text = str(line.get("text", ""))
+	_answer_left = UrenaQuestions.SECONDS_PER_LINE
 	timer_label.visible = true
 	options.visible = true
-	var texts: Array = question.get("options", [])
+	var answers: Array = line.get("answers", [])
 	for i: int in options.get_child_count():
 		var button: Button = options.get_child(i)
-		button.visible = i < texts.size()
+		button.visible = i < answers.size()
 		if button.visible:
-			button.text = "%d) %s" % [i + 1, texts[i]]
+			button.text = "%d) %s" % [i + 1, answers[i].get("text", "")]
+	_step = Step.LINE
 
 
-func _process_question(delta: float) -> void:
-	_question_left -= delta
-	timer_label.text = "%.1f s" % maxf(_question_left, 0.0)
-	if _question_left > 0.0:
+func _process_urena(delta: float) -> void:
+	if _step == Step.LINE:
+		_process_answer_time(delta)
 		return
-	# Se acabó el tiempo: cuenta como mala.
-	wrong_answer.emit()
-	_next_question()
+	# Saludo, reacción y despedida: se escriben y se quedan un momento.
+	_speech_typed = minf(_speech_typed + TYPE_SPEED * delta, float(_speech.length()))
+	subtitle_label.text = _speech.substr(0, int(_speech_typed))
+	if int(_speech_typed) < _speech.length():
+		return
+	_speech_hold -= delta
+	if _speech_hold > 0.0:
+		return
+	if _step == Step.FAREWELL:
+		hang_up()
+	else:
+		_next_line()
+
+
+func _process_answer_time(delta: float) -> void:
+	_answer_left -= delta
+	timer_label.text = "%.1f s" % maxf(_answer_left, 0.0)
+	if _answer_left > 0.0:
+		return
+	# Quedarse callado cuenta como seguirle el juego.
+	_resolve_answer(UrenaQuestions.Answer.PLAYS_ALONG)
 
 
 func _on_option_pressed(index: int) -> void:
-	if not is_open or mode != Mode.QUESTIONS:
+	if not is_open or mode != Mode.URENA or _step != Step.LINE:
 		return
-	if _question_index < 0 or _question_index >= _questions.size():
+	if _line_urena < 0 or _line_urena >= _lines_urena.size():
 		return
-	if index != int(_questions[_question_index].get("correct", -1)):
-		wrong_answer.emit()
-	_next_question()
+	var answers: Array = _lines_urena[_line_urena].get("answers", [])
+	if index >= answers.size():
+		return
+	_resolve_answer(int(answers[index].get("kind", UrenaQuestions.Answer.DODGE)))
+
+
+## Avisa qué clase de respuesta fue y pasa a la reacción de Ureña.
+func _resolve_answer(kind: int) -> void:
+	if kind == UrenaQuestions.Answer.PLAYS_ALONG:
+		_played_along = true
+	answer_given.emit(kind)
+	_say(UrenaQuestions.reaction(kind), UrenaQuestions.REACTION_HOLD)
+	_step = Step.REACTION

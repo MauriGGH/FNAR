@@ -51,6 +51,15 @@ const LED_MASK_ALPHA: float = 0.34
 
 ## Lo que cuelga un cable suelto, y cuánto se mece.
 const LOOSE_LENGTH: float = 128.0
+## La panza del cable conectado, en fracción de lo que hay de alto entre el
+## patch panel y el switch: baja del panel, cuelga por su peso y vuelve a
+## subir para entrar al puerto.
+const CORD_DROP: float = 0.55
+const CORD_RISE: float = 0.45
+## Variación por cámara, para que se vean ordenados pero no calcados: cada
+## cable cuelga un poco distinto y se encima apenas con sus vecinos.
+const CORD_SAG_JITTER: float = 0.2
+const CORD_SIDE_JITTER: float = 9.0
 const SWAY_AMPLITUDE: float = 11.0
 const SWAY_SPEED: float = 1.3
 ## Grosor real de un patch cord, como pediste.
@@ -314,6 +323,10 @@ func _draw() -> void:
 		_draw_switch_body()
 	_draw_ports()
 	_draw_cords()
+	# Los LEDs van después de los cables: mandan ellos, y si un cable que
+	# cruza tapara uno, el jugador perdería la única señal de que ese puerto
+	# está bien.
+	_draw_leds()
 	_draw_sparks()
 	_draw_sheet()
 
@@ -362,7 +375,8 @@ func _draw_switch_body() -> void:
 	DrawKit.soft_outline(self, SWITCH, RACK_EDGE)
 
 
-## Los 24 puertos con su serigrafía, más los LEDs del switch.
+## Los 24 puertos: sobre la foto solo el realce del que está bajo el mouse
+## y el brillo de los libres mientras arrastras.
 func _draw_ports() -> void:
 	var font: Font = get_theme_default_font()
 	for port: int in PORT_COUNT:
@@ -384,7 +398,11 @@ func _draw_ports() -> void:
 			_draw_centered(font, Vector2(gi.get_center().x, gi.end.y + 14.0), "Gi0/%d" % number, 12, SILK)
 		elif number == _hover_gi:
 			DrawKit.soft_outline(self, gi.grow(2.0), HIGHLIGHT)
-		_draw_led(number)
+
+
+func _draw_leds() -> void:
+	for port: int in range(1, PORT_COUNT + 1):
+		_draw_led(port)
 
 
 ## El LED: parpadeo irregular, resplandor difuso y su reflejo en el metal.
@@ -427,20 +445,28 @@ func _draw_rj45(rect: Rect2, highlighted: bool) -> void:
 		DrawKit.soft_outline(self, rect.grow(2.0), HIGHLIGHT)
 
 
-## Los cables: con volumen, sombra propia y la panza del peso del cable.
+## Los 12 cables, uno por cámara. Los conectados van de punta a punta con su
+## conector en los dos extremos; los de una cámara sin señal cuelgan sueltos
+## del patch panel, meciéndose, con su etiquetita de papel.
+## Se dibujan primero todos los cables y después todos los conectores, para
+## que ningún cable que cruza por delante parta un conector a la mitad.
 func _draw_cords() -> void:
-	for camera: int in range(1, PORT_COUNT + 1):
+	var plugs: Array[Dictionary] = []
+	for entry: Dictionary in _cord_order():
+		var camera: int = int(entry["camera"])
 		var color: Color = _model.color_of(camera)
 		var from_point: Vector2 = _pp_tip(_model.pp_of(camera))
+
 		if not _model.is_camera_down(camera):
 			var to_point: Vector2 = _gi_tip(_model.gi_of(camera))
 			var click: float = float(_click_anim.get(camera, 0.0))
+			# Al acertar, el conector entra de golpe al puerto.
 			to_point.y -= click / CLICK_TIME * 12.0
-			# El cable conectado todavía cuelga: su largo natural es más que
-			# la línea recta entre los dos puertos.
-			var natural: float = from_point.distance_to(to_point) + 64.0
-			DrawKit.cable(self, DrawKit.hanging_points(from_point, to_point, natural, CORD_SEGMENTS),
+			DrawKit.cable(self, DrawKit.cord_points(from_point, to_point,
+				float(entry["drop"]), float(entry["rise"]), float(entry["side"]), CORD_SEGMENTS),
 				CORD_WIDTH, color)
+			plugs.append({"at": from_point, "color": color, "highlight": false})
+			plugs.append({"at": to_point, "color": color, "highlight": false})
 			if click > 0.0:
 				var flash: float = click / CLICK_TIME
 				draw_circle(to_point, 16.0 * flash, Color(0.9, 0.93, 0.95, 0.3 * flash))
@@ -449,8 +475,35 @@ func _draw_cords() -> void:
 		var end_point: Vector2 = _drag_point if camera == _drag_camera else _loose_end(camera)
 		DrawKit.cable(self, DrawKit.hanging_points(from_point, end_point, LOOSE_LENGTH, CORD_SEGMENTS),
 			CORD_WIDTH, color)
-		_draw_plug(end_point, color, camera == _hover_camera or camera == _drag_camera)
-		_draw_cord_label(end_point, camera)
+		plugs.append({"at": from_point, "color": color, "highlight": false})
+		plugs.append({"at": end_point, "color": color,
+			"highlight": camera == _hover_camera or camera == _drag_camera, "label": camera})
+
+	for plug: Dictionary in plugs:
+		_draw_plug(plug["at"], plug["color"], bool(plug["highlight"]))
+		if plug.has("label"):
+			_draw_cord_label(plug["at"], int(plug["label"]))
+
+
+## El orden y la forma de cada cable. Van de panza chica a panza grande: los
+## que cuelgan más quedan delante, como cuando se encima un mazo de cables.
+func _cord_order() -> Array[Dictionary]:
+	var cords: Array[Dictionary] = []
+	for camera: int in range(1, PORT_COUNT + 1):
+		var from_point: Vector2 = _pp_tip(_model.pp_of(camera))
+		var gap: float = absf(_gi_tip(_model.gi_of(camera)).y - from_point.y)
+		# Dos senos distintos: una variación fija por cámara, siempre la misma.
+		var sag_wobble: float = sin(float(camera) * 12.9898)
+		var side_wobble: float = sin(float(camera) * 7.233 + 1.7)
+		cords.append({
+			"camera": camera,
+			"drop": gap * CORD_DROP * (1.0 + sag_wobble * CORD_SAG_JITTER),
+			"rise": gap * CORD_RISE * (1.0 + sag_wobble * CORD_SAG_JITTER),
+			"side": side_wobble * CORD_SIDE_JITTER,
+		})
+	cords.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a["rise"]) < float(b["rise"]))
+	return cords
 
 
 ## El conector del extremo suelto. Si existe rj45.png, se usa la imagen.

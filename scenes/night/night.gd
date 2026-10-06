@@ -85,7 +85,7 @@ func _ready() -> void:
 	phone_call.call_answered.connect(_on_call_answered)
 	phone_call.call_missed.connect(_on_call_missed)
 	phone_call.call_ended.connect(_on_call_ended)
-	phone_call.wrong_answer.connect(_on_wrong_answer)
+	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
 	server_room.closed.connect(_leave_server_room)
 	server_room.notice_requested.connect(notice_banner.show_notice)
@@ -261,7 +261,7 @@ func trigger_urena_call() -> void:
 	if phone_call.is_ringing or phone_call.is_open:
 		return
 	_urena_call_ringing = true
-	phone_call.queue_questions(UrenaQuestions.pick(), URENA_RING_TIME)
+	phone_call.queue_urena_call(UrenaQuestions.pick(), URENA_RING_TIME)
 
 
 func _on_ringing_started(_seconds: float) -> void:
@@ -270,15 +270,18 @@ func _on_ringing_started(_seconds: float) -> void:
 
 func _on_ring_tick() -> void:
 	notice_banner.show_notice(RING_NOTICE, NOTICE_SHORT)
+	office.pulse_phone_ring()
 
 
 func _on_call_answered() -> void:
 	office.set_phone_ringing(false)
+	office.set_phone_in_call(true)
 
 
 ## Si no contestas la de Ureña, te mata. La de la noche es opcional.
 func _on_call_missed() -> void:
 	office.set_phone_ringing(false)
+	office.set_phone_in_call(false)
 	if not _urena_call_ringing:
 		return
 	_urena_call_ringing = false
@@ -288,12 +291,17 @@ func _on_call_missed() -> void:
 func _on_call_ended() -> void:
 	_urena_call_ringing = false
 	office.set_phone_ringing(false)
+	office.set_phone_in_call(false)
 
 
-## Cada respuesta mala o sin contestar: energía menos y una foto más.
-func _on_wrong_answer() -> void:
-	PowerManager.drain(UrenaQuestions.WRONG_ANSWER_POWER_COST)
-	office.add_urena_photo()
+## Esquivar con educación no cuesta nada. Seguirle el juego o contestarle
+## grosero cuestan energía, y solo seguirle el juego le deja una foto encima
+## del escritorio.
+func _on_answer_given(kind: int) -> void:
+	if UrenaQuestions.costs_power(kind):
+		PowerManager.drain(UrenaQuestions.WRONG_ANSWER_POWER_COST)
+	if UrenaQuestions.leaves_photo(kind):
+		office.add_urena_photo()
 
 
 ## La barra de cámaras no hace nada si el guardia no está en la oficina.
