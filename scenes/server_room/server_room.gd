@@ -9,7 +9,8 @@ extends Control
 signal closed()
 signal notice_requested(text: String, duration: float)
 
-const BACKGROUND_PATH: String = "res://assets/art/office/sala_servidores.png"
+## Sin extensión: vale png, jpg o jpeg.
+const BACKGROUND_PATH: String = "res://assets/art/office/sala_servidores"
 
 var is_open: bool = false
 
@@ -28,10 +29,7 @@ func _ready() -> void:
 
 ## Si todavía no hay imagen de la sala, se queda el dibujo del patch panel.
 func _load_background() -> void:
-	if not ResourceLoader.exists(BACKGROUND_PATH):
-		background.visible = false
-		return
-	background.texture = load(BACKGROUND_PATH) as Texture2D
+	background.texture = GameAssets.load_texture(BACKGROUND_PATH)
 	background.visible = background.texture != null
 
 

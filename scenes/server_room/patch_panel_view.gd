@@ -17,8 +17,9 @@ signal notice_requested(text: String, duration: float)
 
 const PORT_COUNT: int = 12
 
-const BACKGROUND_PATH: String = "res://assets/art/office/sala_servidores.png"
-const PLUG_TEXTURE_PATH: String = "res://assets/art/office/rj45.png"
+# Sin extensión: valen png, jpg o jpeg.
+const BACKGROUND_PATH: String = "res://assets/art/office/sala_servidores"
+const PLUG_TEXTURE_PATH: String = "res://assets/art/office/rj45"
 const ZONES_PATH: String = "res://data/sala_servidores_zonas.json"
 
 # --- Geometría ---------------------------------------------------------------
@@ -98,9 +99,8 @@ var _spark_anim: Dictionary = {}  # puerto gi -> tiempo restante
 func _ready() -> void:
 	_model = GameManager.patch_panel
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_has_background = ResourceLoader.exists(BACKGROUND_PATH)
-	if ResourceLoader.exists(PLUG_TEXTURE_PATH):
-		_plug_texture = load(PLUG_TEXTURE_PATH) as Texture2D
+	_has_background = GameAssets.has_texture(BACKGROUND_PATH)
+	_plug_texture = GameAssets.load_texture(PLUG_TEXTURE_PATH)
 	_load_zones()
 	resized.connect(_load_zones)
 

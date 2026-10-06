@@ -9,8 +9,9 @@ signal closed()
 signal camera_changed(camera: int)
 
 const MINIMAP_DATA_PATH: String = "res://data/minimapa_camaras.json"
-## Imagen de un estado de cámara: basta agregar el png para que funcione.
-const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s.png"
+## Imagen de un estado de cámara, sin extensión: basta agregar el archivo
+## (png, jpg o jpeg) para que funcione, sin tocar código.
+const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s"
 ## Si falta la imagen de un estado, se usa la imagen base de esa cámara y se
 ## pone la etiqueta de texto encima. Así se pueden ir agregando de a poco.
 const BASE_STATES: Array[String] = ["etapa0", "vacia", "base"]
@@ -238,13 +239,12 @@ func _base_texture(camera: int, state: String) -> Texture2D:
 	return null
 
 
-func _load_texture(path: String) -> Texture2D:
-	if _image_cache.has(path):
-		return _image_cache[path]
-	var texture: Texture2D = null
-	if ResourceLoader.exists(path):
-		texture = load(path) as Texture2D
-	_image_cache[path] = texture  # Se guarda incluso si no existe, para no buscar dos veces.
+func _load_texture(base_path: String) -> Texture2D:
+	if _image_cache.has(base_path):
+		return _image_cache[base_path]
+	var texture: Texture2D = GameAssets.load_texture(base_path)
+	# Se guarda incluso si no existe, para no buscar dos veces.
+	_image_cache[base_path] = texture
 	return texture
 
 
