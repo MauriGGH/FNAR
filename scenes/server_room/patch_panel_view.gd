@@ -8,10 +8,10 @@ extends Control
 ## En los dos casos el acabado es el mismo: degradados, sombras suaves, cables
 ## con volumen y LEDs con resplandor difuso. Nada de contornos negros.
 ##
-## Formato esperado del JSON (coordenadas normalizadas de 0 a 1):
-##   {"pp_ports": [{"x":..,"y":..,"w":..,"h":..}, ... 12],
-##    "gi_ports": [... 12],
-##    "sheet": {"x":..,"y":..,"w":..,"h":..}}
+## Formato del JSON (coordenadas normalizadas de 0 a 1), en "zones":
+##   "PP-01".."PP-12"  rect + center: de ahí salen los cables.
+##   "Gi0/1".."Gi0/12" rect + center (donde se suelta) + led (su foquito).
+##   "label_sheet"     rect de la hoja pegada al rack.
 
 signal notice_requested(text: String, duration: float)
 
@@ -36,7 +36,18 @@ const LED_OFFSET: float = 64.0
 
 const SHEET: Rect2 = Rect2(800.0, 150.0, 300.0, 320.0)
 const SHEET_TILT: float = -0.045
-const SHEET_HOVER_SCALE: float = 1.08
+## La hoja real es una tira angosta, así que al pasar el mouse se agranda de
+## verdad; nunca más de lo que cabe en la pantalla.
+const SHEET_HOVER_SCALE: float = 1.45
+const SHEET_MARGIN: float = 12.0
+## Las tres columnas de la tabla, en fracciones del ancho de la hoja.
+const SHEET_COLUMNS: Array[float] = [0.26, 0.55, 0.82]
+
+## La foto ya trae LEDs encendidos: el puerto sin cable se tapa con un punto
+## negro difuso, en círculos cada vez más chicos.
+const LED_MASK_RADIUS: float = 9.0
+const LED_MASK_STEPS: int = 5
+const LED_MASK_ALPHA: float = 0.34
 
 ## Lo que cuelga un cable suelto, y cuánto se mece.
 const LOOSE_LENGTH: float = 128.0
@@ -51,7 +62,6 @@ const CLICK_TIME: float = 0.3
 const SPARK_TIME: float = 0.45
 const SPARK_ARMS: int = 7
 
-# --- Colores -----------------------------------------------------------------
 # --- Colores -----------------------------------------------------------------
 # Todos desaturados, para que peguen con las fotos de la oficina.
 const AMBIENT: Color = Color(0.045, 0.048, 0.055)
@@ -85,6 +95,9 @@ var _has_background: bool = false
 var _plug_texture: Texture2D = null
 var _pp_rects: Array[Rect2] = []
 var _gi_rects: Array[Rect2] = []
+var _pp_centers: PackedVector2Array = PackedVector2Array()
+var _gi_centers: PackedVector2Array = PackedVector2Array()
+var _led_centers: PackedVector2Array = PackedVector2Array()
 var _sheet_rect: Rect2 = SHEET
 var _elapsed: float = 0.0
 var _drag_camera: int = 0
@@ -105,29 +118,43 @@ func _ready() -> void:
 	resized.connect(_load_zones)
 
 
-## Toma las posiciones de los puertos del JSON si existe; si no, las calcula
-## con la geometría del tablero dibujado.
+## Toma las posiciones del JSON si existe; si no, las calcula con la
+## geometría del tablero dibujado.
 func _load_zones() -> void:
 	_pp_rects.clear()
 	_gi_rects.clear()
+	_pp_centers.clear()
+	_gi_centers.clear()
+	_led_centers.clear()
 	_sheet_rect = SHEET
 
 	var zones: Dictionary = _read_zones()
 	if zones.is_empty():
 		for port: int in PORT_COUNT:
-			_pp_rects.append(Rect2(Vector2(PANEL.position.x + PORT_INSET + port * PORT_STEP,
-				PANEL.position.y + PANEL_PORT_TOP), PORT_SIZE))
-			_gi_rects.append(Rect2(Vector2(SWITCH.position.x + PORT_INSET + port * PORT_STEP,
-				SWITCH.position.y + SWITCH_PORT_TOP), GI_PORT_SIZE))
+			var pp: Rect2 = Rect2(Vector2(PANEL.position.x + PORT_INSET + port * PORT_STEP,
+				PANEL.position.y + PANEL_PORT_TOP), PORT_SIZE)
+			var gi: Rect2 = Rect2(Vector2(SWITCH.position.x + PORT_INSET + port * PORT_STEP,
+				SWITCH.position.y + SWITCH_PORT_TOP), GI_PORT_SIZE)
+			_pp_rects.append(pp)
+			_gi_rects.append(gi)
+			_pp_centers.append(Vector2(pp.get_center().x, pp.end.y + 4.0))
+			_gi_centers.append(Vector2(gi.get_center().x, gi.position.y - 4.0))
+			_led_centers.append(Vector2(gi.get_center().x, gi.end.y + 16.0))
 		return
 
-	_pp_rects = _rects_from(zones.get("pp_ports", []), PORT_SIZE)
-	_gi_rects = _rects_from(zones.get("gi_ports", []), GI_PORT_SIZE)
-	var sheet: Dictionary = zones.get("sheet", {})
+	for port: int in PORT_COUNT:
+		var pp_zone: Dictionary = zones.get("PP-%02d" % (port + 1), {})
+		var gi_zone: Dictionary = zones.get("Gi0/%d" % (port + 1), {})
+		_pp_rects.append(_zone_rect(pp_zone, PORT_SIZE))
+		_gi_rects.append(_zone_rect(gi_zone, GI_PORT_SIZE))
+		_pp_centers.append(_zone_point(pp_zone, "center", _pp_rects[port].get_center()))
+		_gi_centers.append(_zone_point(gi_zone, "center", _gi_rects[port].get_center()))
+		_led_centers.append(_zone_point(gi_zone, "led",
+			Vector2(_gi_rects[port].get_center().x, _gi_rects[port].position.y - 14.0)))
+
+	var sheet: Dictionary = zones.get("label_sheet", {})
 	if not sheet.is_empty():
-		_sheet_rect = Rect2(
-			Vector2(float(sheet.get("x", 0.0)) * size.x, float(sheet.get("y", 0.0)) * size.y),
-			Vector2(float(sheet.get("w", 0.0)) * size.x, float(sheet.get("h", 0.0)) * size.y))
+		_sheet_rect = _zone_rect(sheet, _sheet_rect.size)
 
 
 func _read_zones() -> Dictionary:
@@ -140,23 +167,26 @@ func _read_zones() -> Dictionary:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		push_warning("Las zonas de la sala no tienen un JSON válido: " + ZONES_PATH)
 		return {}
-	return parsed
+	return (parsed as Dictionary).get("zones", {})
 
 
-## Rectángulos normalizados a píxeles, completando lo que falte.
-func _rects_from(list: Array, fallback_size: Vector2) -> Array[Rect2]:
-	var rects: Array[Rect2] = []
-	for i: int in PORT_COUNT:
-		if i >= list.size():
-			rects.append(Rect2(Vector2.ZERO, fallback_size))
-			continue
-		var entry: Dictionary = list[i]
-		var width: float = float(entry.get("w", 0.0)) * size.x
-		var height: float = float(entry.get("h", 0.0)) * size.y
-		rects.append(Rect2(
-			Vector2(float(entry.get("x", 0.0)) * size.x, float(entry.get("y", 0.0)) * size.y),
-			Vector2(width if width > 0.0 else fallback_size.x, height if height > 0.0 else fallback_size.y)))
-	return rects
+## Rectángulo normalizado a píxeles, completando lo que falte.
+func _zone_rect(zone: Dictionary, fallback_size: Vector2) -> Rect2:
+	if zone.is_empty():
+		return Rect2(Vector2.ZERO, fallback_size)
+	var width: float = float(zone.get("w", 0.0)) * size.x
+	var height: float = float(zone.get("h", 0.0)) * size.y
+	return Rect2(
+		Vector2(float(zone.get("x", 0.0)) * size.x, float(zone.get("y", 0.0)) * size.y),
+		Vector2(width if width > 0.0 else fallback_size.x, height if height > 0.0 else fallback_size.y))
+
+
+## Un punto normalizado del JSON (center o led), o el de respaldo.
+func _zone_point(zone: Dictionary, key: String, fallback: Vector2) -> Vector2:
+	var point: Array = zone.get(key, [])
+	if point.size() < 2:
+		return fallback
+	return Vector2(float(point[0]) * size.x, float(point[1]) * size.y)
 
 
 # --- Geometría ----------------------------------------------------------------
@@ -169,22 +199,19 @@ func _gi_rect(port: int) -> Rect2:
 	return _gi_rects[clampi(port - 1, 0, _gi_rects.size() - 1)]
 
 
-## El LED va justo debajo de su puerto del switch.
+## El LED, donde lo marca el JSON (arriba del puerto en la foto).
 func _led_center(port: int) -> Vector2:
-	var rect: Rect2 = _gi_rect(port)
-	return Vector2(rect.get_center().x, rect.end.y + 16.0)
+	return _led_centers[clampi(port - 1, 0, _led_centers.size() - 1)]
 
 
 ## De donde sale el cable en el panel de arriba.
 func _pp_tip(port: int) -> Vector2:
-	var rect: Rect2 = _pp_rect(port)
-	return Vector2(rect.get_center().x, rect.end.y + 4.0)
+	return _pp_centers[clampi(port - 1, 0, _pp_centers.size() - 1)]
 
 
 ## Donde entra el cable en el switch.
 func _gi_tip(port: int) -> Vector2:
-	var rect: Rect2 = _gi_rect(port)
-	return Vector2(rect.get_center().x, rect.position.y - 4.0)
+	return _gi_centers[clampi(port - 1, 0, _gi_centers.size() - 1)]
 
 
 ## Punta de un cable suelto: cuelga y se mece.
@@ -361,17 +388,25 @@ func _draw_ports() -> void:
 
 
 ## El LED: parpadeo irregular, resplandor difuso y su reflejo en el metal.
+## Sin cable queda apagado, y sobre la foto se tapa el que ya venía encendido.
 func _draw_led(port: int) -> void:
 	var center: Vector2 = _led_center(port)
+	var connected: bool = _model.is_gi_connected(port)
+	if not connected and _has_background:
+		for step: int in LED_MASK_STEPS:
+			var t: float = float(step) / float(LED_MASK_STEPS - 1)
+			draw_circle(center, lerpf(LED_MASK_RADIUS, 1.5, t),
+				Color(0.0, 0.0, 0.0, LED_MASK_ALPHA))
 	var intensity: float = 0.0
-	if _model.is_gi_connected(port):
+	if connected:
 		# Dos senos de frecuencias distintas: el ritmo sale irregular, como
 		# tráfico de verdad, y nunca parpadean todos a la vez.
 		var speed: float = 3.0 + float(port % 5) * 1.7
 		var phase: float = float(port) * 1.37
 		var wave: float = sin(_elapsed * speed + phase) + sin(_elapsed * speed * 0.37 + phase * 2.0)
 		intensity = clampf(0.35 + wave * 0.45, 0.0, 1.0)
-	DrawKit.led_reflection(self, center - Vector2(0.0, 7.0), Vector2(30.0, 16.0), LED_ON, intensity, true)
+	# El reflejo va sobre la lámina del switch, debajo del foquito.
+	DrawKit.led_reflection(self, center + Vector2(0.0, 6.0), Vector2(26.0, 14.0), LED_ON, intensity, true)
 	DrawKit.led(self, center, 3.4, LED_ON, intensity)
 
 
@@ -458,46 +493,97 @@ func _draw_sparks() -> void:
 		DrawKit.led(self, center, 4.0 * fade, SPARK_COLOR, fade)
 
 
+## Lo que crece la hoja al pasar el mouse, sin pasarse del alto de la pantalla.
+func _sheet_scale() -> float:
+	if not _sheet_hovered:
+		return 1.0
+	return minf(SHEET_HOVER_SCALE, (size.y - SHEET_MARGIN * 2.0) / maxf(_sheet_rect.size.y, 1.0))
+
+
+## El centro con el que se dibuja: corrido hacia adentro si al agrandarse se
+## saldría de la pantalla.
+func _sheet_center() -> Vector2:
+	var half: Vector2 = _sheet_rect.size * _sheet_scale() * 0.5
+	var center: Vector2 = _sheet_rect.get_center()
+	return Vector2(_clamp_axis(center.x, half.x, size.x), _clamp_axis(center.y, half.y, size.y))
+
+
+func _clamp_axis(value: float, half: float, limit: float) -> float:
+	if (half + SHEET_MARGIN) * 2.0 >= limit:
+		return limit * 0.5
+	return clampf(value, half + SHEET_MARGIN, limit - half - SHEET_MARGIN)
+
+
+## El área que responde al mouse: la hoja tal como se está dibujando, para que
+## al agrandarse no se "despegue" del cursor.
 func _sheet_bounds() -> Rect2:
-	return _sheet_rect.grow(10.0)
+	var drawn: Vector2 = _sheet_rect.size * _sheet_scale()
+	return Rect2(_sheet_center() - drawn * 0.5, drawn).grow(10.0)
 
 
 ## La hoja de etiquetado: papel con textura y arruga, sombra, cinta en las
 ## esquinas y letra de impresora de matriz (la VT323 ya es de ese tipo).
+## La tabla se ajusta al rectángulo del JSON: como la hoja real es angosta,
+## va en tres columnas de números en vez de renglones largos.
 func _draw_sheet() -> void:
-	var scale: float = SHEET_HOVER_SCALE if _sheet_hovered else 1.0
-	var center: Vector2 = _sheet_rect.get_center()
-	draw_set_transform(center, SHEET_TILT, Vector2(scale, scale))
+	var scale: float = _sheet_scale()
+	draw_set_transform(_sheet_center(), SHEET_TILT, Vector2(scale, scale))
 	var sheet: Rect2 = Rect2(-_sheet_rect.size * 0.5, _sheet_rect.size)
 
 	DrawKit.rect_shadow(self, sheet, Vector2(5.0, 8.0))
 	DrawKit.gradient_rect(self, sheet, PAPER, PAPER_SHADE)
-	# Textura: fibras finas y unas motas, siempre las mismas.
+	# Textura: fibras finas, siempre las mismas.
+	var fiber_span: float = maxf(sheet.size.x - 30.0, 8.0)
 	for i: int in 26:
-		var fiber_y: float = sheet.position.y + 8.0 + fmod(float(i) * 37.0, sheet.size.y - 16.0)
-		var fiber_x: float = sheet.position.x + 6.0 + fmod(float(i) * 61.0, sheet.size.x - 40.0)
-		draw_line(Vector2(fiber_x, fiber_y), Vector2(fiber_x + 18.0, fiber_y + 1.0),
+		var fiber_y: float = sheet.position.y + 8.0 + fmod(float(i) * 37.0, maxf(sheet.size.y - 16.0, 8.0))
+		var fiber_x: float = sheet.position.x + 6.0 + fmod(float(i) * 61.0, fiber_span)
+		draw_line(Vector2(fiber_x, fiber_y), Vector2(fiber_x + fiber_span * 0.3, fiber_y + 1.0),
 			Color(0.0, 0.0, 0.0, 0.035), 1.0)
-	# La arruga: una banda clara y su sombra, en diagonal.
+	# La arruga: una banda clara y su sombra.
 	var crease_y: float = sheet.position.y + sheet.size.y * 0.42
 	DrawKit.gradient_rect(self, Rect2(Vector2(sheet.position.x, crease_y), Vector2(sheet.size.x, 10.0)),
 		Color(1.0, 1.0, 1.0, 0.1), Color(0.0, 0.0, 0.0, 0.07))
+	var tape: Vector2 = Vector2(minf(34.0, sheet.size.x * 0.5), 14.0) * 0.5
 	for corner: Vector2 in [sheet.position, Vector2(sheet.end.x, sheet.position.y),
 			Vector2(sheet.position.x, sheet.end.y), sheet.end]:
-		draw_rect(Rect2(corner - Vector2(17.0, 7.0), Vector2(34.0, 14.0)), TAPE)
+		draw_rect(Rect2(corner - tape, tape * 2.0), TAPE)
 
+	_draw_sheet_table(sheet)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## El contenido impreso, repartido dentro de la hoja para que siempre quepa.
+func _draw_sheet_table(sheet: Rect2) -> void:
 	var font: Font = get_theme_default_font()
-	_draw_centered(font, Vector2(0.0, sheet.position.y + 26.0), "ETIQUETADO DE CAMARAS", 16, PAPER_INK)
-	draw_line(Vector2(sheet.position.x + 14.0, sheet.position.y + 34.0),
-		Vector2(sheet.end.x - 14.0, sheet.position.y + 34.0), Color(PAPER_INK.r, PAPER_INK.g, PAPER_INK.b, 0.5), 1.0)
+	var body_size: int = int(clampf(sheet.size.x * 0.185, 12.0, 20.0))
+	var head_size: int = maxi(body_size - 3, 10)
+	var rule: Color = Color(PAPER_INK.r, PAPER_INK.g, PAPER_INK.b, 0.5)
+	var columns: PackedFloat32Array = PackedFloat32Array()
+	for fraction: float in SHEET_COLUMNS:
+		columns.append(sheet.position.x + sheet.size.x * fraction)
+
+	var top: float = sheet.position.y + 10.0
+	_draw_centered(font, Vector2(0.0, top + head_size), "ETIQUETADO", head_size, PAPER_INK)
+	_draw_centered(font, Vector2(0.0, top + head_size * 2.0 + 2.0), "CAMARAS", head_size, PAPER_INK)
+	var rule_y: float = top + head_size * 2.0 + 8.0
+	draw_line(Vector2(sheet.position.x + 6.0, rule_y), Vector2(sheet.end.x - 6.0, rule_y), rule, 1.0)
+
+	var header_y: float = rule_y + head_size + 6.0
+	var titles: PackedStringArray = PackedStringArray(["CAM", "PP", "GI"])
+	for i: int in columns.size():
+		_draw_centered(font, Vector2(columns[i], header_y), titles[i], head_size, PAPER_INK)
+	var header_rule: float = header_y + 6.0
+	draw_line(Vector2(sheet.position.x + 6.0, header_rule), Vector2(sheet.end.x - 6.0, header_rule), rule, 1.0)
+
+	var first_y: float = header_rule + body_size + 6.0
+	var step: float = minf((sheet.end.y - 12.0 - first_y) / float(PORT_COUNT - 1), body_size * 2.2)
 	for i: int in PORT_COUNT:
 		var camera: int = i + 1
-		var y: float = sheet.position.y + 54.0 + i * 21.0
-		# La fuente no trae flecha, así que la tabla usa ->.
-		draw_string(font, Vector2(sheet.position.x + 20.0, y),
-			"CAM %02d  ->  PP-%02d  ->  Gi0/%d" % [camera, _model.pp_of(camera), _model.gi_of(camera)],
-			HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, PAPER_INK)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var y: float = first_y + i * step
+		var values: PackedStringArray = PackedStringArray(["%02d" % camera,
+			"%02d" % _model.pp_of(camera), "%02d" % _model.gi_of(camera)])
+		for column: int in columns.size():
+			_draw_centered(font, Vector2(columns[column], y), values[column], body_size, PAPER_INK)
 
 
 func _draw_centered(font: Font, center: Vector2, text: String, font_size: int, color: Color) -> void:
