@@ -1,6 +1,16 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/pc_screen/pc_screen.gd" id="1_pc"]
+[ext_resource type="Script" path="res://scenes/pc_screen/monitor_bezel.gd" id="2_bezel"]
+[ext_resource type="Script" path="res://scenes/pc_screen/pc_window.gd" id="3_window"]
+[ext_resource type="Shader" path="res://scenes/pc_screen/crt_screen.gdshader" id="4_crt"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("4_crt")
+shader_parameter/scanline_strength = 0.16
+shader_parameter/scanline_count = 260.0
+shader_parameter/tube_edge = 0.55
+shader_parameter/tube_center = 0.1
 
 [node name="PcScreen" type="Control"]
 visible = false
@@ -12,7 +22,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_pc")
 
-[node name="Desktop" type="ColorRect" parent="."]
+[node name="Bezel" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,45 +30,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.09, 0.13, 1)
+script = ExtResource("2_bezel")
 
-[node name="TopStrip" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 34.0
-grow_horizontal = 2
-mouse_filter = 2
-color = Color(0.07, 0.15, 0.19, 1)
-
-[node name="ClosePcButton" type="Button" parent="."]
+[node name="Screen" type="Control" parent="."]
+clip_contents = true
 layout_mode = 0
-offset_left = 16.0
-offset_top = 4.0
-offset_right = 150.0
-offset_bottom = 30.0
-focus_mode = 0
-theme_override_font_sizes/font_size = 18
-text = "Cerrar PC"
+offset_left = 64.0
+offset_top = 48.0
+offset_right = 1088.0
+offset_bottom = 568.0
 
-[node name="AiToggleButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 160.0
-offset_top = 4.0
-offset_right = 330.0
-offset_bottom = 30.0
-focus_mode = 0
-theme_override_font_sizes/font_size = 18
-text = "Asistente IA"
-
-[node name="TasksWindow" type="Control" parent="."]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 130.0
-offset_right = 400.0
-offset_bottom = 515.0
-
-[node name="Body" type="ColorRect" parent="TasksWindow"]
+[node name="Wallpaper" type="ColorRect" parent="Screen"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -66,217 +48,189 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.09, 0.11, 0.15, 1)
+color = Color(0.05, 0.11, 0.14, 1)
 
-[node name="TitleBar" type="ColorRect" parent="TasksWindow"]
+[node name="WallpaperLabel" type="Label" parent="Screen"]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 28.0
-grow_horizontal = 2
-mouse_filter = 2
-color = Color(0.06, 0.43, 0.43, 1)
-
-[node name="TitleLabel" type="Label" parent="TasksWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 8.0
-offset_bottom = 28.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 18
-text = "TAREAS DE LA NOCHE"
-vertical_alignment = 1
-
-[node name="TaskList" type="VBoxContainer" parent="TasksWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 10.0
-offset_top = 40.0
-offset_right = -10.0
-offset_bottom = 300.0
-grow_horizontal = 2
-theme_override_constants/separation = 8
-
-[node name="ProgressLabel" type="Label" parent="TasksWindow"]
-layout_mode = 1
-anchors_preset = 12
+anchors_preset = 3
+anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = -36.0
-offset_right = -10.0
-offset_bottom = -8.0
-grow_horizontal = 2
+offset_left = -330.0
+offset_top = -40.0
+offset_right = -14.0
+offset_bottom = -10.0
+grow_horizontal = 0
 grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.3, 0.45, 0.5, 1)
+theme_override_font_sizes/font_size = 17
+text = "COORDINACION DE SISTEMAS"
+horizontal_alignment = 2
+
+[node name="ClosePcButton" type="Button" parent="Screen"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 136.0
+offset_bottom = 36.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 17
+text = "Bajar PC"
+
+[node name="Icons" type="Control" parent="Screen"]
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 520.0
+mouse_filter = 1
+
+[node name="TasksWindow" type="Control" parent="Screen"]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 82.0
+offset_right = 492.0
+offset_bottom = 262.0
+script = ExtResource("3_window")
+window_title = "Tareas de la noche"
+
+[node name="TaskList" type="VBoxContainer" parent="Screen/TasksWindow"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 34.0
+offset_right = 322.0
+offset_bottom = 144.0
+theme_override_constants/separation = 6
+
+[node name="ProgressLabel" type="Label" parent="Screen/TasksWindow"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 148.0
+offset_right = 322.0
+offset_bottom = 172.0
 theme_override_colors/font_color = Color(0.72, 0.85, 0.88, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 17
 text = "0 de 2 terminadas"
 
-[node name="TaskWindow" type="Control" parent="."]
+[node name="TerminalWindow" type="Control" parent="Screen"]
 visible = false
 layout_mode = 0
-offset_left = 416.0
-offset_top = 130.0
-offset_right = 860.0
-offset_bottom = 515.0
+offset_left = 160.0
+offset_top = 274.0
+offset_right = 492.0
+offset_bottom = 472.0
+script = ExtResource("3_window")
+window_title = "Terminal"
 
-[node name="Body" type="ColorRect" parent="TaskWindow"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0.09, 0.11, 0.15, 1)
-
-[node name="TitleBar" type="ColorRect" parent="TaskWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 28.0
-grow_horizontal = 2
-mouse_filter = 2
-color = Color(0.06, 0.43, 0.43, 1)
-
-[node name="TitleLabel" type="Label" parent="TaskWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 8.0
-offset_right = -32.0
-offset_bottom = 28.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 18
-text = "Tarea"
-vertical_alignment = 1
-
-[node name="CloseButton" type="Button" parent="TaskWindow"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -28.0
-offset_top = 2.0
-offset_right = -2.0
-offset_bottom = 26.0
-grow_horizontal = 0
-focus_mode = 0
-theme_override_font_sizes/font_size = 16
-text = "X"
-
-[node name="Content" type="Control" parent="TaskWindow"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="ConsoleLabel" type="Label" parent="Screen/TerminalWindow"]
+layout_mode = 0
 offset_left = 12.0
-offset_top = 38.0
-offset_right = -12.0
-offset_bottom = -12.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 36.0
+offset_right = 320.0
+offset_bottom = 188.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.5, 1)
+theme_override_font_sizes/font_size = 17
+text = "coord-sistemas:~$ help
+Terminal 0.3 (solo lectura)
 
-[node name="AiWindow" type="Control" parent="."]
+Comandos disponibles:
+  (ninguno todavía)
+
+Los comandos llegan en el hito 7.
+coord-sistemas:~$ _"
+autowrap_mode = 2
+
+[node name="NetworkWindow" type="Control" parent="Screen"]
 visible = false
 layout_mode = 0
-offset_left = 876.0
-offset_top = 130.0
-offset_right = 1128.0
-offset_bottom = 515.0
+offset_left = 504.0
+offset_top = 82.0
+offset_right = 748.0
+offset_bottom = 472.0
+script = ExtResource("3_window")
+window_title = "Simulador de red"
 
-[node name="Body" type="ColorRect" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0.09, 0.11, 0.15, 1)
-
-[node name="TitleBar" type="ColorRect" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 28.0
-grow_horizontal = 2
-mouse_filter = 2
-color = Color(0.3, 0.2, 0.52, 1)
-
-[node name="TitleLabel" type="Label" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 8.0
-offset_right = -32.0
-offset_bottom = 28.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 18
-text = "ASISTENTE IA"
-vertical_alignment = 1
-
-[node name="CloseButton" type="Button" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -28.0
-offset_top = 2.0
-offset_right = -2.0
-offset_bottom = 26.0
-grow_horizontal = 0
-focus_mode = 0
-theme_override_font_sizes/font_size = 16
-text = "X"
-
-[node name="ChatLabel" type="Label" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
+[node name="HintLabel" type="Label" parent="Screen/NetworkWindow"]
+layout_mode = 0
 offset_left = 12.0
-offset_top = 40.0
-offset_right = -12.0
-offset_bottom = 260.0
-grow_horizontal = 2
+offset_top = 36.0
+offset_right = 232.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "Segmentos detectados. Abre uno para configurar sus equipos."
+autowrap_mode = 2
+
+[node name="DeviceList" type="VBoxContainer" parent="Screen/NetworkWindow"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 108.0
+offset_right = 232.0
+offset_bottom = 300.0
+theme_override_constants/separation = 6
+
+[node name="AiWindow" type="Control" parent="Screen"]
+visible = false
+layout_mode = 0
+offset_left = 760.0
+offset_top = 82.0
+offset_right = 1006.0
+offset_bottom = 472.0
+script = ExtResource("3_window")
+window_title = "Asistente IA"
+
+[node name="ChatLabel" type="Label" parent="Screen/AiWindow"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 36.0
+offset_right = 234.0
+offset_bottom = 296.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.78, 0.74, 0.95, 1)
 theme_override_font_sizes/font_size = 17
 autowrap_mode = 2
-vertical_alignment = 0
 
-[node name="SolveButton" type="Button" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="SolveButton" type="Button" parent="Screen/AiWindow"]
+layout_mode = 0
 offset_left = 12.0
-offset_top = -74.0
-offset_right = -12.0
-offset_bottom = -42.0
-grow_horizontal = 2
-grow_vertical = 0
+offset_top = 312.0
+offset_right = 234.0
+offset_bottom = 344.0
 focus_mode = 0
 theme_override_font_sizes/font_size = 18
 text = "Resolver tarea"
 
-[node name="SolveProgress" type="ProgressBar" parent="AiWindow"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="SolveProgress" type="ProgressBar" parent="Screen/AiWindow"]
+layout_mode = 0
 offset_left = 12.0
-offset_top = -32.0
-offset_right = -12.0
-offset_bottom = -12.0
-grow_horizontal = 2
-grow_vertical = 0
+offset_top = 352.0
+offset_right = 234.0
+offset_bottom = 372.0
 show_percentage = false
+
+[node name="TaskWindow" type="Control" parent="Screen"]
+visible = false
+layout_mode = 0
+offset_left = 176.0
+offset_top = 122.0
+offset_right = 736.0
+offset_bottom = 470.0
+script = ExtResource("3_window")
+window_title = "Configuración de equipos"
+
+[node name="Content" type="Control" parent="Screen/TaskWindow"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 36.0
+offset_right = 548.0
+offset_bottom = 336.0
+
+[node name="CrtOverlay" type="ColorRect" parent="Screen"]
+material = SubResource("ShaderMaterial_crt")
+layout_mode = 0
+offset_right = 1024.0
+offset_bottom = 520.0
+mouse_filter = 2
+color = Color(1, 1, 1, 1)

@@ -7,7 +7,8 @@ extends Control
 signal completed()
 
 const UNASSIGNED_TEXT: String = "( sin asignar )"
-const NAME_WIDTH: float = 150.0
+const NAME_WIDTH: float = 210.0
+const SELECTOR_WIDTH: float = 230.0
 
 var task_id: String = ""
 var is_completed: bool = false
@@ -35,7 +36,12 @@ func setup(data: Dictionary) -> void:
 		var name_label: Label = Label.new()
 		name_label.text = _computers[i]
 		name_label.custom_minimum_size = Vector2(NAME_WIDTH, 0.0)
+		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_label.add_theme_font_size_override("font_size", 18)
 		var selector: OptionButton = OptionButton.new()
+		selector.custom_minimum_size = Vector2(SELECTOR_WIDTH, 0.0)
+		selector.focus_mode = Control.FOCUS_NONE
+		selector.add_theme_font_size_override("font_size", 18)
 		selector.add_item(UNASSIGNED_TEXT)
 		for ip: String in _ips:
 			selector.add_item(ip)

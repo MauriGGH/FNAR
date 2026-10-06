@@ -37,7 +37,7 @@ res://
 - **PowerManager (autoload):** energía de 0 a 100 %. Gastan: puerta cerrada, linterna y cámaras abiertas. En 0 % todo se apaga. El breaker corta la corriente unos segundos; la chapa de la puerta está en un no-break y sigue funcionando.
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
-- **Sistema de cámaras:** 12 cámaras. Cada vista es un fondo vacío con capas de sprites de los profes presentes (por ahora, etiquetas de texto).
+- **Sistema de cámaras:** 12 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
 - **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, Audel y las Trabas. Linterna hacia el pasillo, breaker, PC.
 
 ## Cámaras
@@ -67,7 +67,8 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   - **Llamada de Ureña:** cada noche que Ureña está activo hay cierta probabilidad de que llame al teléfono de la oficina en algún momento entre las 2 y las 4 AM. El teléfono suena unos segundos; si no contestas a tiempo, game over (te mata). Si contestas, hace varias preguntas de opción múltiple, cada una con poco tiempo para responder. Cada respuesta mala o sin responder a tiempo: baja energía y aparece (o se queda) una foto de Ureña en la oficina; no es game over. El resto de los profes sigue moviéndose durante la llamada. Las preguntas vienen de un banco de preguntas en `data/urena_questions.gd` (el equipo las escribirá; por ahora usa 3 preguntas de ejemplo).
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Audel Electrix (rol Balloon Boy):** vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
-- **Santi (rol Puppet):** su caja musical en CAM 4 se descarga con el tiempo; se le da cuerda manteniendo un botón en esa cámara. En cero, suena su canción y llama a las Trabas, que entran y matan al jugador.
+  - **Descarga del pararrayos:** mientras Audel está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
+- **Santi (rol Puppet):** su alma quedó atrapada dentro de la botarga de la mascota de la universidad y la poseyó. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca el himno de la universidad (melodía original) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, levanta la cabeza, sale del cubículo y entra a la oficina junto con las Trabas: game over. Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía.
 - **Cuéllar (secreto, rol Golden Freddy):** desde la noche 4, aparición rara en la oficina o en una cámara. Si aparece en la oficina, el jugador tiene 3 s para subir las cámaras o muere.
 
 ## Reglas para que las mecánicas no choquen
@@ -79,6 +80,10 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 ## Tareas
 
 Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en la sala de servidores, dejando la oficina sin vigilar. La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
+
+Las tareas imitan herramientas reales de un coordinador de sistemas, con diseño original (sin logos ni nombres de marcas): una terminal estilo consola (comandos tipo `ipconfig`, `ping`, reinicio de servicios), un simulador de redes estilo diagrama de topología donde se conectan y configuran equipos, y el patch panel físico en la sala de servidores.
+
+**La PC:** al hacer clic en el monitor, la vista se acerca a la pantalla y aparece un escritorio retro original enmarcado por el bisel del monitor, con íconos: Terminal, Simulador de red, Tareas y Asistente IA. La ventana del Asistente IA sigue abierta y trabajando aunque se baje la PC. Usar la PC gasta energía (cuenta como una barra de consumo).
 
 ## Niveles de IA por noche
 

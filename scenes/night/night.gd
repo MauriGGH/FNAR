@@ -18,6 +18,7 @@ const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 @onready var notice_banner: Label = $Hud/NoticeBanner
 
 var _animatronics: Array[Animatronic] = []
+var _debug_shown: bool = false
 
 
 func _ready() -> void:
@@ -27,6 +28,7 @@ func _ready() -> void:
 
 	office.door_toggled.connect(_on_door_toggled)
 	office.pc_requested.connect(pc_screen.open)
+	office.notice_requested.connect(notice_banner.show_notice)
 
 	camera_system.set_animatronics(_animatronics)
 	camera_system.opened.connect(_on_cameras_opened)
@@ -37,6 +39,8 @@ func _ready() -> void:
 	# La PC y las cámaras no pueden estar abiertas a la vez.
 	pc_screen.opened.connect(camera_system.close)
 	camera_system.opened.connect(pc_screen.close)
+	# Al bajar la PC, la vista de la oficina regresa de su acercamiento.
+	pc_screen.closed.connect(office.zoom_out)
 
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
@@ -44,7 +48,26 @@ func _ready() -> void:
 	GameManager.game_over.connect(_on_game_over)
 	PowerManager.power_changed.connect(_on_power_changed)
 
+	_apply_debug_shown()
+
 	GameManager.start_night()
+
+
+## F3 prende y apaga la depuración: la etiqueta de las cámaras y las zonas
+## de clic de la oficina.
+func _unhandled_input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed or key.echo or key.keycode != KEY_F3:
+		return
+	_debug_shown = not _debug_shown
+	_apply_debug_shown()
+	get_viewport().set_input_as_handled()
+
+
+## Un solo interruptor: la etiqueta de los profes y las zonas de clic.
+func _apply_debug_shown() -> void:
+	camera_system.set_debug_visible(_debug_shown)
+	office.set_zones_visible(_debug_shown)
 
 
 ## Los profes son hijos del nodo Animatronics, así se agregan sin tocar código.

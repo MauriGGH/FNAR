@@ -10,6 +10,7 @@ var power: float = NightConfig.MAX_POWER
 var is_draining: bool = false
 var is_door_closed: bool = false
 var are_cameras_open: bool = false
+var is_pc_open: bool = false
 
 
 ## Deja la energía al 100 % para empezar una noche.
@@ -17,6 +18,7 @@ func reset() -> void:
 	power = NightConfig.MAX_POWER
 	is_door_closed = false
 	are_cameras_open = false
+	is_pc_open = false
 	power_changed.emit(power)
 
 
@@ -33,6 +35,10 @@ func set_cameras_open(open: bool) -> void:
 	are_cameras_open = open
 
 
+func set_pc_open(open: bool) -> void:
+	is_pc_open = open
+
+
 ## Porcentaje que se pierde por segundo real con el estado actual.
 func drain_per_second() -> float:
 	var per_hour: float = NightConfig.IDLE_DRAIN_PER_HOUR
@@ -40,6 +46,8 @@ func drain_per_second() -> float:
 		per_hour += NightConfig.DOOR_DRAIN_PER_HOUR
 	if are_cameras_open:
 		per_hour += NightConfig.CAMERA_DRAIN_PER_HOUR
+	if is_pc_open:
+		per_hour += NightConfig.PC_DRAIN_PER_HOUR
 	return per_hour / NightConfig.hour_duration()
 
 
@@ -51,6 +59,8 @@ func usage_level() -> int:
 	if is_door_closed:
 		level += 1
 	if are_cameras_open:
+		level += 1
+	if is_pc_open:
 		level += 1
 	return mini(level, 4)
 

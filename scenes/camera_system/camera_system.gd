@@ -54,6 +54,11 @@ func _ready() -> void:
 	_fit_minimap()
 
 
+## F3: el night.gd prende y apaga la depuración de todos a la vez.
+func set_debug_visible(is_debug_visible: bool) -> void:
+	debug_label.visible = is_debug_visible
+
+
 ## El night.gd le pasa la lista de profes para poder decir quién está en cada cámara.
 func set_animatronics(animatronics: Array[Animatronic]) -> void:
 	_animatronics = animatronics
@@ -99,12 +104,6 @@ func switch_to_camera(camera: int) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_cameras"):
 		toggle()
-		get_viewport().set_input_as_handled()
-		return
-	# F3 esconde la etiqueta de depuración; la reemplazarán los sprites.
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_F3:
-		debug_label.visible = not debug_label.visible
 		get_viewport().set_input_as_handled()
 
 

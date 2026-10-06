@@ -1,8 +1,10 @@
 extends Control
 
-## La PC de la oficina: un escritorio viejo con la lista de tareas de la noche,
-## la tarea abierta y el Asistente IA. La ventana del asistente sigue abierta
-## aunque el jugador baje la PC, y eso es justo lo que lo delata ante Mamador.
+## La PC de la oficina. La pantalla va enmarcada por el bisel del monitor CRT y
+## adentro hay un escritorio retro con cuatro íconos: Terminal, Simulador de
+## red, Tareas y Asistente IA. La tarea de IPs se abre desde el simulador.
+## La ventana del asistente sigue trabajando aunque el jugador baje la PC, y
+## eso es justo lo que lo delata ante Mamador.
 
 signal opened()
 signal closed()
@@ -11,48 +13,75 @@ signal closed()
 const AI_SOLVE_TIME: float = 8.0
 const AI_CHAT_LINES: int = 5
 
+const ICON_LEFT: float = 20.0
+const ICON_TOP: float = 48.0
+const ICON_GAP: float = 6.0
+
 var is_open: bool = false
 var is_ai_window_open: bool = false
 
-var _task_buttons: Array[Button] = []
 var _open_task_index: int = -1
 var _task_instance: Node = null
 var _solving: bool = false
 var _solve_elapsed: float = 0.0
 var _chat: PackedStringArray = PackedStringArray()
+var _icons: Array[DesktopIcon] = []
 
-@onready var close_pc_button: Button = $ClosePcButton
-@onready var ai_toggle_button: Button = $AiToggleButton
-@onready var task_list: VBoxContainer = $TasksWindow/TaskList
-@onready var task_progress_label: Label = $TasksWindow/ProgressLabel
-@onready var task_window: Control = $TaskWindow
-@onready var task_window_title: Label = $TaskWindow/TitleLabel
-@onready var task_content: Control = $TaskWindow/Content
-@onready var task_close_button: Button = $TaskWindow/CloseButton
-@onready var ai_window: Control = $AiWindow
-@onready var ai_close_button: Button = $AiWindow/CloseButton
-@onready var ai_chat_label: Label = $AiWindow/ChatLabel
-@onready var ai_solve_button: Button = $AiWindow/SolveButton
-@onready var ai_progress: ProgressBar = $AiWindow/SolveProgress
+@onready var bezel: Control = $Bezel
+@onready var screen: Control = $Screen
+@onready var crt_overlay: ColorRect = $Screen/CrtOverlay
+@onready var close_pc_button: Button = $Screen/ClosePcButton
+@onready var icons_holder: Control = $Screen/Icons
+
+@onready var tasks_window: PcWindow = $Screen/TasksWindow
+@onready var task_list: VBoxContainer = $Screen/TasksWindow/TaskList
+@onready var task_progress_label: Label = $Screen/TasksWindow/ProgressLabel
+
+@onready var terminal_window: PcWindow = $Screen/TerminalWindow
+@onready var network_window: PcWindow = $Screen/NetworkWindow
+@onready var network_list: VBoxContainer = $Screen/NetworkWindow/DeviceList
+
+@onready var task_window: PcWindow = $Screen/TaskWindow
+@onready var task_content: Control = $Screen/TaskWindow/Content
+
+@onready var ai_window: PcWindow = $Screen/AiWindow
+@onready var ai_chat_label: Label = $Screen/AiWindow/ChatLabel
+@onready var ai_solve_button: Button = $Screen/AiWindow/SolveButton
+@onready var ai_progress: ProgressBar = $Screen/AiWindow/SolveProgress
 
 
 func _ready() -> void:
 	visible = false
+	_fit_screen()
+	bezel.resized.connect(_fit_screen)
+
 	close_pc_button.pressed.connect(close)
-	ai_toggle_button.pressed.connect(_toggle_ai_window)
-	ai_close_button.pressed.connect(_close_ai_window)
-	task_close_button.pressed.connect(_close_task)
 	ai_solve_button.pressed.connect(_request_solve)
+	ai_window.close_requested.connect(_close_ai_window)
+	task_window.close_requested.connect(_close_task)
+	tasks_window.close_requested.connect(func() -> void: tasks_window.visible = false)
+	terminal_window.close_requested.connect(func() -> void: terminal_window.visible = false)
+	network_window.close_requested.connect(func() -> void: network_window.visible = false)
 
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.task_completed.connect(_on_any_task_completed)
 
+	_build_icons()
 	_set_ai_window_open(false)
 	task_window.visible = false
+	terminal_window.visible = false
 	ai_progress.value = 0.0
 	_chat.append("Asistente IA v0.9 (Coordinación de Sistemas)")
 	_chat.append("Abre una tarea y pulsa Resolver tarea.")
 	_refresh_chat()
+
+
+## El escritorio ocupa el hueco que deja el bisel del monitor.
+func _fit_screen() -> void:
+	var hole: Rect2 = bezel.screen_rect()
+	screen.position = hole.position
+	screen.size = hole.size
+	crt_overlay.size = hole.size
 
 
 # --- Abrir y cerrar la PC -----------------------------------------------------
@@ -69,6 +98,7 @@ func open() -> void:
 		return
 	is_open = true
 	visible = true
+	PowerManager.set_pc_open(true)
 	opened.emit()
 
 
@@ -77,40 +107,86 @@ func close() -> void:
 		return
 	is_open = false
 	visible = false
+	PowerManager.set_pc_open(false)
 	closed.emit()
 
 
-# --- Lista de tareas ----------------------------------------------------------
+# --- Escritorio ---------------------------------------------------------------
+
+func _build_icons() -> void:
+	_add_icon("terminal", DesktopIcon.Glyph.TERMINAL, "Terminal")
+	_add_icon("network", DesktopIcon.Glyph.NETWORK, "Simulador de red")
+	_add_icon("tasks", DesktopIcon.Glyph.TASKS, "Tareas")
+	_add_icon("ai", DesktopIcon.Glyph.AI, "Asistente IA")
+
+
+func _add_icon(icon_id: String, glyph: DesktopIcon.Glyph, text: String) -> void:
+	var icon: DesktopIcon = DesktopIcon.new()
+	icon.setup(icon_id, glyph, text)
+	icon.position = Vector2(ICON_LEFT, ICON_TOP + _icons.size() * (DesktopIcon.ICON_SIZE.y + ICON_GAP))
+	icon.pressed.connect(_on_icon_pressed)
+	icons_holder.add_child(icon)
+	_icons.append(icon)
+
+
+func _on_icon_pressed(icon_id: String) -> void:
+	match icon_id:
+		"terminal":
+			terminal_window.visible = true
+		"network":
+			network_window.visible = true
+		"tasks":
+			tasks_window.visible = true
+		"ai":
+			_set_ai_window_open(true)
+
+
+# --- Lista de tareas y simulador de red ---------------------------------------
 
 func _on_night_started(_night: int) -> void:
 	_close_task()
 	_set_ai_window_open(false)
 	_build_task_list()
+	_build_network_list()
 
 
-## Un botón por tarea de la noche, con casilla [ ] o [X].
+## La ventana de Tareas es solo la lista con casillas [ ] o [X].
 func _build_task_list() -> void:
 	for child: Node in task_list.get_children():
 		child.queue_free()
-	_task_buttons.clear()
-
-	var tasks: Array = GameManager.night_tasks()
-	for i: int in tasks.size():
-		var button: Button = Button.new()
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.pressed.connect(_open_task.bind(i))
-		task_list.add_child(button)
-		_task_buttons.append(button)
+	for task: Dictionary in GameManager.night_tasks():
+		var label: Label = Label.new()
+		label.add_theme_font_size_override("font_size", 17)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		task_list.add_child(label)
 	_refresh_task_list()
 
 
 func _refresh_task_list() -> void:
 	var tasks: Array = GameManager.night_tasks()
-	for i: int in _task_buttons.size():
-		var task: Dictionary = tasks[i]
-		var done: bool = GameManager.is_task_completed(str(task.get("id", "")))
-		_task_buttons[i].text = "%s %s" % ["[X]" if done else "[ ]", task.get("title", "Tarea")]
+	var labels: Array[Node] = task_list.get_children()
+	for i: int in mini(labels.size(), tasks.size()):
+		var done: bool = GameManager.is_task_completed(str(tasks[i].get("id", "")))
+		(labels[i] as Label).text = "%s %s" % ["[X]" if done else "[ ]", tasks[i].get("title", "Tarea")]
 	task_progress_label.text = "%d de %d terminadas" % [GameManager.completed_task_count(), tasks.size()]
+
+
+## El simulador de red lista los equipos configurables de la noche.
+func _build_network_list() -> void:
+	for child: Node in network_list.get_children():
+		child.queue_free()
+	var tasks: Array = GameManager.night_tasks()
+	for i: int in tasks.size():
+		if str(tasks[i].get("type", "")) != Tasks.TYPE_IP_CONFIG:
+			continue
+		var button: Button = Button.new()
+		button.text = str(tasks[i].get("title", "Segmento"))
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.focus_mode = Control.FOCUS_NONE
+		button.clip_text = true
+		button.add_theme_font_size_override("font_size", 16)
+		button.pressed.connect(_open_task.bind(i))
+		network_list.add_child(button)
 
 
 func _open_task(index: int) -> void:
@@ -136,7 +212,7 @@ func _open_task(index: int) -> void:
 		_task_instance.completed.connect(_on_open_task_completed)
 
 	_open_task_index = index
-	task_window_title.text = str(task.get("title", "Tarea"))
+	task_window.set_window_title("Configuración de equipos: %s" % task.get("title", "Tarea"))
 	task_window.visible = true
 
 
@@ -162,10 +238,6 @@ func _on_any_task_completed(_task_id: String) -> void:
 
 # --- Asistente IA -------------------------------------------------------------
 
-func _toggle_ai_window() -> void:
-	_set_ai_window_open(not is_ai_window_open)
-
-
 func _close_ai_window() -> void:
 	_set_ai_window_open(false)
 
@@ -175,7 +247,6 @@ func _close_ai_window() -> void:
 func _set_ai_window_open(is_window_open: bool) -> void:
 	is_ai_window_open = is_window_open
 	ai_window.visible = is_window_open
-	ai_toggle_button.text = "Asistente IA [abierto]" if is_window_open else "Asistente IA"
 	GameManager.set_ai_window_open(is_window_open)
 	if not is_window_open:
 		_cancel_solve("Resolución cancelada: cerraste el asistente.")

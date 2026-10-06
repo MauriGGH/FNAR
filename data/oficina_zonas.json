@@ -1,0 +1,72 @@
+{
+  "source_image_size": [
+    1376,
+    768
+  ],
+  "note": "Coordenadas normalizadas (0 a 1): x, y, ancho, alto respecto a la imagen de la oficina central.",
+  "zones": {
+    "monitor": {
+      "x": 0.0218,
+      "y": 0.332,
+      "w": 0.2289,
+      "h": 0.3646,
+      "desc": "Clic: acercamiento y abrir la PC"
+    },
+    "monitor_screen": {
+      "x": 0.0509,
+      "y": 0.3685,
+      "w": 0.1831,
+      "h": 0.2865,
+      "desc": "Área de la pantalla donde se dibuja la PC"
+    },
+    "phone": {
+      "x": 0.5065,
+      "y": 0.7031,
+      "w": 0.133,
+      "h": 0.1497,
+      "desc": "Teléfono: llamadas de la noche y de Ureña"
+    },
+    "lock_box": {
+      "x": 0.6577,
+      "y": 0.6771,
+      "w": 0.0749,
+      "h": 0.1042,
+      "desc": "Caja de la chapa: cerrar/abrir la puerta de entrada"
+    },
+    "flashlight": {
+      "x": 0.7631,
+      "y": 0.7747,
+      "w": 0.1199,
+      "h": 0.0742,
+      "desc": "Linterna: alumbrar el pasillo"
+    },
+    "entrance_door": {
+      "x": 0.2965,
+      "y": 0.3411,
+      "w": 0.1083,
+      "h": 0.3359,
+      "desc": "Puerta de entrada: Barcosa golpeando"
+    },
+    "front_glass": {
+      "x": 0.407,
+      "y": 0.2995,
+      "w": 0.3198,
+      "h": 0.2604,
+      "desc": "Cristal y pasillo: Mamador inspeccionando, Ureña en el pasillo"
+    },
+    "ladder": {
+      "x": 0.7304,
+      "y": 0.1823,
+      "w": 0.04,
+      "h": 0.4948,
+      "desc": "Escalera al techo: Audel bajando"
+    },
+    "cubicles_side": {
+      "x": 0.7703,
+      "y": 0.2344,
+      "w": 0.2297,
+      "h": 0.4557,
+      "desc": "Lado de los cubículos"
+    }
+  }
+}
