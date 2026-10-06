@@ -1,9 +1,11 @@
 extends Control
 
-## El tablero del breaker, de cerca. Todo dibujado: lámina de acero con sus
-## tornillos, etiqueta de peligro, la palanca grande en su carril y los dos
-## focos. La palanca se arrastra hacia abajo y pesa: sigue al mouse con
-## retraso y, si la sueltas antes de llegar, se regresa sola.
+## El tablero del breaker, de cerca. Todo dibujado, con el mismo acabado que
+## el resto del juego: degradados en vez de rellenos planos, sombras suaves,
+## focos con resplandor difuso y, encima de todo, el filtro de grano y viñeta.
+## La palanca se arrastra hacia abajo y pesa: sigue al mouse con retraso y, si
+## la sueltas antes de llegar, se regresa sola.
+## Se sale con el botón, con Escape o con clic derecho.
 
 signal closed()
 ## Para el "[clac]" y el temblor, que los dispara la escena de la noche.
@@ -41,12 +43,12 @@ const SCREW_SLOT: Color = Color(0.14, 0.15, 0.16)
 const HANDLE_COLOR: Color = Color(0.58, 0.16, 0.13)
 const HANDLE_TOP_COLOR: Color = Color(0.72, 0.24, 0.2)
 const HANDLE_GRIP: Color = Color(0.3, 0.08, 0.07)
-const WARNING_YELLOW: Color = Color(0.93, 0.78, 0.12)
+const WARNING_YELLOW: Color = Color(0.82, 0.7, 0.2)
 const INK: Color = Color(0.09, 0.08, 0.05)
 const ENGRAVED: Color = Color(0.2, 0.21, 0.22)
 const LAMP_OFF: Color = Color(0.13, 0.14, 0.15)
-const LAMP_GREEN: Color = Color(0.3, 0.95, 0.42)
-const LAMP_RED: Color = Color(0.98, 0.26, 0.2)
+const LAMP_GREEN: Color = Color(0.42, 0.82, 0.46)
+const LAMP_RED: Color = Color(0.78, 0.3, 0.26)
 
 var is_open: bool = false
 
@@ -58,9 +60,13 @@ var _shake_offset: Vector2 = Vector2.ZERO
 var _blink_elapsed: float = 0.0
 
 
+@onready var exit_button: Button = $ExitButton
+
+
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	exit_button.pressed.connect(close)
 
 
 func open() -> void:
@@ -169,6 +175,7 @@ func _handle_rect() -> Rect2:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), BACKDROP)
 	var plate: Rect2 = Rect2(PLATE.position + _shake_offset, PLATE.size)
+	DrawKit.rect_shadow(self, plate, Vector2(6.0, 10.0))
 	_draw_plate(plate)
 	_draw_warning_label(plate)
 	_draw_track(plate)
@@ -177,21 +184,26 @@ func _draw() -> void:
 	_draw_status(plate)
 
 
-## La lámina: cuerpo con bisel y los cuatro tornillos.
+## La lámina: degradado de arriba abajo, borde claro fino y los tornillos.
 func _draw_plate(plate: Rect2) -> void:
 	draw_style_box(_box(PLATE_EDGE_DARK, 8, PLATE_EDGE_DARK, 0), plate.grow(3.0))
-	draw_style_box(_box(PLATE_COLOR, 6, PLATE_EDGE_LIGHT, 2), plate)
-	# Una raya clara arriba y otra oscura abajo, para que se vea lámina.
-	draw_rect(Rect2(plate.position + Vector2(8.0, 8.0), Vector2(plate.size.x - 16.0, 2.0)), PLATE_EDGE_LIGHT)
-	draw_rect(Rect2(plate.position + Vector2(8.0, plate.size.y - 10.0), Vector2(plate.size.x - 16.0, 2.0)), PLATE_EDGE_DARK)
+	DrawKit.gradient_rect(self, plate, PLATE_EDGE_LIGHT, PLATE_COLOR.darkened(0.18))
+	DrawKit.soft_outline(self, plate, PLATE_EDGE_LIGHT)
+	# Un brillo largo arriba y una sombra abajo: así se lee como lámina.
+	DrawKit.gradient_rect(self, Rect2(plate.position + Vector2(8.0, 8.0), Vector2(plate.size.x - 16.0, 26.0)),
+		Color(1.0, 1.0, 1.0, 0.07), Color(1.0, 1.0, 1.0, 0.0))
+	DrawKit.gradient_rect(self, Rect2(plate.position + Vector2(8.0, plate.size.y - 34.0), Vector2(plate.size.x - 16.0, 26.0)),
+		Color(0.0, 0.0, 0.0, 0.0), Color(0.0, 0.0, 0.0, 0.14))
 	for corner: Vector2 in [Vector2(24.0, 24.0), Vector2(plate.size.x - 24.0, 24.0),
 			Vector2(24.0, plate.size.y - 24.0), Vector2(plate.size.x - 24.0, plate.size.y - 24.0)]:
 		_draw_screw(plate.position + corner)
 
 
 func _draw_screw(center: Vector2) -> void:
+	draw_circle(center + Vector2(1.0, 2.0), 9.0, Color(0.0, 0.0, 0.02, 0.22))
 	draw_circle(center, 10.0, PLATE_EDGE_DARK)
 	draw_circle(center, 8.0, SCREW_COLOR)
+	draw_circle(center - Vector2(2.0, 2.5), 2.6, Color(1.0, 1.0, 1.0, 0.14))
 	# La ranura, girada distinto en cada tornillo para que no se vean clonados.
 	var angle: float = float(int(center.x + center.y)) * 0.7
 	var arm: Vector2 = Vector2(cos(angle), sin(angle)) * 5.5
@@ -228,8 +240,9 @@ func _draw_warning_label(plate: Rect2) -> void:
 ## El carril hundido donde corre la palanca, con sus marcas ON y OFF.
 func _draw_track(plate: Rect2) -> void:
 	var track: Rect2 = Rect2(plate.position + TRACK.position, TRACK.size)
-	draw_style_box(_box(RECESS_COLOR, 5, PLATE_EDGE_DARK, 2), track)
-	draw_rect(Rect2(track.position + Vector2(2.0, 2.0), Vector2(track.size.x - 4.0, 3.0)), Color(0.1, 0.1, 0.11))
+	draw_style_box(_box(RECESS_COLOR, 5, PLATE_EDGE_DARK, 1), track)
+	# Hundido: oscuro arriba, un poco de luz al fondo.
+	DrawKit.gradient_rect(self, track.grow(-2.0), Color(0.08, 0.085, 0.09), RECESS_COLOR.lightened(0.12))
 
 	var font: Font = get_theme_default_font()
 	draw_string(font, Vector2(track.position.x - 52.0, track.position.y + 22.0), "ON", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 22, ENGRAVED)
@@ -240,43 +253,46 @@ func _draw_track(plate: Rect2) -> void:
 		draw_line(Vector2(track.end.x + 6.0, y), Vector2(track.end.x + 18.0, y), ENGRAVED, 2.0)
 
 
-## El mango: bloque con bisel arriba y tres rayas de agarre.
+## El mango: sombra propia, degradado y tres rayas de agarre hundidas.
 func _draw_handle() -> void:
 	var handle: Rect2 = _handle_rect()
 	handle.position += _shake_offset
-	draw_style_box(_box(HANDLE_COLOR, 6, HANDLE_GRIP, 2), handle)
-	draw_rect(Rect2(handle.position + Vector2(6.0, 5.0), Vector2(handle.size.x - 12.0, 10.0)), HANDLE_TOP_COLOR)
+	DrawKit.rect_shadow(self, handle)
+	draw_style_box(_box(HANDLE_COLOR, 6, HANDLE_GRIP, 1), handle)
+	DrawKit.gradient_rect(self, handle.grow(-2.0), HANDLE_TOP_COLOR, HANDLE_COLOR.darkened(0.3))
 	for i: int in 3:
-		draw_rect(Rect2(handle.position + Vector2(16.0, 28.0 + i * 12.0),
-			Vector2(handle.size.x - 32.0, 5.0)), HANDLE_GRIP)
+		var groove: Rect2 = Rect2(handle.position + Vector2(16.0, 28.0 + i * 12.0),
+			Vector2(handle.size.x - 32.0, 5.0))
+		DrawKit.gradient_rect(self, groove, HANDLE_GRIP, Color(1.0, 1.0, 1.0, 0.06))
 
 
 ## Los dos focos, con su aro y su brillo.
 func _draw_lights(plate: Rect2) -> void:
 	var has_power: bool = not PowerManager.is_blackout
 	var waiting: bool = PowerManager.cooldown_progress() > 0.0
+	# El verde late apenas, para que no se vea como una calcomanía.
+	var green: float = 0.0 if not has_power else 0.86 + 0.14 * sin(_blink_elapsed * 2.1)
 	# En espera, el rojo parpadea; cortada, se queda fijo.
-	var red_on: bool = PowerManager.is_blackout or (waiting and fmod(_blink_elapsed, 0.6) < 0.3)
+	var red: float = 0.0
+	if PowerManager.is_blackout:
+		red = 1.0
+	elif waiting:
+		red = 1.0 if fmod(_blink_elapsed, 0.6) < 0.3 else 0.1
 
-	_draw_lamp(plate.position + GREEN_LIGHT, LAMP_GREEN, has_power)
-	_draw_lamp(plate.position + RED_LIGHT, LAMP_RED, red_on)
+	_draw_lamp(plate.position + GREEN_LIGHT, LAMP_GREEN, green)
+	_draw_lamp(plate.position + RED_LIGHT, LAMP_RED, red)
 
 	var font: Font = get_theme_default_font()
 	_draw_centered(font, plate.position + GREEN_LIGHT + Vector2(0.0, 40.0), "ENERGIA", 18, ENGRAVED)
 	_draw_centered(font, plate.position + RED_LIGHT + Vector2(0.0, 40.0), "CORTE", 18, ENGRAVED)
 
 
-func _draw_lamp(center: Vector2, color: Color, lit: bool) -> void:
+## Foco con resplandor difuso y su reflejo tenue sobre la lámina.
+func _draw_lamp(center: Vector2, color: Color, intensity: float) -> void:
 	center += _shake_offset
-	if lit:
-		# El brillo son círculos encimados, que es lo más barato aquí.
-		for i: int in 3:
-			var radius: float = LIGHT_RADIUS + 8.0 + i * 7.0
-			draw_circle(center, radius, Color(color.r, color.g, color.b, 0.1 - i * 0.03))
-	draw_circle(center, LIGHT_RADIUS + 4.0, PLATE_EDGE_DARK)
-	draw_circle(center, LIGHT_RADIUS, color if lit else LAMP_OFF)
-	if lit:
-		draw_circle(center - Vector2(4.0, 4.0), 4.0, Color(1.0, 1.0, 1.0, 0.65))
+	DrawKit.led_reflection(self, center + Vector2(0.0, LIGHT_RADIUS + 2.0),
+		Vector2(LIGHT_RADIUS * 5.0, LIGHT_RADIUS * 2.6), color, intensity, false)
+	DrawKit.led(self, center, LIGHT_RADIUS, color, intensity)
 
 
 ## La línea de estado: deja ver la cuenta de los 3 s y la de los 10 s.
@@ -297,8 +313,9 @@ func _draw_status(plate: Rect2) -> void:
 	draw_rect(bar, RECESS_COLOR)
 	var filled: float = PowerManager.cooldown_progress()
 	if filled > 0.0:
-		draw_rect(Rect2(bar.position, Vector2(bar.size.x * filled, bar.size.y)), WARNING_YELLOW)
-	draw_rect(bar, PLATE_EDGE_DARK, false, 1.0)
+		DrawKit.gradient_rect(self, Rect2(bar.position, Vector2(bar.size.x * filled, bar.size.y)),
+			WARNING_YELLOW.lightened(0.2), WARNING_YELLOW.darkened(0.25))
+	DrawKit.soft_outline(self, bar, PLATE_EDGE_LIGHT)
 	_draw_centered(font, plate.position + Vector2(plate.size.x * 0.5, 148.0),
 		"TABLERO PRINCIPAL", 17, ENGRAVED)
 
