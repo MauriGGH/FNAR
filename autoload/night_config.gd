@@ -30,6 +30,17 @@ const CAMERA_DRAIN_PER_HOUR: float = 14.0  # extra mientras las cámaras están 
 const PC_DRAIN_PER_HOUR: float = 12.0      # extra mientras la PC está encendida
 
 
+# --- Breaker y cortaso -------------------------------------------------------
+## Lo que dura la corriente cortada cuando se baja la palanca.
+const BLACKOUT_TIME: float = 3.0
+## Lo que hay que esperar, después, para poder volver a bajarla.
+const BREAKER_COOLDOWN: float = 10.0
+## Energía que se pierde de golpe con el cortaso de Audel.
+const CORTASO_POWER_LOSS: float = 15.0
+## Lo que la linterna queda inservible después del cortaso.
+const FLASHLIGHT_DISABLED_TIME: float = 45.0
+
+
 ## Cuánto dura una hora de juego en segundos reales. Solo para el reloj.
 static func hour_duration() -> float:
 	return TEST_HOUR_DURATION if TEST_MODE else HOUR_DURATION

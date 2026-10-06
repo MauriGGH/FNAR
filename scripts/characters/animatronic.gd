@@ -95,14 +95,10 @@ func debug_text() -> String:
 	return ""
 
 
-## Texto provisional para la oficina mientras este profe está en la puerta.
-## Cadena vacía = no está ahí. Lo reemplazarán los sprites.
-func door_presence() -> String:
-	return ""
-
-
-## Lo mismo, para cuando está asomado al cristal.
-func window_presence() -> String:
+## Texto provisional para la oficina mientras este profe se ve en una zona
+## (la puerta, el cristal, la escalera). Cadena vacía = no se ve ahí.
+## Lo reemplazarán los sprites.
+func zone_presence(_zone_id: String) -> String:
 	return ""
 
 

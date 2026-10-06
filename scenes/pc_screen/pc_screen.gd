@@ -109,8 +109,8 @@ func toggle() -> void:
 
 
 func open() -> void:
-	if is_open:
-		return
+	if is_open or PowerManager.is_blackout or GameManager.is_in_server_room:
+		return  # Sin corriente, la PC no prende.
 	is_open = true
 	visible = true
 	PowerManager.set_pc_open(true)

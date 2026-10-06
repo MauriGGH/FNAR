@@ -30,6 +30,11 @@ const STATIC_INTERFERENCE: float = 0.95
 const INTERFERENCE_HOLD_RATIO: float = 0.65
 
 const REC_BLINK_TIME: float = 0.55
+## Estática fija de una cámara sin señal, y el parpadeo de su cartel.
+const NO_SIGNAL_STATIC: float = 0.55
+const NO_SIGNAL_BLINK_TIME: float = 0.7
+## Color del botón del minimapa de una cámara caída.
+const BUTTON_DOWN: Color = Color(0.3, 0.3, 0.31, 0.85)
 ## Cada cuánto se repinta la etiqueta de depuración.
 const DEBUG_REFRESH_TIME: float = 0.2
 
@@ -58,6 +63,7 @@ var _camera_signature: String = ""
 @onready var static_overlay: ColorRect = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
 @onready var rec_dot: ColorRect = $RecDot
+@onready var no_signal_label: Label = $NoSignalLabel
 @onready var fallback_label: Label = $FallbackLabel
 @onready var debug_label: Label = $DebugOccupantsLabel
 @onready var minimap_frame: Control = $Minimap
@@ -74,7 +80,9 @@ func _ready() -> void:
 	_start_rec_blink()
 	_build_minimap_buttons()
 	feed_image.visible = false
+	no_signal_label.visible = false
 	wind_control.visible = false
+	GameManager.patch_panel.camera_restored.connect(_on_camera_restored)
 	wind_control.keep_pressed_outside = true  # Soltar fuera del botón no se traba.
 	wind_control.button_down.connect(_on_wind_button_down)
 	wind_control.button_up.connect(_on_wind_button_up)
@@ -105,8 +113,8 @@ func toggle() -> void:
 
 
 func open() -> void:
-	if is_open:
-		return
+	if is_open or PowerManager.is_blackout or GameManager.is_in_server_room:
+		return  # Sin corriente, las cámaras no prenden.
 	is_open = true
 	visible = true
 	_refresh_view()
@@ -176,6 +184,15 @@ func _state_of(camera: int) -> String:
 ## deja la etiqueta de texto encima; si tampoco hay base, queda el fondo gris.
 func _refresh_camera_content() -> void:
 	var room: String = Rooms.room_of_camera(current_camera)
+	# Sin señal no se ve nada: estática fija y el cartel parpadeando.
+	if GameManager.patch_panel.is_camera_down(current_camera):
+		feed_image.visible = false
+		fallback_label.visible = false
+		no_signal_label.visible = true
+		_set_static_strength(NO_SIGNAL_STATIC)
+		_refresh_occupants(room)
+		return
+	no_signal_label.visible = false
 	var state: String = _state_of(current_camera)
 	var texture: Texture2D = _camera_texture(current_camera, state)
 	var is_exact: bool = texture != null
@@ -289,6 +306,9 @@ func _process(delta: float) -> void:
 	if not is_open or _interference_active:
 		return
 	_refresh_wind_control()
+	if no_signal_label.visible:
+		no_signal_label.modulate.a = 1.0 if fmod(_blink_elapsed(), NO_SIGNAL_BLINK_TIME * 2.0) < NO_SIGNAL_BLINK_TIME else 0.1
+		_set_static_strength(NO_SIGNAL_STATIC)
 	_debug_elapsed += delta
 	if _debug_elapsed < DEBUG_REFRESH_TIME:
 		return
@@ -335,9 +355,30 @@ func _play_interference() -> void:
 	_static_tween.tween_callback(_on_interference_cleared)
 
 
+## Al reconectar el cable en la sala de servidores, la cámara vuelve.
+func _on_camera_restored(_camera: int) -> void:
+	_refresh_minimap_highlight()
+	if is_open:
+		_camera_signature = ""  # Fuerza el repaso: la imagen cambió.
+
+
+## La descarga llena de estática todas las cámaras y repinta el minimapa.
+func on_discharge() -> void:
+	_refresh_minimap_highlight()
+	if not is_open:
+		return
+	_camera_signature = _signature_of(current_camera)
+	_play_interference()
+
+
 func _on_interference_cleared() -> void:
 	_interference_active = false
 	_refresh_camera_content()
+
+
+## Reloj propio para los parpadeos, sin guardar otra variable.
+func _blink_elapsed() -> float:
+	return Time.get_ticks_msec() / 1000.0
 
 
 func _set_static_strength(value: float) -> void:
@@ -420,6 +461,9 @@ func _refresh_minimap_highlight() -> void:
 	for camera: int in _camera_buttons:
 		var button: Button = _camera_buttons[camera]
 		var is_active: bool = camera == current_camera
+		if GameManager.patch_panel.is_camera_down(camera):
+			_paint_button(button, BUTTON_DOWN, false)
+			continue
 		_paint_button(button, BUTTON_ACTIVE if is_active else BUTTON_IDLE, is_active)
 
 

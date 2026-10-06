@@ -1,0 +1,158 @@
+class_name Audel
+extends Animatronic
+
+## Audel Electrix (rol Balloon Boy). Vive en el techo y baja por la escalera
+## hacia la recepción y la oficina. No mata: si entra, hace el "cortaso", que
+## se lleva un pedazo de energía y deja la linterna muerta un rato.
+## Si le bajas el breaker mientras va en la escalera, se regresa al techo.
+
+enum State {
+	WALKING,   # Bajando por su ruta
+	CORTASO,   # Haciendo el cortaso en la oficina
+}
+
+## Nivel de IA mientras no exista la configuración por noche (hito 6).
+## Para probar: 10. El nivel real de la noche 4 es 5.
+const DEBUG_AI_LEVEL: int = 10
+
+const ROUTE: Array[String] = ["techo", "escalera_techo", "recepcion", "oficina"]
+const STEP_TECHO: int = 0
+const STEP_ESCALERA: int = 1
+const STEP_RECEPCION: int = 2
+const STEP_OFICINA: int = 3
+
+## Cada cuánto tira el dado para dar un paso.
+const MOVE_INTERVAL: float = 6.0
+## Lo que dura el cortaso antes de que se regrese al techo.
+const CORTASO_TIME: float = 1.6
+
+## De cada 100 oportunidades que no usa para moverse, cuántas acaban en
+## descarga. Solo cuenta mientras está en el techo.
+const DISCHARGE_CHANCE: int = 40
+
+const DISCHARGE_NOTICE: String = "[chispazo en el techo]"
+const LADDER_NOTICE: String = "[zumbido eléctrico]"
+const CORTASO_NOTICE: String = "[cortaso]"
+const NOTICE_TIME: float = 2.5
+const LADDER_PRESENCE: String = "Audel bajando la escalera"
+const LADDER_ZONE: String = "ladder"
+
+## Avisa que hay que dibujar las chispas sobre la pantalla.
+signal cortaso_started()
+## La descarga del pararrayos, con las cámaras que se llevó.
+signal discharge_started(cameras: PackedInt32Array)
+
+var _state: State = State.WALKING
+var _cortaso_elapsed: float = 0.0
+
+
+func start() -> void:
+	ai_level = DEBUG_AI_LEVEL
+	move_interval = MOVE_INTERVAL
+	route = PackedStringArray(ROUTE)
+	super()
+	_state = State.WALKING
+	_cortaso_elapsed = 0.0
+
+
+func _process(delta: float) -> void:
+	if not is_active:
+		return
+	match _state:
+		State.WALKING:
+			super(delta)  # El dado de la IA de la clase base
+		State.CORTASO:
+			_cortaso_elapsed += delta
+			if _cortaso_elapsed >= CORTASO_TIME:
+				_go_back_to_roof()
+
+
+## La oportunidad que no usa para moverse puede acabar en descarga, pero solo
+## si sigue arriba en el techo, junto al pararrayos.
+func try_move() -> bool:
+	if super():
+		return true
+	if _state != State.WALKING or _route_index != STEP_TECHO:
+		return false
+	if randi_range(1, 100) <= DISCHARGE_CHANCE:
+		cause_discharge()
+	return false
+
+
+## La descarga: tumba de 1 a 3 cámaras y avisa para el destello y la estática.
+func cause_discharge() -> void:
+	var affected: PackedInt32Array = GameManager.patch_panel.cause_discharge(GameManager.current_night)
+	if affected.is_empty():
+		return
+	made_noise.emit(DISCHARGE_NOTICE, NOTICE_TIME)
+	discharge_started.emit(affected)
+
+
+## Le ganó el dado: baja un paso. Al llegar a la oficina hace el cortaso.
+func advance() -> void:
+	var next_step: int = _route_index + 1
+	if next_step > STEP_OFICINA:
+		return
+	move_to_step(next_step)
+	if next_step == STEP_ESCALERA:
+		made_noise.emit(LADDER_NOTICE, NOTICE_TIME)
+	elif next_step == STEP_OFICINA:
+		_do_cortaso()
+
+
+## El breaker lo manda de vuelta al techo, pero solo si va en la escalera.
+func on_blackout() -> void:
+	if _state != State.WALKING or _route_index != STEP_ESCALERA:
+		return
+	move_to_step(STEP_TECHO)
+
+
+func zone_presence(zone_id: String) -> String:
+	if zone_id == LADDER_ZONE and _state == State.WALKING and _route_index == STEP_ESCALERA:
+		return LADDER_PRESENCE
+	return ""
+
+
+func debug_text() -> String:
+	if _state == State.CORTASO:
+		return "cortaso (%.1f s)" % maxf(CORTASO_TIME - _cortaso_elapsed, 0.0)
+	var text: String = "en %s" % Rooms.display_name(current_room)
+	if PowerManager.is_flashlight_disabled:
+		text += ", linterna muerta"
+	var down: Array = GameManager.patch_panel.disconnected
+	if not down.is_empty():
+		text += ", sin señal: %s" % str(down)
+	return text
+
+
+## F10: lo manda directo a la escalera, para no esperar al dado.
+func debug_force_to_ladder() -> void:
+	if _state != State.WALKING:
+		return
+	move_to_step(STEP_ESCALERA)
+	made_noise.emit(LADDER_NOTICE, NOTICE_TIME)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	match key.keycode:
+		KEY_F10:
+			debug_force_to_ladder()
+		KEY_F9:
+			cause_discharge()  # F9: descarga a la fuerza.
+
+
+func _do_cortaso() -> void:
+	_state = State.CORTASO
+	_cortaso_elapsed = 0.0
+	made_noise.emit(CORTASO_NOTICE, NOTICE_TIME)
+	PowerManager.apply_cortaso()
+	cortaso_started.emit()
+
+
+func _go_back_to_roof() -> void:
+	_state = State.WALKING
+	_cortaso_elapsed = 0.0
+	move_to_step(STEP_TECHO)

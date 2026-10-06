@@ -91,8 +91,10 @@ func _leave() -> void:
 	move_to_step(STEP_ESTACIONAMIENTO)
 
 
-func window_presence() -> String:
-	return WINDOW_PRESENCE if _state == State.INSPECTING else ""
+func zone_presence(zone_id: String) -> String:
+	if zone_id == "front_glass" and _state == State.INSPECTING:
+		return WINDOW_PRESENCE
+	return ""
 
 
 func debug_text() -> String:

@@ -9,6 +9,14 @@ const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 ## Lo que muestra el HUD con la energía infinita de depuración puesta.
 const INFINITE_POWER_TEXT: String = "ENERGÍA ∞ (debug)"
 
+const BREAKER_NOTICE: String = "[clac]"
+const BREAKER_NOTICE_TIME: float = 1.2
+
+const STEPS_NOTICE: String = "[pasos]"
+const STEPS_NOTICE_TIME: float = 1.2
+## Lo que dura el destello blanco de la descarga.
+const FLASH_TIME: float = 0.28
+
 @onready var office: Control = $Office
 @onready var camera_system: Control = $CameraSystem
 @onready var pc_screen: Control = $PcScreen
@@ -20,10 +28,16 @@ const INFINITE_POWER_TEXT: String = "ENERGÍA ∞ (debug)"
 @onready var camera_bar: Control = $Hud/CameraBar
 @onready var notice_banner: Label = $Hud/NoticeBanner
 @onready var warning_icon: Control = $Hud/WarningIcon
+@onready var cortaso_overlay: Control = $Hud/CortasoOverlay
+@onready var breaker_panel: Control = $BreakerPanel
+@onready var server_room: Control = $ServerRoom
+@onready var fade_overlay: ColorRect = $Hud/FadeOverlay
+@onready var flash_overlay: ColorRect = $Hud/FlashOverlay
 
 var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
 var _come_trabas: ComeTrabas = null
+var _audel: Audel = null
 
 
 func _ready() -> void:
@@ -34,16 +48,27 @@ func _ready() -> void:
 			_come_trabas = animatronic as ComeTrabas
 			# Al quedarse sin cuerda, la silla del cubículo 3 queda vacía.
 			_come_trabas.music_stopped.connect(office.set_right_view_empty.bind(true))
+		elif animatronic is Audel:
+			_audel = animatronic as Audel
+			_audel.cortaso_started.connect(cortaso_overlay.play)
+			_audel.discharge_started.connect(_on_discharge)
 
 	office.door_toggled.connect(_on_door_toggled)
 	office.pc_requested.connect(pc_screen.open)
 	office.notice_requested.connect(notice_banner.show_notice)
+	office.breaker_requested.connect(breaker_panel.open)
+	office.server_room_requested.connect(_enter_server_room)
+	server_room.closed.connect(_leave_server_room)
+	server_room.notice_requested.connect(notice_banner.show_notice)
+	breaker_panel.closed.connect(office.zoom_out)
+	breaker_panel.lever_pulled.connect(_on_breaker_pulled)
+	PowerManager.blackout_changed.connect(_on_blackout_changed)
 
 	camera_system.set_animatronics(_animatronics)
 	camera_system.opened.connect(_on_cameras_opened)
 	camera_system.closed.connect(_on_cameras_closed)
 	camera_system.camera_changed.connect(_on_camera_changed)
-	camera_bar.hovered.connect(camera_system.toggle)
+	camera_bar.hovered.connect(_on_camera_bar_hovered)
 
 	# La PC y las cámaras no pueden estar abiertas a la vez.
 	pc_screen.opened.connect(camera_system.close)
@@ -101,18 +126,16 @@ func _on_night_started(night: int) -> void:
 		animatronic.start()
 
 
-## Mientras no haya imágenes, la oficina dice por texto quién está en la
-## puerta y quién en el cristal.
+## Mientras no haya imágenes, la oficina dice por texto quién se ve en cada
+## zona: la puerta, el cristal y la escalera.
 func _process(_delta: float) -> void:
-	var at_door: String = ""
-	var at_window: String = ""
-	for animatronic: Animatronic in _animatronics:
-		if at_door.is_empty():
-			at_door = animatronic.door_presence()
-		if at_window.is_empty():
-			at_window = animatronic.window_presence()
-	office.set_door_presence(at_door)
-	office.set_window_presence(at_window)
+	for zone_id: String in office.presence_zone_ids():
+		var text: String = ""
+		for animatronic: Animatronic in _animatronics:
+			text = animatronic.zone_presence(zone_id)
+			if not text.is_empty():
+				break
+		office.set_zone_presence(zone_id, text)
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
 	warning_icon.set_level(0 if _come_trabas == null else _come_trabas.warning_level())
 
@@ -159,6 +182,66 @@ func _update_watched_camera() -> void:
 	var camera: int = camera_system.current_camera if camera_system.is_open else Rooms.NO_CAMERA
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_watched_camera(camera)
+
+
+## La barra de cámaras no hace nada si el guardia no está en la oficina.
+func _on_camera_bar_hovered() -> void:
+	if GameManager.is_in_server_room:
+		return
+	camera_system.toggle()
+
+
+## La sala de servidores: fundido de 1 s con "[pasos]" a la mitad.
+func _enter_server_room() -> void:
+	if GameManager.is_in_server_room:
+		return
+	camera_system.close()
+	pc_screen.close()
+	notice_banner.show_notice(STEPS_NOTICE, STEPS_NOTICE_TIME)
+	fade_overlay.play()
+	await fade_overlay.midpoint_reached
+	GameManager.is_in_server_room = true
+	office.visible = false
+	# La barra de cámaras se esconde: allá no sirve de nada y confunde.
+	camera_bar.visible = false
+	server_room.open()
+
+
+func _leave_server_room() -> void:
+	notice_banner.show_notice(STEPS_NOTICE, STEPS_NOTICE_TIME)
+	fade_overlay.play()
+	await fade_overlay.midpoint_reached
+	GameManager.is_in_server_room = false
+	office.visible = true
+	camera_bar.visible = true
+	office.zoom_out()
+
+
+## La descarga del pararrayos: destello blanco y estática en todas las cámaras.
+func _on_discharge(_cameras: PackedInt32Array) -> void:
+	camera_system.on_discharge()
+	flash_overlay.visible = true
+	flash_overlay.color.a = 0.85
+	var tween: Tween = create_tween()
+	tween.tween_property(flash_overlay, "color:a", 0.0, FLASH_TIME)
+	tween.tween_callback(func() -> void: flash_overlay.visible = false)
+
+
+## El breaker: "[clac]", el temblor lo hace el tablero, y la oficina a oscuras.
+func _on_breaker_pulled() -> void:
+	notice_banner.show_notice(BREAKER_NOTICE, BREAKER_NOTICE_TIME)
+
+
+## Sin corriente se apagan las cámaras y la PC, y la oficina se oscurece.
+## La chapa de la puerta sigue, porque está en el no-break.
+func _on_blackout_changed(is_blackout: bool) -> void:
+	office.set_blackout(is_blackout)
+	if not is_blackout:
+		return
+	camera_system.close()
+	pc_screen.close()
+	if _audel != null:
+		_audel.on_blackout()
 
 
 func _on_night_won(_night: int) -> void:

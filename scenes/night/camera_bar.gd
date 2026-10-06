@@ -1,24 +1,32 @@
 extends Control
 
-## Barra semitransparente de abajo, estilo FNAF: con solo pasarle el mouse por
-## encima avisa para abrir o cerrar las cámaras. Las flechas apuntan hacia
-## arriba cuando están cerradas y hacia abajo cuando están abiertas.
+## Barra de las cámaras, estilo FNAF: un rectángulo ancho y bajo pegado al
+## borde de abajo, gris translúcido con borde blanco fino, y dos chevrones
+## gruesos que apuntan hacia arriba cuando las cámaras están abajo y hacia
+## abajo cuando están arriba. Sin texto.
+## Se activa con solo pasarle el mouse por encima; Espacio hace lo mismo.
 
 signal hovered()
 
-const BACKGROUND_COLOR: Color = Color(0.06, 0.06, 0.08, 0.55)
-const EDGE_COLOR: Color = Color(0.85, 0.87, 0.9, 0.35)
-const ARROW_COLOR: Color = Color(0.9, 0.92, 0.95, 0.85)
-const ARROW_COUNT: int = 5
-const ARROW_SIZE: Vector2 = Vector2(18.0, 10.0)
-const ARROW_GAP: float = 10.0
-const ARROW_TOP: float = 9.0
+const BACKGROUND_COLOR: Color = Color(0.09, 0.09, 0.11, 0.5)
+const BACKGROUND_HOVER: Color = Color(0.2, 0.2, 0.23, 0.62)
+const BORDER_COLOR: Color = Color(1.0, 1.0, 1.0, 0.75)
+const BORDER_WIDTH: float = 2.0
+const CHEVRON_COLOR: Color = Color(1.0, 1.0, 1.0, 0.95)
+
+const CHEVRON_COUNT: int = 2
+const CHEVRON_SIZE: Vector2 = Vector2(38.0, 13.0)
+const CHEVRON_THICKNESS: float = 5.0
+const CHEVRON_GAP: float = 16.0
 
 var pointing_up: bool = true
 
+var _hovered: bool = false
+
 
 func _ready() -> void:
-	mouse_entered.connect(func() -> void: hovered.emit())
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
 	resized.connect(queue_redraw)
 
 
@@ -29,24 +37,36 @@ func set_pointing_up(up: bool) -> void:
 	queue_redraw()
 
 
+func _on_mouse_entered() -> void:
+	_hovered = true
+	queue_redraw()
+	hovered.emit()
+
+
+func _on_mouse_exited() -> void:
+	_hovered = false
+	queue_redraw()
+
+
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), BACKGROUND_COLOR)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(size.x, 2.0)), EDGE_COLOR)
+	var rect: Rect2 = Rect2(Vector2.ZERO, size)
+	draw_rect(rect, BACKGROUND_HOVER if _hovered else BACKGROUND_COLOR)
+	draw_rect(rect, BORDER_COLOR, false, BORDER_WIDTH)
 
-	var row_width: float = ARROW_COUNT * ARROW_SIZE.x + (ARROW_COUNT - 1) * ARROW_GAP
+	# Los chevrones van centrados, uno al lado del otro.
+	var row_width: float = CHEVRON_COUNT * CHEVRON_SIZE.x + (CHEVRON_COUNT - 1) * CHEVRON_GAP
 	var start_x: float = (size.x - row_width) * 0.5
-	for i: int in ARROW_COUNT:
-		_draw_arrow(Vector2(start_x + i * (ARROW_SIZE.x + ARROW_GAP), ARROW_TOP))
+	for i: int in CHEVRON_COUNT:
+		_draw_chevron(Vector2(start_x + i * (CHEVRON_SIZE.x + CHEVRON_GAP) + CHEVRON_SIZE.x * 0.5, size.y * 0.5))
 
 
-func _draw_arrow(origin: Vector2) -> void:
-	var points: PackedVector2Array = PackedVector2Array()
-	if pointing_up:
-		points.append(origin + Vector2(ARROW_SIZE.x * 0.5, 0.0))
-		points.append(origin + Vector2(ARROW_SIZE.x, ARROW_SIZE.y))
-		points.append(origin + Vector2(0.0, ARROW_SIZE.y))
-	else:
-		points.append(origin)
-		points.append(origin + Vector2(ARROW_SIZE.x, 0.0))
-		points.append(origin + Vector2(ARROW_SIZE.x * 0.5, ARROW_SIZE.y))
-	draw_colored_polygon(points, ARROW_COLOR)
+## Un chevron grueso, con la punta arriba o abajo según el estado.
+func _draw_chevron(center: Vector2) -> void:
+	var half: Vector2 = CHEVRON_SIZE * 0.5
+	var tip_y: float = center.y - half.y if pointing_up else center.y + half.y
+	var side_y: float = center.y + half.y if pointing_up else center.y - half.y
+	draw_polyline(PackedVector2Array([
+		Vector2(center.x - half.x, side_y),
+		Vector2(center.x, tip_y),
+		Vector2(center.x + half.x, side_y),
+	]), CHEVRON_COLOR, CHEVRON_THICKNESS, true)

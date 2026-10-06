@@ -26,6 +26,12 @@ var _completed_tasks: Dictionary = {}
 # Las tareas de la noche se sortean una sola vez, al empezar.
 var _night_tasks: Array = []
 
+## El patch panel de la sala de servidores: qué puerto le toca a cada cámara y
+## cuáles tumbó una descarga de Audel. Es estado de la noche, como las tareas.
+var patch_panel: PatchPanelModel = PatchPanelModel.new()
+## Mientras el guardia está en la sala de servidores no vigila la oficina.
+var is_in_server_room: bool = false
+
 
 func _ready() -> void:
 	PowerManager.power_depleted.connect(_on_power_depleted)
@@ -40,6 +46,8 @@ func start_night(night: int = current_night) -> void:
 	_hallway_holder = null
 	_completed_tasks.clear()
 	_night_tasks = Tasks.pick_for_night(current_night)
+	patch_panel.reset_for_night()
+	is_in_server_room = false
 	is_ai_window_open = false
 	is_night_active = true
 	PowerManager.reset()

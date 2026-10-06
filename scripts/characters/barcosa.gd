@@ -204,8 +204,10 @@ func _catch_player() -> void:
 	GameManager.trigger_game_over(GAME_OVER_CAUSE)
 
 
-func door_presence() -> String:
-	return DOOR_PRESENCE if _state == State.BANGING else ""
+func zone_presence(zone_id: String) -> String:
+	if zone_id == "entrance_door" and _state == State.BANGING:
+		return DOOR_PRESENCE
+	return ""
 
 
 func _set_stage(new_stage: int) -> void:

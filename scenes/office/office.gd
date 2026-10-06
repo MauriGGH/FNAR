@@ -9,6 +9,8 @@ extends Control
 
 signal door_toggled(is_closed: bool)
 signal pc_requested()
+signal breaker_requested()
+signal server_room_requested()
 signal notice_requested(text: String, duration: float)
 
 const CENTER_ZONES_PATH: String = "res://data/oficina_zonas.json"
@@ -17,6 +19,7 @@ const LEFT_ZONES_PATH: String = "res://data/oficina_izquierda_zonas.json"
 
 ## Vista derecha con la silla del cubículo 3 vacía: el Come Trabas ya se levantó.
 const RIGHT_EMPTY_TEXTURE: Texture2D = preload("res://assets/art/office/oficina_derecha_vacia.png")
+const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay.gd")
 
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
@@ -61,9 +64,22 @@ const RIGHT_EMPTY_BRIGHTNESS: float = 0.98
 
 const PHONE_NOTICE: String = "[el teléfono no suena todavía]"
 const FLASHLIGHT_NOTICE: String = "[la linterna todavía no funciona]"
-const SERVER_ROOM_NOTICE: String = "[sala de servidores: próximamente]"
-const BREAKER_NOTICE: String = "[breaker: próximamente]"
 const NOTICE_TIME: float = 1.6
+
+## Zonas sobre las que se ponen etiquetas de presencia, con su color y su
+## separación. El profe decide qué dice en cada una con zone_presence().
+const PRESENCE_ZONES: Array[Dictionary] = [
+	{"zone": "entrance_door", "color": Color(0.98, 0.45, 0.4), "gap": 6.0},
+	{"zone": "front_glass", "color": Color(0.98, 0.62, 0.35), "gap": 16.0},
+	{"zone": "ladder", "color": Color(0.6, 0.85, 1.0), "gap": 6.0},
+]
+
+## Puntos que siguen encendidos cuando se corta la corriente, por vista.
+const BLACKOUT_SPOTS: Dictionary = {
+	View.LEFT: [{"zone": "window", "radius": 110.0, "color": Color(0.62, 0.72, 0.95)}],
+	View.CENTER: [{"zone": "lock_box", "radius": 34.0, "color": Color(0.3, 0.95, 0.45)}],
+	View.RIGHT: [],
+}
 
 const PRESENCE_SIZE: Vector2 = Vector2(360.0, 34.0)
 const DOOR_STATE_SIZE: Vector2 = Vector2(200.0, 28.0)
@@ -96,9 +112,12 @@ var _sweep_direction: int = 1
 @onready var center_image: TextureRect = $Views/CenterView/Content/Background
 @onready var right_image: TextureRect = $Views/RightView/Content/Background
 
-var door_presence_label: Label = null
-var window_presence_label: Label = null
 var door_state_label: Label = null
+
+var _presence_labels: Dictionary = {}  # id de zona -> Label
+var _blackout_overlays: Array[Control] = []
+var _zoom_view: int = View.CENTER
+var _zoom_request: String = ""
 
 var _view_nodes: Array[Control] = []
 var _content_nodes: Array[Control] = []
@@ -117,6 +136,7 @@ func _ready() -> void:
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
 	_build_labels()
+	_build_blackout_overlays()
 	_layout()
 	resized.connect(_layout)
 
@@ -124,8 +144,8 @@ func _ready() -> void:
 		_view_nodes[i].visible = i == _current_view
 		_view_nodes[i].position = Vector2.ZERO
 
-	set_door_presence("")
-	set_window_presence("")
+	for entry: Dictionary in PRESENCE_ZONES:
+		set_zone_presence(str(entry["zone"]), "")
 	_refresh_door()
 
 
@@ -177,11 +197,34 @@ func _layout_zones() -> void:
 		zone.size = Vector2(
 			zone.normalized_rect.size.x * content_size.x,
 			zone.normalized_rect.size.y * content_size.y)
-	# Separaciones distintas para que los dos textos no se toquen cuando
-	# Barcosa está en la puerta y Mamador en el cristal a la vez.
-	_place_above_zone(door_presence_label, "entrance_door", PRESENCE_SIZE, 6.0)
-	_place_above_zone(window_presence_label, "front_glass", PRESENCE_SIZE, 16.0)
+	# Separaciones distintas para que los textos no se toquen cuando hay
+	# varios profes a la vista al mismo tiempo.
+	for entry: Dictionary in PRESENCE_ZONES:
+		_place_above_zone(_presence_labels[entry["zone"]], str(entry["zone"]),
+			PRESENCE_SIZE, float(entry["gap"]))
 	_place_below_zone(door_state_label, "lock_box", DOOR_STATE_SIZE)
+	_layout_blackout_overlays()
+
+
+## Las capas de oscuridad cubren todo el contenido y sus puntos de luz van
+## sobre las zonas que les tocan.
+func _layout_blackout_overlays() -> void:
+	var content_size: Vector2 = size * VIEW_SCALE
+	for i: int in _blackout_overlays.size():
+		var overlay: Control = _blackout_overlays[i]
+		overlay.position = Vector2.ZERO
+		overlay.size = content_size
+		var spots: Array[Dictionary] = []
+		for spot: Dictionary in BLACKOUT_SPOTS.get(i, []):
+			var rect: Rect2 = zone_rect(str(spot["zone"]))
+			if rect.size.x <= 0.0:
+				continue
+			spots.append({
+				"position": rect.get_center(),
+				"radius": float(spot["radius"]),
+				"color": spot["color"],
+			})
+		overlay.set_spots(spots)
 
 
 # --- Recorrido y giro ---------------------------------------------------------
@@ -311,11 +354,23 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Encuadra la pantalla del monitor y, al terminar, pide abrir la PC.
 func zoom_to_pc() -> void:
-	if _state != ViewState.PANNING:
+	_zoom_to_zone("monitor_screen", View.CENTER, "pc")
+
+
+## Lo mismo con el tablero del breaker, en la vista izquierda.
+func zoom_to_breaker() -> void:
+	_zoom_to_zone("breaker", View.LEFT, "breaker")
+
+
+## Acerca la vista a una zona y, al terminar, avisa qué se pidió abrir.
+func _zoom_to_zone(zone_id: String, view: int, request: String) -> void:
+	if _state != ViewState.PANNING or _current_view != view:
 		return
-	var target: Rect2 = zone_rect("monitor_screen")
+	_zoom_request = request
+	_zoom_view = view
+	var target: Rect2 = zone_rect(zone_id)
 	if target.size.x <= 0.0 or target.size.y <= 0.0:
-		pc_requested.emit()
+		_emit_zoom_request()
 		return
 	_state = ViewState.ZOOMING_IN
 	_pan_speed = 0.0
@@ -324,26 +379,34 @@ func zoom_to_pc() -> void:
 	_tween_content(target_position, Vector2(factor, factor), _on_zoom_in_finished)
 
 
+func _emit_zoom_request() -> void:
+	if _zoom_request == "breaker":
+		breaker_requested.emit()
+	else:
+		pc_requested.emit()
+
+
 ## Vuelve la vista a donde estaba antes del acercamiento.
 func zoom_out() -> void:
 	if _state == ViewState.PANNING or _state == ViewState.ZOOMING_OUT:
 		return
 	_state = ViewState.ZOOMING_OUT
-	_tween_content(Vector2(_pan_offsets[View.CENTER], _content_top()), Vector2.ONE, _on_zoom_out_finished)
+	_tween_content(Vector2(_pan_offsets[_zoom_view], _content_top()), Vector2.ONE, _on_zoom_out_finished)
 
 
 func _tween_content(target_position: Vector2, target_scale: Vector2, on_finished: Callable) -> void:
 	if _view_tween != null and _view_tween.is_valid():
 		_view_tween.kill()
+	var content: Control = _content_nodes[_zoom_view]
 	_view_tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	_view_tween.tween_property(center_content, "position", target_position, ZOOM_TIME)
-	_view_tween.parallel().tween_property(center_content, "scale", target_scale, ZOOM_TIME)
+	_view_tween.tween_property(content, "position", target_position, ZOOM_TIME)
+	_view_tween.parallel().tween_property(content, "scale", target_scale, ZOOM_TIME)
 	_view_tween.tween_callback(on_finished)
 
 
 func _on_zoom_in_finished() -> void:
 	_state = ViewState.ZOOMED
-	pc_requested.emit()
+	_emit_zoom_request()
 
 
 func _on_zoom_out_finished() -> void:
@@ -406,9 +469,9 @@ func _on_zone_clicked(zone_id: String) -> void:
 		"flashlight":
 			notice_requested.emit(FLASHLIGHT_NOTICE, NOTICE_TIME)
 		"server_room":
-			notice_requested.emit(SERVER_ROOM_NOTICE, NOTICE_TIME)
+			server_room_requested.emit()
 		"breaker":
-			notice_requested.emit(BREAKER_NOTICE, NOTICE_TIME)
+			zoom_to_breaker()
 
 
 # --- Puerta y presencias ------------------------------------------------------
@@ -424,17 +487,19 @@ func _refresh_door() -> void:
 	door_state_label.modulate = Color(1.0, 0.75, 0.2) if is_door_closed else Color(0.65, 0.7, 0.7)
 
 
-## Quién se ve en la puerta de entrada. Vacío = nadie.
-func set_door_presence(text: String) -> void:
-	_set_presence(door_presence_label, text)
+## Las zonas que llevan etiqueta de presencia, para que el night.gd las recorra.
+func presence_zone_ids() -> PackedStringArray:
+	var ids: PackedStringArray = PackedStringArray()
+	for entry: Dictionary in PRESENCE_ZONES:
+		ids.append(str(entry["zone"]))
+	return ids
 
 
-## Quién se ve asomado al cristal. Vacío = nadie.
-func set_window_presence(text: String) -> void:
-	_set_presence(window_presence_label, text)
-
-
-func _set_presence(label: Label, text: String) -> void:
+## Quién se ve en una zona. Vacío = nadie.
+func set_zone_presence(zone_id: String, text: String) -> void:
+	if not _presence_labels.has(zone_id):
+		return
+	var label: Label = _presence_labels[zone_id]
 	label.text = text
 	label.visible = not text.is_empty()
 
@@ -443,12 +508,37 @@ func _set_presence(label: Label, text: String) -> void:
 # Van pegadas a su zona de la vista central, así que se recolocan con ella.
 
 func _build_labels() -> void:
-	door_presence_label = _make_label(22, Color(0.98, 0.45, 0.4))
-	window_presence_label = _make_label(22, Color(0.98, 0.62, 0.35))
+	for entry: Dictionary in PRESENCE_ZONES:
+		var label: Label = _make_label(22, entry["color"])
+		_presence_labels[entry["zone"]] = label
+		_content_for_zone(str(entry["zone"])).add_child(label)
 	door_state_label = _make_label(19, Color(0.65, 0.7, 0.7))
-	center_content.add_child(door_presence_label)
-	center_content.add_child(window_presence_label)
 	center_content.add_child(door_state_label)
+
+
+## En qué vista vive una zona. Las de la izquierda y la derecha salen de sus
+## propios JSON, así que se reconocen por ahí.
+func _content_for_zone(zone_id: String) -> Control:
+	if not _zones.has(zone_id):
+		return center_content
+	return (_zones[zone_id] as OfficeZone).get_parent().get_parent() as Control
+
+
+## Una capa de oscuridad por vista, con sus puntos de luz.
+func _build_blackout_overlays() -> void:
+	_blackout_overlays.clear()
+	for i: int in _content_nodes.size():
+		var overlay: Control = BLACKOUT_OVERLAY.new()
+		overlay.name = "Blackout"
+		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_content_nodes[i].add_child(overlay)
+		_blackout_overlays.append(overlay)
+
+
+## El night.gd avisa aquí cuando la corriente se corta o vuelve.
+func set_blackout(blackout: bool) -> void:
+	for overlay: Control in _blackout_overlays:
+		overlay.set_blackout(blackout)
 
 
 func _make_label(font_size: int, color: Color) -> Label:
