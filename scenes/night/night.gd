@@ -114,7 +114,7 @@ func _process(_delta: float) -> void:
 	office.set_door_presence(at_door)
 	office.set_window_presence(at_window)
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
-	warning_icon.visible = _come_trabas != null and _come_trabas.is_warning()
+	warning_icon.set_level(0 if _come_trabas == null else _come_trabas.warning_level())
 
 
 func _on_hour_changed(_hour: int) -> void:

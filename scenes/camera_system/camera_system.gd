@@ -63,10 +63,9 @@ var _camera_signature: String = ""
 @onready var minimap_frame: Control = $Minimap
 @onready var minimap_scale: Control = $Minimap/MinimapScale
 @onready var minimap_buttons: Control = $Minimap/MinimapScale/CameraButtons
-@onready var wind_control: Control = $WindControl
-@onready var wind_button: Button = $WindControl/WindButton
+## Todo el recuadro es el botón que se mantiene presionado.
+@onready var wind_control: Button = $WindControl
 @onready var wind_gauge: Control = $WindControl/WindGauge
-@onready var wind_percent_label: Label = $WindControl/WindGauge/PercentLabel
 
 
 func _ready() -> void:
@@ -76,9 +75,9 @@ func _ready() -> void:
 	_build_minimap_buttons()
 	feed_image.visible = false
 	wind_control.visible = false
-	wind_button.keep_pressed_outside = true  # Soltar fuera del botón no se traba.
-	wind_button.button_down.connect(_on_wind_button_down)
-	wind_button.button_up.connect(_on_wind_button_up)
+	wind_control.keep_pressed_outside = true  # Soltar fuera del botón no se traba.
+	wind_control.button_down.connect(_on_wind_button_down)
+	wind_control.button_up.connect(_on_wind_button_up)
 	minimap_frame.resized.connect(_fit_minimap)
 	_fit_minimap()
 
@@ -244,9 +243,10 @@ func _refresh_wind_control() -> void:
 		_on_wind_changed(_come_trabas.wind)
 
 
+## El porcentaje exacto no se enseña: solo el reloj de pastel. El número sale
+## únicamente en la etiqueta de depuración de F3.
 func _on_wind_changed(percent: float) -> void:
 	wind_gauge.set_percent(percent)
-	wind_percent_label.text = "%d%%" % roundi(percent)
 
 
 func _on_wind_button_down() -> void:

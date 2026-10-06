@@ -1,9 +1,9 @@
 class_name PcWindow
 extends Control
 
-## Marco de ventana del escritorio retro: cuerpo, barra de título y botón de
-## cerrar. El contenido de cada ventana son sus hijos normales, puestos a
-## partir de los 30 px de arriba.
+## Marco de ventana del escritorio retro: cuerpo, barra de título, botón de
+## cerrar y arrastre por la barra de título. El contenido de cada ventana son
+## sus hijos normales, puestos a partir de los 30 px de arriba.
 
 signal close_requested()
 ## Avisa que le hicieron clic, para pasar al frente de las demás ventanas.
@@ -19,6 +19,9 @@ const BORDER_COLOR: Color = Color(0.42, 0.56, 0.58)
 const TITLE_FONT_SIZE: int = 18
 
 var title_label: Label = null
+
+var _dragging: bool = false
+var _drag_offset: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -63,10 +66,32 @@ func _layout_chrome() -> void:
 
 ## Cualquier clic en la ventana la trae al frente, pero no se consume: el
 ## control de abajo (un botón, la consola) igual recibe el clic.
+## Y si el clic cae en la barra de título, la ventana se arrastra.
 func _gui_input(event: InputEvent) -> void:
 	var click: InputEventMouseButton = event as InputEventMouseButton
-	if click != null and click.pressed:
-		focused.emit()
+	if click != null and click.button_index == MOUSE_BUTTON_LEFT:
+		if click.pressed:
+			focused.emit()
+			if click.position.y <= TITLE_HEIGHT:
+				_dragging = true
+				_drag_offset = click.position
+		else:
+			_dragging = false
+		return
+
+	var motion: InputEventMouseMotion = event as InputEventMouseMotion
+	if motion == null or not _dragging:
+		return
+	position += motion.position - _drag_offset
+	_clamp_inside_parent()
+
+
+## La ventana no se puede sacar del escritorio.
+func _clamp_inside_parent() -> void:
+	var parent: Control = get_parent() as Control
+	if parent == null:
+		return
+	position = position.clamp(Vector2.ZERO, (parent.size - size).max(Vector2.ZERO))
 
 
 func _draw() -> void:

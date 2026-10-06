@@ -26,8 +26,10 @@ const ROOM: String = "cubiculo_3"
 const MAX_WIND: float = 100.0
 ## Lo que sube la cuerda por segundo mientras mantienes el botón.
 const WIND_PER_SECOND: float = 25.0
-## Debajo de este porcentaje despierta y empieza a parpadear el aviso.
+## Debajo de este porcentaje despierta y el aviso parpadea en amarillo.
 const WARNING_THRESHOLD: float = 25.0
+## Y debajo de este, el aviso se pone rojo y parpadea más rápido.
+const CRITICAL_THRESHOLD: float = 10.0
 ## Lo que tarda en matarte desde que la cuerda llegó a cero.
 const ATTACK_TIME: float = 5.0
 
@@ -99,7 +101,14 @@ func set_winding(winding: bool) -> void:
 
 ## true mientras hay que mostrar el aviso parpadeante junto a la barra de cámaras.
 func is_warning() -> bool:
-	return is_active and wind <= WARNING_THRESHOLD
+	return warning_level() > 0
+
+
+## 0 sin aviso, 1 amarillo, 2 rojo y más rápido.
+func warning_level() -> int:
+	if not is_active or wind > WARNING_THRESHOLD:
+		return 0
+	return 2 if wind <= CRITICAL_THRESHOLD else 1
 
 
 ## Estado de la CAM 4 según la cuerda.

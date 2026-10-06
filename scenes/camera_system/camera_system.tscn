@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/camera_system/camera_system.gd" id="1_cameras"]
 [ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="2_static"]
@@ -20,6 +20,27 @@ shader_parameter/scanline_count = 180.0
 shader_parameter/scanline_speed = 0.02
 shader_parameter/vignette_start = 0.3
 shader_parameter/vignette_strength = 0.8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wind"]
+bg_color = Color(0.1, 0.1, 0.11, 0.62)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wind_hover"]
+bg_color = Color(0.16, 0.16, 0.18, 0.72)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wind_pressed"]
+bg_color = Color(0.22, 0.22, 0.24, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="CameraSystem" type="Control"]
 visible = false
@@ -129,55 +150,49 @@ theme_override_font_sizes/font_size = 16
 text = "[F3] aqui: nadie"
 vertical_alignment = 1
 
-[node name="WindControl" type="Control" parent="."]
+[node name="WindControl" type="Button" parent="."]
 visible = false
 layout_mode = 0
 offset_left = 48.0
-offset_top = 288.0
-offset_right = 308.0
-offset_bottom = 500.0
-mouse_filter = 1
+offset_top = 400.0
+offset_right = 300.0
+offset_bottom = 480.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_wind")
+theme_override_styles/hover = SubResource("StyleBoxFlat_wind_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_wind_pressed")
 
 [node name="TitleLabel" type="Label" parent="WindControl"]
 layout_mode = 0
-offset_right = 260.0
-offset_bottom = 26.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = 176.0
+offset_bottom = 44.0
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.82, 0.86, 0.88, 1)
-theme_override_font_sizes/font_size = 20
-text = "CUERDA"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
+text = "DAR CUERDA"
+vertical_alignment = 1
+
+[node name="HintLabel" type="Label" parent="WindControl"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 44.0
+offset_right = 176.0
+offset_bottom = 68.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.79, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "Clic y mantén"
+vertical_alignment = 1
 
 [node name="WindGauge" type="Control" parent="WindControl"]
 layout_mode = 0
-offset_left = 60.0
-offset_top = 30.0
-offset_right = 200.0
-offset_bottom = 170.0
+offset_left = 186.0
+offset_top = 11.0
+offset_right = 244.0
+offset_bottom = 69.0
 mouse_filter = 2
 script = ExtResource("6_gauge")
-
-[node name="PercentLabel" type="Label" parent="WindControl/WindGauge"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 32
-text = "100%"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="WindButton" type="Button" parent="WindControl"]
-layout_mode = 0
-offset_top = 176.0
-offset_right = 260.0
-offset_bottom = 212.0
-focus_mode = 0
-theme_override_font_sizes/font_size = 17
-text = "MANTÉN PARA DAR CUERDA"
 
 [node name="Minimap" type="Control" parent="."]
 layout_mode = 1
