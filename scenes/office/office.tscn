@@ -1,0 +1,57 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/office/office.gd" id="1_office"]
+
+[node name="Office" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_office")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.29, 0.29, 0.31, 1)
+
+[node name="PlaceholderLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 260.0
+offset_right = 760.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(0.72, 0.72, 0.74, 1)
+theme_override_font_sizes/font_size = 28
+text = "OFICINA (placeholder)"
+
+[node name="DoorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 820.0
+offset_top = 150.0
+offset_right = 1080.0
+offset_bottom = 520.0
+color = Color(0.12, 0.12, 0.15, 1)
+
+[node name="DoorStateLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 820.0
+offset_top = 528.0
+offset_right = 1080.0
+offset_bottom = 560.0
+theme_override_font_sizes/font_size = 22
+text = "PUERTA: ABIERTA"
+horizontal_alignment = 1
+
+[node name="DoorButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 820.0
+offset_top = 572.0
+offset_right = 1080.0
+offset_bottom = 616.0
+text = "Cerrar puerta"
