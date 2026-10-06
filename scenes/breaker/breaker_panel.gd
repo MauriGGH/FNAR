@@ -1,15 +1,28 @@
 extends Control
 
-## El tablero del breaker, de cerca. Todo dibujado: lámina de acero con sus
-## tornillos, etiqueta de peligro, la palanca grande en su carril y los dos
-## focos. La palanca se arrastra hacia abajo y pesa: sigue al mouse con
-## retraso y, si la sueltas antes de llegar, se regresa sola.
+## El tablero del breaker, de cerca. Sistema híbrido: si existen las imágenes
+## breaker_arriba.png y breaker_abajo.png, se usan de fondo y encima solo se
+## dibujan los focos con su resplandor. Si no, se dibuja el tablero completo,
+## con el mismo acabado (degradados, sombras suaves, sin contornos negros).
+## La palanca se arrastra hacia abajo y pesa: sigue al mouse con retraso y, si
+## la sueltas antes de llegar, se regresa sola.
 
 signal closed()
 ## Para el "[clac]" y el temblor, que los dispara la escena de la noche.
 signal lever_pulled()
 
+const IMAGE_UP_PATH: String = "res://assets/art/office/breaker_arriba.png"
+const IMAGE_DOWN_PATH: String = "res://assets/art/office/breaker_abajo.png"
+
 const PLATE: Rect2 = Rect2(380.0, 56.0, 460.0, 520.0)
+
+# Con imágenes de fondo, estas tres cosas hay que ajustarlas a la foto:
+# dónde se agarra la palanca y dónde quedan los dos focos.
+const IMAGE_LEVER_AREA: Rect2 = Rect2(470.0, 180.0, 220.0, 300.0)
+const IMAGE_GREEN_LIGHT: Vector2 = Vector2(468.0, 520.0)
+const IMAGE_RED_LIGHT: Vector2 = Vector2(690.0, 520.0)
+## A partir de este punto del recorrido se cambia a la imagen de abajo.
+const IMAGE_SWITCH_AT: float = 0.5
 
 # Qué tanto sigue la palanca al mouse (bajo = pesada) y qué tan rápido vuelve.
 const LEVER_FOLLOW: float = 7.0
@@ -56,11 +69,32 @@ var _drag_target: float = 0.0
 var _shake_left: float = 0.0
 var _shake_offset: Vector2 = Vector2.ZERO
 var _blink_elapsed: float = 0.0
+var _use_images: bool = false
+var _texture_up: Texture2D = null
+var _texture_down: Texture2D = null
+## Con qué imagen se está viendo ahora, para saber cuándo cambiar y sacudir.
+var _showing_down: bool = false
+
+@onready var background: TextureRect = $Background
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_load_images()
+
+
+## Si están las dos imágenes, el tablero pasa a modo foto.
+func _load_images() -> void:
+	if not ResourceLoader.exists(IMAGE_UP_PATH) or not ResourceLoader.exists(IMAGE_DOWN_PATH):
+		background.visible = false
+		return
+	_texture_up = load(IMAGE_UP_PATH) as Texture2D
+	_texture_down = load(IMAGE_DOWN_PATH) as Texture2D
+	_use_images = _texture_up != null and _texture_down != null
+	background.visible = _use_images
+	if _use_images:
+		background.texture = _texture_up
 
 
 func open() -> void:
@@ -70,6 +104,7 @@ func open() -> void:
 	visible = true
 	_lever = 1.0 if PowerManager.is_blackout else 0.0
 	_dragging = false
+	_refresh_image(true)
 	queue_redraw()
 
 
@@ -109,7 +144,8 @@ func _gui_input(event: InputEvent) -> void:
 	var click: InputEventMouseButton = event as InputEventMouseButton
 	if click != null and click.button_index == MOUSE_BUTTON_LEFT:
 		if click.pressed:
-			_dragging = _handle_rect().has_point(click.position)
+			var grab: Rect2 = IMAGE_LEVER_AREA if _use_images else _handle_rect()
+			_dragging = grab.has_point(click.position)
 			if _dragging:
 				_drag_target = _lever
 		else:
@@ -121,6 +157,9 @@ func _gui_input(event: InputEvent) -> void:
 	if motion == null or not _dragging:
 		return
 	# La palanca apunta a donde está el mouse, pero llega con retraso.
+	if _use_images:
+		_drag_target = clampf((motion.position.y - IMAGE_LEVER_AREA.position.y) / IMAGE_LEVER_AREA.size.y, 0.0, 1.0)
+		return
 	var local_y: float = motion.position.y - PLATE.position.y
 	_drag_target = clampf((local_y - HANDLE_TOP - HANDLE_SIZE.y * 0.5) / HANDLE_TRAVEL, 0.0, 1.0)
 
@@ -137,9 +176,23 @@ func _process(delta: float) -> void:
 	var speed: float = LEVER_FOLLOW if _dragging else LEVER_RETURN
 	_lever = lerpf(_lever, target, 1.0 - exp(-delta * speed))
 
+	_refresh_image(false)
 	if _dragging and not PowerManager.is_blackout and _lever >= TRIGGER_AT:
 		_pull_down()
 	queue_redraw()
+
+
+## Al pasar la mitad del recorrido se cambia de imagen, con su sacudón.
+func _refresh_image(silent: bool) -> void:
+	if not _use_images:
+		return
+	var should_show_down: bool = _lever >= IMAGE_SWITCH_AT
+	if should_show_down == _showing_down:
+		return
+	_showing_down = should_show_down
+	background.texture = _texture_down if _showing_down else _texture_up
+	if not silent:
+		shake()
 
 
 func _update_shake(delta: float) -> void:
@@ -167,23 +220,33 @@ func _handle_rect() -> Rect2:
 # --- Dibujo -------------------------------------------------------------------
 
 func _draw() -> void:
+	# Con imagen de fondo solo van encima los focos y el estado.
+	if _use_images:
+		_draw_lights_at(IMAGE_GREEN_LIGHT, IMAGE_RED_LIGHT)
+		_draw_status(Rect2(PLATE.position + _shake_offset, PLATE.size))
+		return
+
 	draw_rect(Rect2(Vector2.ZERO, size), BACKDROP)
 	var plate: Rect2 = Rect2(PLATE.position + _shake_offset, PLATE.size)
+	DrawKit.rect_shadow(self, plate, Vector2(6.0, 10.0))
 	_draw_plate(plate)
 	_draw_warning_label(plate)
 	_draw_track(plate)
 	_draw_handle()
-	_draw_lights(plate)
+	_draw_lights_at(plate.position + GREEN_LIGHT, plate.position + RED_LIGHT)
 	_draw_status(plate)
 
 
-## La lámina: cuerpo con bisel y los cuatro tornillos.
+## La lámina: degradado de arriba abajo, borde suave y los cuatro tornillos.
 func _draw_plate(plate: Rect2) -> void:
 	draw_style_box(_box(PLATE_EDGE_DARK, 8, PLATE_EDGE_DARK, 0), plate.grow(3.0))
-	draw_style_box(_box(PLATE_COLOR, 6, PLATE_EDGE_LIGHT, 2), plate)
-	# Una raya clara arriba y otra oscura abajo, para que se vea lámina.
-	draw_rect(Rect2(plate.position + Vector2(8.0, 8.0), Vector2(plate.size.x - 16.0, 2.0)), PLATE_EDGE_LIGHT)
-	draw_rect(Rect2(plate.position + Vector2(8.0, plate.size.y - 10.0), Vector2(plate.size.x - 16.0, 2.0)), PLATE_EDGE_DARK)
+	DrawKit.gradient_rect(self, plate, PLATE_EDGE_LIGHT, PLATE_COLOR.darkened(0.18))
+	DrawKit.soft_outline(self, plate, PLATE_EDGE_LIGHT)
+	# Un brillo largo arriba y una sombra abajo: así se lee como lámina.
+	DrawKit.gradient_rect(self, Rect2(plate.position + Vector2(8.0, 8.0), Vector2(plate.size.x - 16.0, 26.0)),
+		Color(1.0, 1.0, 1.0, 0.07), Color(1.0, 1.0, 1.0, 0.0))
+	DrawKit.gradient_rect(self, Rect2(plate.position + Vector2(8.0, plate.size.y - 34.0), Vector2(plate.size.x - 16.0, 26.0)),
+		Color(0.0, 0.0, 0.0, 0.0), Color(0.0, 0.0, 0.0, 0.14))
 	for corner: Vector2 in [Vector2(24.0, 24.0), Vector2(plate.size.x - 24.0, 24.0),
 			Vector2(24.0, plate.size.y - 24.0), Vector2(plate.size.x - 24.0, plate.size.y - 24.0)]:
 		_draw_screw(plate.position + corner)
@@ -240,43 +303,46 @@ func _draw_track(plate: Rect2) -> void:
 		draw_line(Vector2(track.end.x + 6.0, y), Vector2(track.end.x + 18.0, y), ENGRAVED, 2.0)
 
 
-## El mango: bloque con bisel arriba y tres rayas de agarre.
+## El mango: sombra propia, degradado y tres rayas de agarre hundidas.
 func _draw_handle() -> void:
 	var handle: Rect2 = _handle_rect()
 	handle.position += _shake_offset
-	draw_style_box(_box(HANDLE_COLOR, 6, HANDLE_GRIP, 2), handle)
-	draw_rect(Rect2(handle.position + Vector2(6.0, 5.0), Vector2(handle.size.x - 12.0, 10.0)), HANDLE_TOP_COLOR)
+	DrawKit.rect_shadow(self, handle)
+	draw_style_box(_box(HANDLE_COLOR, 6, HANDLE_GRIP, 1), handle)
+	DrawKit.gradient_rect(self, handle.grow(-2.0), HANDLE_TOP_COLOR, HANDLE_COLOR.darkened(0.3))
 	for i: int in 3:
-		draw_rect(Rect2(handle.position + Vector2(16.0, 28.0 + i * 12.0),
-			Vector2(handle.size.x - 32.0, 5.0)), HANDLE_GRIP)
+		var groove: Rect2 = Rect2(handle.position + Vector2(16.0, 28.0 + i * 12.0),
+			Vector2(handle.size.x - 32.0, 5.0))
+		DrawKit.gradient_rect(self, groove, HANDLE_GRIP, Color(1.0, 1.0, 1.0, 0.06))
 
 
-## Los dos focos, con su aro y su brillo.
-func _draw_lights(plate: Rect2) -> void:
-	var has_power: bool = not PowerManager.is_blackout
+## Los dos focos, con resplandor difuso y su reflejo sobre el metal.
+## El verde late apenas, para que no se vea como una calcomanía.
+func _draw_lights_at(green_center: Vector2, red_center: Vector2) -> void:
 	var waiting: bool = PowerManager.cooldown_progress() > 0.0
-	# En espera, el rojo parpadea; cortada, se queda fijo.
-	var red_on: bool = PowerManager.is_blackout or (waiting and fmod(_blink_elapsed, 0.6) < 0.3)
+	var green: float = 0.0 if PowerManager.is_blackout else 0.86 + 0.14 * sin(_blink_elapsed * 2.1)
+	var red: float = 0.0
+	if PowerManager.is_blackout:
+		red = 1.0
+	elif waiting:
+		# En espera parpadea; cortada, se queda fijo.
+		red = 1.0 if fmod(_blink_elapsed, 0.6) < 0.3 else 0.08
 
-	_draw_lamp(plate.position + GREEN_LIGHT, LAMP_GREEN, has_power)
-	_draw_lamp(plate.position + RED_LIGHT, LAMP_RED, red_on)
+	_draw_lamp(green_center, LAMP_GREEN, green)
+	_draw_lamp(red_center, LAMP_RED, red)
 
+	if _use_images:
+		return
 	var font: Font = get_theme_default_font()
-	_draw_centered(font, plate.position + GREEN_LIGHT + Vector2(0.0, 40.0), "ENERGIA", 18, ENGRAVED)
-	_draw_centered(font, plate.position + RED_LIGHT + Vector2(0.0, 40.0), "CORTE", 18, ENGRAVED)
+	_draw_centered(font, green_center + Vector2(0.0, 40.0) - _shake_offset, "ENERGIA", 18, ENGRAVED)
+	_draw_centered(font, red_center + Vector2(0.0, 40.0) - _shake_offset, "CORTE", 18, ENGRAVED)
 
 
-func _draw_lamp(center: Vector2, color: Color, lit: bool) -> void:
+func _draw_lamp(center: Vector2, color: Color, intensity: float) -> void:
 	center += _shake_offset
-	if lit:
-		# El brillo son círculos encimados, que es lo más barato aquí.
-		for i: int in 3:
-			var radius: float = LIGHT_RADIUS + 8.0 + i * 7.0
-			draw_circle(center, radius, Color(color.r, color.g, color.b, 0.1 - i * 0.03))
-	draw_circle(center, LIGHT_RADIUS + 4.0, PLATE_EDGE_DARK)
-	draw_circle(center, LIGHT_RADIUS, color if lit else LAMP_OFF)
-	if lit:
-		draw_circle(center - Vector2(4.0, 4.0), 4.0, Color(1.0, 1.0, 1.0, 0.65))
+	DrawKit.led_reflection(self, center + Vector2(0.0, LIGHT_RADIUS + 2.0),
+		Vector2(LIGHT_RADIUS * 5.0, LIGHT_RADIUS * 2.6), color, intensity, false)
+	DrawKit.led(self, center, LIGHT_RADIUS, color, intensity)
 
 
 ## La línea de estado: deja ver la cuenta de los 3 s y la de los 10 s.

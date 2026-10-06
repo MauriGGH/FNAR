@@ -1,0 +1,49 @@
+{
+  "source_image_size": [
+    1024,
+    572
+  ],
+  "note": "Coordenadas normalizadas (0 a 1) sobre breaker_arriba.png y breaker_abajo.png (misma composición).",
+  "zones": {
+    "lever_track": {
+      "x": 0.457,
+      "y": 0.2797,
+      "w": 0.0918,
+      "h": 0.4196,
+      "clickable": true,
+      "desc": "Recorrido de la palanca: se agarra aquí y se arrastra hacia abajo"
+    },
+    "lever_up": {
+      "x": 0.4834,
+      "y": 0.2885,
+      "w": 0.041,
+      "h": 0.201,
+      "clickable": false,
+      "desc": "Mango en posición ARRIBA"
+    },
+    "lever_down": {
+      "x": 0.4805,
+      "y": 0.458,
+      "w": 0.0439,
+      "h": 0.2325,
+      "clickable": false,
+      "desc": "Mango en posición ABAJO"
+    },
+    "indicator_light": {
+      "x": 0.5391,
+      "y": 0.3741,
+      "w": 0.0293,
+      "h": 0.0524,
+      "clickable": false,
+      "desc": "Foquito verde/rojo"
+    },
+    "panel": {
+      "x": 0.3174,
+      "y": 0.014,
+      "w": 0.3584,
+      "h": 0.9685,
+      "clickable": false,
+      "desc": "Tablero completo"
+    }
+  }
+}

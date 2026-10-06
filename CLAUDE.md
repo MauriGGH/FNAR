@@ -44,25 +44,27 @@ res://
 
 | CAM | Lugar | Quién puede aparecer |
 | --- | --- | --- |
-| 1 | Pasillo norte | Barcosa |
-| 2 | Pasillo sur, frente al cristal | Barcosa, Mamador, Ureña |
+| 1 | Pasillo norte (mira hacia el balcón) | Barcosa |
+| 2 | Pasillo sur (mira hacia la coordinación y los baños) | Barcosa, Mamador, Ureña |
 | 3 | Cubículo 2 | Rochis |
 | 4 | Cubículo 3 | Botarga del Come Trabas |
 | 5 | Escalera al techo | Audel |
 | 6 | Techo, pararrayos | Audel |
-| 7 | Escalera a planta baja | Mamador |
+| 7 | Escalera a planta baja (junto a la coordinación) | Mamador |
 | 8 | Estacionamiento | Mamador |
 | 9 | Cafetería sur | Mamador |
 | 10 | Salón B, sala de servicio | Barcosa |
 | 11 | Salón E | Ureña |
 | 12 | Baños | Ureña |
 
+Hay dos escaleras. En el extremo sur del pasillo, junto a la coordinación, la escalera interior baja a la planta baja (más salones), desde donde se sale del edificio al estacionamiento y a la cafetería; en el grafo, escalera_pb conecta con pasillo_sur. En el extremo norte, junto al salón B, dos puertas de cristal dan a un balcón con muros de concreto a media altura y una escalera exterior que baja fuera del edificio; por ahora es solo escenografía (se ve al fondo de la CAM 1).
+
 Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cubículo 1, zona de tareas; id `sala_servidores`) y cuatro salones (puntos ciegos).
 
 ## Personajes
 
 - **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B. Si revisas CAM 10 seguido, se queda; si lo descuidas, se asoma, sale y corre por CAM 1 hasta la puerta. Solo se detiene cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
-- **Mamador (rol Freddy):** ruta CAM 8 → 9 → 7 → 2 → cristal. Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
+- **Mamador (rol Freddy):** ruta CAM 8 → 9 → 7 → 2 → cristal (sale del estacionamiento y la cafetería, entra al edificio por la planta baja y sube por la escalera junto a la coordinación). Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
 - **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna.
   - **Llamada de Ureña:** cada noche que Ureña está activo hay cierta probabilidad de que llame al teléfono de la oficina en algún momento entre las 2 y las 4 AM. El teléfono suena unos segundos; si no contestas a tiempo, game over (te mata). Si contestas, hace varias preguntas de opción múltiple, cada una con poco tiempo para responder. Cada respuesta mala o sin responder a tiempo: baja energía y aparece (o se queda) una foto de Ureña en la oficina; no es game over. El resto de los profes sigue moviéndose durante la llamada. Las preguntas vienen de un banco de preguntas en `data/urena_questions.gd` (el equipo las escribirá; por ahora usa 3 preguntas de ejemplo).
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.

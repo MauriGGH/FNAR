@@ -1,7 +1,17 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/server_room/server_room.gd" id="1_room"]
 [ext_resource type="Script" path="res://scenes/server_room/patch_panel_view.gd" id="2_panel"]
+[ext_resource type="Shader" path="res://scenes/ui/room_grade.gdshader" id="3_grade"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grade"]
+shader = ExtResource("3_grade")
+shader_parameter/grain_strength = 0.05
+shader_parameter/grain_cells = Vector2(520, 300)
+shader_parameter/grain_fps = 16.0
+shader_parameter/vignette_start = 0.3
+shader_parameter/vignette_strength = 0.72
+shader_parameter/darken = 0.16
 
 [node name="ServerRoom" type="Control"]
 visible = false
@@ -32,6 +42,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_panel")
+
+[node name="Grade" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_grade")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
 
 [node name="ExitButton" type="Button" parent="."]
 layout_mode = 0

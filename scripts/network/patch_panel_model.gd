@@ -18,11 +18,12 @@ const CAM4_SAFE_BEFORE_NIGHT: int = 5
 const PROTECTED_CAMERA: int = 4
 
 ## Colores de los patch cords, en el orden en que se reparten.
+## Desaturados a propósito, para que peguen con las fotos de la oficina.
 const CORD_COLORS: Array[Color] = [
-	Color(0.25, 0.45, 0.85),  # azul
-	Color(0.9, 0.78, 0.2),    # amarillo
-	Color(0.62, 0.64, 0.66),  # gris
-	Color(0.8, 0.22, 0.2),    # rojo
+	Color(0.3, 0.4, 0.55),    # azul
+	Color(0.66, 0.6, 0.34),   # amarillo
+	Color(0.45, 0.46, 0.48),  # gris
+	Color(0.54, 0.3, 0.28),   # rojo
 ]
 
 ## cámara -> {"pp": int, "gi": int, "color": Color}

@@ -1,6 +1,16 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scenes/breaker/breaker_panel.gd" id="1_breaker"]
+[ext_resource type="Shader" path="res://scenes/ui/room_grade.gdshader" id="2_grade"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grade"]
+shader = ExtResource("2_grade")
+shader_parameter/grain_strength = 0.055
+shader_parameter/grain_cells = Vector2(520, 300)
+shader_parameter/grain_fps = 16.0
+shader_parameter/vignette_start = 0.32
+shader_parameter/vignette_strength = 0.7
+shader_parameter/darken = 0.14
 
 [node name="BreakerPanel" type="Control"]
 visible = false
@@ -11,3 +21,26 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_breaker")
+
+[node name="Background" type="TextureRect" parent="."]
+visible = false
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+
+[node name="Grade" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_grade")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
