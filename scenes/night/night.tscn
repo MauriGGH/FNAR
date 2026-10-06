@@ -1,7 +1,11 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
+[ext_resource type="PackedScene" path="res://scenes/camera_system/camera_system.tscn" id="3_cameras"]
+[ext_resource type="Script" path="res://scripts/characters/test_profe.gd" id="4_test_profe"]
+[ext_resource type="Script" path="res://scenes/night/usage_bars.gd" id="5_usage_bars"]
+[ext_resource type="Script" path="res://scenes/night/camera_bar.gd" id="6_camera_bar"]
 
 [node name="Night" type="Control"]
 layout_mode = 3
@@ -15,22 +19,98 @@ script = ExtResource("1_night")
 [node name="Office" parent="." instance=ExtResource("2_office")]
 layout_mode = 1
 
+[node name="CameraSystem" parent="." instance=ExtResource("3_cameras")]
+layout_mode = 1
+
+[node name="Animatronics" type="Node" parent="."]
+
+[node name="TestProfe" type="Node" parent="Animatronics"]
+script = ExtResource("4_test_profe")
+display_name = "Profe de prueba"
+ai_level = 12
+move_interval = 3.0
+route = PackedStringArray("estacionamiento", "cafeteria", "escalera_pb", "pasillo_sur")
+
 [node name="Hud" type="CanvasLayer" parent="."]
 
 [node name="ClockLabel" type="Label" parent="Hud"]
-anchors_preset = 10
+anchors_preset = 1
+anchor_left = 1.0
 anchor_right = 1.0
-offset_top = 16.0
-offset_bottom = 64.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 36
+offset_left = -300.0
+offset_top = 18.0
+offset_right = -28.0
+offset_bottom = 86.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 60
 text = "12 AM"
-horizontal_alignment = 1
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="NightLabel" type="Label" parent="Hud"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 86.0
+offset_right = -28.0
+offset_bottom = 116.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.78, 0.78, 0.82, 1)
+theme_override_font_sizes/font_size = 26
+text = "Noche 1"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="PowerLabel" type="Label" parent="Hud"]
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 380.0
-offset_bottom = 60.0
-theme_override_font_sizes/font_size = 26
-text = "ENERGÍA: 100 %"
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -116.0
+offset_right = 360.0
+offset_bottom = -78.0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 34
+text = "Energía: 100%"
+vertical_alignment = 1
+
+[node name="UsageBars" type="Control" parent="Hud"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -66.0
+offset_right = 160.0
+offset_bottom = -46.0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("5_usage_bars")
+
+[node name="CameraBar" type="Control" parent="Hud"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -52.0
+offset_right = 140.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("6_camera_bar")
+
+[node name="HintLabel" type="Label" parent="Hud/CameraBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 22.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.88, 0.9, 0.93, 0.85)
+theme_override_font_sizes/font_size = 20
+text = "CÁMARAS  [ESPACIO]"
+horizontal_alignment = 1
+vertical_alignment = 1

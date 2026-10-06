@@ -24,7 +24,8 @@ const END_HOUR: int = 6    # 6 AM, la noche termina
 # prueba no vuelva la energía irrelevante.
 const MAX_POWER: float = 100.0
 const IDLE_DRAIN_PER_HOUR: float = 11.0  # consumo base de la oficina
-const DOOR_DRAIN_PER_HOUR: float = 22.0  # extra mientras la puerta está cerrada
+const DOOR_DRAIN_PER_HOUR: float = 22.0    # extra mientras la puerta está cerrada
+const CAMERA_DRAIN_PER_HOUR: float = 14.0  # extra mientras las cámaras están abiertas
 
 
 ## Cuánto dura una hora de juego en segundos reales.

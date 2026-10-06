@@ -38,7 +38,7 @@ res://
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 12 cámaras. Cada vista es un fondo vacío con capas de sprites de los profes presentes (por ahora, etiquetas de texto).
-- **Oficina:** vista panorámica que gira con el mouse; puerta de entrada con chapa magnética, linterna hacia el pasillo, breaker, PC.
+- **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, Audel y las Trabas. Linterna hacia el pasillo, breaker, PC.
 
 ## Cámaras
 
@@ -57,7 +57,7 @@ res://
 | 11 | Salón E | Ureña |
 | 12 | Baños | Ureña |
 
-Sin cámara: recepción (se ve desde la oficina), cubículo 1 (cuarto de redes, zona de tareas) y cuatro salones (puntos ciegos).
+Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cubículo 1, zona de tareas; id `sala_servidores`) y cuatro salones (puntos ciegos).
 
 ## Personajes
 
@@ -78,7 +78,7 @@ Sin cámara: recepción (se ve desde la oficina), cubículo 1 (cuarto de redes, 
 
 ## Tareas
 
-Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en el cubículo 1, dejando la oficina sin vigilar. La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
+Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en la sala de servidores, dejando la oficina sin vigilar. La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
 
 ## Niveles de IA por noche
 

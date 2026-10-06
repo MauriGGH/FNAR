@@ -1,0 +1,145 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/camera_system/camera_system.gd" id="1_cameras"]
+[ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="2_static"]
+[ext_resource type="Shader" path="res://scenes/camera_system/camera_crt.gdshader" id="3_crt"]
+[ext_resource type="Script" path="res://scenes/camera_system/viewfinder_corners.gd" id="4_corners"]
+[ext_resource type="Texture2D" path="res://assets/art/minimapa.svg" id="5_minimap"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_static"]
+shader = ExtResource("2_static")
+shader_parameter/strength = 0.07
+shader_parameter/noise_cells = Vector2(384, 216)
+shader_parameter/noise_fps = 20.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("3_crt")
+shader_parameter/scanline_strength = 0.22
+shader_parameter/scanline_count = 180.0
+shader_parameter/scanline_speed = 0.02
+shader_parameter/vignette_start = 0.3
+shader_parameter/vignette_strength = 0.8
+
+[node name="CameraSystem" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cameras")
+
+[node name="Feed" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.16, 0.16, 0.17, 1)
+
+[node name="StaticOverlay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_static")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="CrtOverlay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_crt")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="ViewfinderCorners" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_corners")
+
+[node name="RecDot" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 50.0
+offset_right = 62.0
+offset_bottom = 64.0
+mouse_filter = 2
+color = Color(0.85, 0.12, 0.12, 1)
+
+[node name="CameraNameLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 72.0
+offset_top = 44.0
+offset_right = 620.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.93, 0.93, 0.95, 0.9)
+theme_override_font_sizes/font_size = 22
+text = "CAM 01  PASILLO NORTE"
+vertical_alignment = 1
+
+[node name="DebugOccupantsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 76.0
+offset_right = 620.0
+offset_bottom = 98.0
+theme_override_colors/font_color = Color(0.45, 0.95, 0.55, 0.7)
+theme_override_font_sizes/font_size = 16
+text = "[F3] aqui: nadie"
+vertical_alignment = 1
+
+[node name="Minimap" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -528.0
+offset_top = -416.0
+offset_right = -16.0
+offset_bottom = -64.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 1
+
+[node name="MinimapScale" type="Control" parent="Minimap"]
+layout_mode = 0
+offset_right = 640.0
+offset_bottom = 440.0
+mouse_filter = 1
+
+[node name="MapTexture" type="TextureRect" parent="Minimap/MinimapScale"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_minimap")
+expand_mode = 1
+
+[node name="CameraButtons" type="Control" parent="Minimap/MinimapScale"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
