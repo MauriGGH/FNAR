@@ -52,6 +52,12 @@ func set_door_closed(closed: bool) -> void:
 	door_closed = closed
 
 
+## El night.gd avisa aquí cuando el jugador prende o apaga la linterna.
+## A Ureña lo ahuyenta; a Mamador le da igual.
+func set_flashlight_on(_is_on: bool) -> void:
+	pass
+
+
 ## true si el jugador está viendo justo la cámara de donde está este profe.
 func is_being_watched() -> bool:
 	return watched_camera != Rooms.NO_CAMERA and watched_camera == Rooms.camera_of(current_room)

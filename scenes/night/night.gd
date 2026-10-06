@@ -12,6 +12,16 @@ const INFINITE_POWER_TEXT: String = "ENERGÍA ∞ (debug)"
 const BREAKER_NOTICE: String = "[clac]"
 const BREAKER_NOTICE_TIME: float = 1.2
 
+const FLASHLIGHT_CLICK: String = "[clic]"
+const FLASHLIGHT_DEAD: String = "[la linterna no enciende]"
+const NOTICE_TIME_DEAD: float = 1.8
+const RING_NOTICE: String = "[ring]"
+const NOTICE_SHORT: float = 0.9
+## Lo que suena el teléfono de Ureña antes de matarte.
+const URENA_RING_TIME: float = 8.0
+## De cada 100 noches con Ureña activo, en cuántas llama.
+const URENA_CALL_CHANCE: int = 60
+
 const STEPS_NOTICE: String = "[pasos]"
 const STEPS_NOTICE_TIME: float = 1.2
 ## Lo que dura el destello blanco de la descarga.
@@ -30,6 +40,7 @@ const FLASH_TIME: float = 0.28
 @onready var warning_icon: Control = $Hud/WarningIcon
 @onready var cortaso_overlay: Control = $Hud/CortasoOverlay
 @onready var breaker_panel: Control = $BreakerPanel
+@onready var phone_call: Control = $Hud/PhoneCall
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
@@ -38,6 +49,12 @@ var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
 var _come_trabas: ComeTrabas = null
 var _audel: Audel = null
+var _urena: Urena = null
+
+# Teléfono: la llamada de la noche y la de Ureña.
+var _nightly_call_left: float = 0.0
+var _urena_call_at: float = -1.0
+var _urena_call_ringing: bool = false
 
 
 func _ready() -> void:
@@ -48,6 +65,8 @@ func _ready() -> void:
 			_come_trabas = animatronic as ComeTrabas
 			# Al quedarse sin cuerda, la silla del cubículo 3 queda vacía.
 			_come_trabas.music_stopped.connect(office.set_right_view_empty.bind(true))
+		elif animatronic is Urena:
+			_urena = animatronic as Urena
 		elif animatronic is Audel:
 			_audel = animatronic as Audel
 			_audel.cortaso_started.connect(cortaso_overlay.play)
@@ -57,6 +76,16 @@ func _ready() -> void:
 	office.pc_requested.connect(pc_screen.open)
 	office.notice_requested.connect(notice_banner.show_notice)
 	office.breaker_requested.connect(breaker_panel.open)
+	office.phone_requested.connect(phone_call.answer)
+	office.flashlight_changed.connect(_on_flashlight_changed)
+	office.flashlight_failed.connect(_on_flashlight_failed)
+
+	phone_call.ring_tick.connect(_on_ring_tick)
+	phone_call.ringing_started.connect(_on_ringing_started)
+	phone_call.call_answered.connect(_on_call_answered)
+	phone_call.call_missed.connect(_on_call_missed)
+	phone_call.call_ended.connect(_on_call_ended)
+	phone_call.wrong_answer.connect(_on_wrong_answer)
 	office.server_room_requested.connect(_enter_server_room)
 	server_room.closed.connect(_leave_server_room)
 	server_room.notice_requested.connect(notice_banner.show_notice)
@@ -99,6 +128,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_debug_shown()
 		KEY_F8:
 			PowerManager.toggle_infinite()
+		KEY_2:
+			trigger_urena_call()  # Tecla 2: la llamada de Ureña a la fuerza.
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -122,13 +153,15 @@ func _collect_animatronics() -> Array[Animatronic]:
 func _on_night_started(night: int) -> void:
 	night_label.text = "Noche %d" % night
 	office.set_right_view_empty(false)
+	_schedule_calls(night)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.start()
 
 
 ## Mientras no haya imágenes, la oficina dice por texto quién se ve en cada
 ## zona: la puerta, el cristal y la escalera.
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_process_calls(delta)
 	for zone_id: String in office.presence_zone_ids():
 		var text: String = ""
 		for animatronic: Animatronic in _animatronics:
@@ -182,6 +215,85 @@ func _update_watched_camera() -> void:
 	var camera: int = camera_system.current_camera if camera_system.is_open else Rooms.NO_CAMERA
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_watched_camera(camera)
+
+
+# --- Linterna -----------------------------------------------------------------
+
+func _on_flashlight_changed(is_on: bool) -> void:
+	PowerManager.set_flashlight_on(is_on)
+	notice_banner.show_notice(FLASHLIGHT_CLICK, NOTICE_SHORT)
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_flashlight_on(is_on)
+
+
+func _on_flashlight_failed() -> void:
+	notice_banner.show_notice(FLASHLIGHT_DEAD, NOTICE_TIME_DEAD)
+
+
+# --- Teléfono -----------------------------------------------------------------
+
+## La llamada de la noche suena a los pocos segundos. La de Ureña, si toca,
+## en un momento al azar entre las 2 y las 4 AM.
+func _schedule_calls(night: int) -> void:
+	_nightly_call_left = Calls.NIGHTLY_CALL_DELAY
+	_urena_call_at = -1.0
+	_urena_call_ringing = false
+	if _urena == null or not _urena.is_active:
+		return
+	if randi_range(1, 100) > URENA_CALL_CHANCE:
+		return
+	_urena_call_at = randf_range(2.0, 4.0)
+
+
+func _process_calls(delta: float) -> void:
+	if _nightly_call_left > 0.0:
+		_nightly_call_left -= delta
+		if _nightly_call_left <= 0.0:
+			phone_call.queue_message(Calls.for_night(GameManager.current_night), Calls.NIGHTLY_RING_TIME)
+		return
+	if _urena_call_at >= 0.0 and GameManager.night_progress() >= _urena_call_at:
+		_urena_call_at = -1.0
+		trigger_urena_call()
+
+
+## Tecla 2, y también la llamada de la noche cuando le toca.
+func trigger_urena_call() -> void:
+	if phone_call.is_ringing or phone_call.is_open:
+		return
+	_urena_call_ringing = true
+	phone_call.queue_questions(UrenaQuestions.pick(), URENA_RING_TIME)
+
+
+func _on_ringing_started(_seconds: float) -> void:
+	office.set_phone_ringing(true)
+
+
+func _on_ring_tick() -> void:
+	notice_banner.show_notice(RING_NOTICE, NOTICE_SHORT)
+
+
+func _on_call_answered() -> void:
+	office.set_phone_ringing(false)
+
+
+## Si no contestas la de Ureña, te mata. La de la noche es opcional.
+func _on_call_missed() -> void:
+	office.set_phone_ringing(false)
+	if not _urena_call_ringing:
+		return
+	_urena_call_ringing = false
+	GameManager.trigger_game_over(Urena.GAME_OVER_CAUSE)
+
+
+func _on_call_ended() -> void:
+	_urena_call_ringing = false
+	office.set_phone_ringing(false)
+
+
+## Cada respuesta mala o sin contestar: energía menos y una foto más.
+func _on_wrong_answer() -> void:
+	PowerManager.drain(UrenaQuestions.WRONG_ANSWER_POWER_COST)
+	office.add_urena_photo()
 
 
 ## La barra de cámaras no hace nada si el guardia no está en la oficina.

@@ -11,6 +11,11 @@ signal door_toggled(is_closed: bool)
 signal pc_requested()
 signal breaker_requested()
 signal server_room_requested()
+signal phone_requested()
+## La linterna se prendió o se apagó de verdad.
+signal flashlight_changed(is_on: bool)
+## Se intentó prender pero el cortaso de Audel la dejó muerta.
+signal flashlight_failed()
 signal notice_requested(text: String, duration: float)
 
 const CENTER_ZONES_PATH: String = "res://data/oficina_zonas.json"
@@ -20,9 +25,21 @@ const LEFT_ZONES_PATH: String = "res://data/oficina_izquierda_zonas.json"
 ## Vista derecha con la silla del cubículo 3 vacía: el Come Trabas ya se levantó.
 const RIGHT_EMPTY_TEXTURE: Texture2D = preload("res://assets/art/office/oficina_derecha_vacia.png")
 const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay.gd")
+const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
+const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
+## Si existe la foto de Ureña se usa; si no, una etiqueta.
+const URENA_PHOTO_PATH: String = "res://assets/art/office/urena_foto"
 
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
+
+## La zona del cristal, que es lo que alumbra la linterna.
+const GLASS_ZONE: String = "front_glass"
+## Dónde se pegan las fotos de Ureña, sobre el escritorio.
+const PHOTO_SPOTS: Array[Vector2] = [
+	Vector2(0.27, 0.88), Vector2(0.35, 0.9), Vector2(0.43, 0.88), Vector2(0.51, 0.9),
+]
+const PHOTO_SIZE: Vector2 = Vector2(96.0, 74.0)
 
 ## Cada vista se dibuja este factor más grande que la pantalla. Lo que sobra a
 ## lo ancho es el recorrido del mouse; a cambio se recorta un poco arriba y abajo.
@@ -62,8 +79,7 @@ const RIGHT_EMPTY_CHANNEL_GAIN: Vector3 = Vector3(1.26, 0.93, 0.99)
 const RIGHT_EMPTY_SATURATION: float = 0.9
 const RIGHT_EMPTY_BRIGHTNESS: float = 0.98
 
-const PHONE_NOTICE: String = "[el teléfono no suena todavía]"
-const FLASHLIGHT_NOTICE: String = "[la linterna todavía no funciona]"
+const FLASHLIGHT_NOTICE: String = "[sostén Ctrl o el clic sobre el cristal]"
 const NOTICE_TIME: float = 1.6
 
 ## Zonas sobre las que se ponen etiquetas de presencia, con su color y su
@@ -118,6 +134,11 @@ var _presence_labels: Dictionary = {}  # id de zona -> Label
 var _blackout_overlays: Array[Control] = []
 var _zoom_view: int = View.CENTER
 var _zoom_request: String = ""
+var _flashlight_on: bool = false
+var _urena_photos: int = 0
+
+var flashlight_overlay: Control = null
+var phone_light: Control = null
 
 var _view_nodes: Array[Control] = []
 var _content_nodes: Array[Control] = []
@@ -137,6 +158,7 @@ func _ready() -> void:
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
 	_build_labels()
 	_build_blackout_overlays()
+	_build_flashlight()
 	_layout()
 	resized.connect(_layout)
 
@@ -147,6 +169,65 @@ func _ready() -> void:
 	for entry: Dictionary in PRESENCE_ZONES:
 		set_zone_presence(str(entry["zone"]), "")
 	_refresh_door()
+
+
+## La linterna se mantiene con Ctrl o con el clic izquierdo sostenido sobre el
+## cristal, y solo sirve mirando al frente.
+func _update_flashlight() -> void:
+	var allowed: bool = is_interactive and _state == ViewState.PANNING and _current_view == View.CENTER
+	var wants_on: bool = false
+	if allowed:
+		wants_on = Input.is_key_pressed(KEY_CTRL)
+		if not wants_on and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			wants_on = zone_rect(GLASS_ZONE).has_point(center_content.get_local_mouse_position())
+
+	if wants_on == _flashlight_on:
+		return
+	# Si el cortaso de Audel la dejó muerta, ni se prende.
+	if wants_on and PowerManager.is_flashlight_disabled:
+		flashlight_failed.emit()
+		return
+	_flashlight_on = wants_on
+	flashlight_overlay.set_on(_flashlight_on)
+	flashlight_changed.emit(_flashlight_on)
+
+
+## Quién se ve en una zona, y el foquito del teléfono.
+func set_phone_ringing(ringing: bool) -> void:
+	if phone_light != null:
+		phone_light.set_ringing(ringing)
+
+
+## Pega una foto de Ureña sobre el escritorio. Las fotos se quedan.
+func add_urena_photo() -> void:
+	if _urena_photos >= PHOTO_SPOTS.size():
+		return
+	var spot: Vector2 = PHOTO_SPOTS[_urena_photos]
+	_urena_photos += 1
+	var content_size: Vector2 = size * VIEW_SCALE
+	var photo: Control = null
+	var texture: Texture2D = GameAssets.load_texture(URENA_PHOTO_PATH)
+	if texture != null:
+		var rect: TextureRect = TextureRect.new()
+		rect.texture = texture
+		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		photo = rect
+	else:
+		var label: Label = Label.new()
+		label.text = "[foto de\nUreña]"
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 16)
+		label.add_theme_color_override("font_color", Color(0.9, 0.88, 0.82))
+		label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+		label.add_theme_constant_override("outline_size", 6)
+		photo = label
+	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	photo.size = PHOTO_SIZE
+	photo.position = Vector2(spot.x * content_size.x, spot.y * content_size.y) - PHOTO_SIZE * 0.5
+	photo.pivot_offset = PHOTO_SIZE * 0.5
+	photo.rotation = randf_range(-0.12, 0.12)  # Cada una un poco chueca.
+	center_content.add_child(photo)
 
 
 ## El night.gd apaga la interacción mientras las cámaras están arriba, para que
@@ -204,6 +285,21 @@ func _layout_zones() -> void:
 			PRESENCE_SIZE, float(entry["gap"]))
 	_place_below_zone(door_state_label, "lock_box", DOOR_STATE_SIZE)
 	_layout_blackout_overlays()
+	_layout_flashlight()
+
+
+## El haz sale de abajo al centro, como si lo sostuviera el guardia.
+func _layout_flashlight() -> void:
+	var content_size: Vector2 = size * VIEW_SCALE
+	if flashlight_overlay != null:
+		flashlight_overlay.position = Vector2.ZERO
+		flashlight_overlay.size = content_size
+		flashlight_overlay.set_beam(zone_rect(GLASS_ZONE),
+			Vector2(content_size.x * 0.5, content_size.y))
+	if phone_light != null:
+		var phone: Rect2 = zone_rect("phone")
+		phone_light.position = phone.position
+		phone_light.size = phone.size
 
 
 ## Las capas de oscuridad cubren todo el contenido y sus puntos de luz van
@@ -230,6 +326,7 @@ func _layout_blackout_overlays() -> void:
 # --- Recorrido y giro ---------------------------------------------------------
 
 func _process(delta: float) -> void:
+	_update_flashlight()
 	if _state != ViewState.PANNING or not is_interactive:
 		return
 
@@ -464,10 +561,10 @@ func _on_zone_clicked(zone_id: String) -> void:
 			zoom_to_pc()
 		"lock_box":
 			_toggle_door()
-		"phone":
-			notice_requested.emit(PHONE_NOTICE, NOTICE_TIME)
 		"flashlight":
 			notice_requested.emit(FLASHLIGHT_NOTICE, NOTICE_TIME)
+		"phone":
+			phone_requested.emit()
 		"server_room":
 			server_room_requested.emit()
 		"breaker":
@@ -522,6 +619,20 @@ func _content_for_zone(zone_id: String) -> Control:
 	if not _zones.has(zone_id):
 		return center_content
 	return (_zones[zone_id] as OfficeZone).get_parent().get_parent() as Control
+
+
+## La linterna y el foquito del teléfono viven en la vista central.
+func _build_flashlight() -> void:
+	flashlight_overlay = FLASHLIGHT_OVERLAY.new()
+	flashlight_overlay.name = "Flashlight"
+	flashlight_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center_content.add_child(flashlight_overlay)
+
+	phone_light = PHONE_LIGHT.new()
+	phone_light.name = "PhoneLight"
+	phone_light.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	phone_light.visible = false
+	center_content.add_child(phone_light)
 
 
 ## Una capa de oscuridad por vista, con sus puntos de luz.

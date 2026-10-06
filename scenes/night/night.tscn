@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
@@ -17,6 +17,8 @@
 [ext_resource type="Script" path="res://scenes/night/cortaso_overlay.gd" id="15_cortaso"]
 [ext_resource type="PackedScene" path="res://scenes/server_room/server_room.tscn" id="17_room"]
 [ext_resource type="Script" path="res://scenes/night/fade_overlay.gd" id="18_fade"]
+[ext_resource type="Script" path="res://scripts/characters/urena.gd" id="19_urena"]
+[ext_resource type="PackedScene" path="res://scenes/phone/phone_call.tscn" id="20_phone"]
 [ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="16_static"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
@@ -58,6 +60,10 @@ display_name = "Barcosa"
 [node name="Mamador" type="Node" parent="Animatronics"]
 script = ExtResource("8_mamador")
 display_name = "Mamador"
+
+[node name="Urena" type="Node" parent="Animatronics"]
+script = ExtResource("19_urena")
+display_name = "Ureña"
 
 [node name="Audel" type="Node" parent="Animatronics"]
 script = ExtResource("13_audel")
@@ -220,3 +226,5 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
 script = ExtResource("18_fade")
+
+[node name="PhoneCall" parent="Hud" instance=ExtResource("20_phone")]

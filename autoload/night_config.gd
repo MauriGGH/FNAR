@@ -28,6 +28,7 @@ const IDLE_DRAIN_PER_HOUR: float = 11.0  # consumo base de la oficina
 const DOOR_DRAIN_PER_HOUR: float = 22.0    # extra mientras la puerta está cerrada
 const CAMERA_DRAIN_PER_HOUR: float = 14.0  # extra mientras las cámaras están abiertas
 const PC_DRAIN_PER_HOUR: float = 12.0      # extra mientras la PC está encendida
+const FLASHLIGHT_DRAIN_PER_HOUR: float = 16.0  # extra mientras la linterna alumbra
 
 
 # --- Breaker y cortaso -------------------------------------------------------

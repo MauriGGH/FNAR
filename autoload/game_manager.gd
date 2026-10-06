@@ -127,6 +127,12 @@ func hallway_holder() -> Node:
 	return _hallway_holder
 
 
+## Qué tan avanzada va la noche, en horas con decimales: 2.5 son las 2:30 AM.
+## Lo usa el teléfono para sonar entre las 2 y las 4.
+func night_progress() -> float:
+	return float(current_hour) + clampf(_hour_elapsed / NightConfig.hour_duration(), 0.0, 1.0)
+
+
 ## Texto del reloj para el HUD: la hora 0 se muestra como 12 AM.
 func hour_text() -> String:
 	var hour: int = 12 if current_hour == 0 else current_hour

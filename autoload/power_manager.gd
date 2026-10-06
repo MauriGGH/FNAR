@@ -1,7 +1,7 @@
 extends Node
 
 ## Autoload. Lleva la energía de la oficina, de 0 a 100 %.
-## Gastan la puerta cerrada y las cámaras abiertas; falta la linterna.
+## Gastan la puerta cerrada, las cámaras, la PC y la linterna.
 
 signal power_changed(percent: float)
 signal power_depleted()
@@ -14,6 +14,7 @@ var is_draining: bool = false
 var is_door_closed: bool = false
 var are_cameras_open: bool = false
 var is_pc_open: bool = false
+var is_flashlight_on: bool = false
 ## Depuración (F8): la energía deja de bajar, pero todo lo demás sigue igual.
 var is_infinite: bool = false
 
@@ -32,6 +33,7 @@ func reset() -> void:
 	is_door_closed = false
 	are_cameras_open = false
 	is_pc_open = false
+	is_flashlight_on = false
 	is_flashlight_disabled = false
 	_blackout_left = 0.0
 	_cooldown_left = 0.0
@@ -69,6 +71,13 @@ func set_pc_open(open: bool) -> void:
 	power_changed.emit(power)
 
 
+func set_flashlight_on(on: bool) -> void:
+	if is_flashlight_on == on:
+		return
+	is_flashlight_on = on
+	power_changed.emit(power)
+
+
 ## Porcentaje que se pierde por segundo real con el estado actual.
 func drain_per_second() -> float:
 	var per_hour: float = NightConfig.IDLE_DRAIN_PER_HOUR
@@ -78,13 +87,16 @@ func drain_per_second() -> float:
 		per_hour += NightConfig.CAMERA_DRAIN_PER_HOUR
 	if is_pc_open:
 		per_hour += NightConfig.PC_DRAIN_PER_HOUR
+	if is_flashlight_on:
+		per_hour += NightConfig.FLASHLIGHT_DRAIN_PER_HOUR
 	# Contra la hora normal, no contra la del modo prueba.
 	return per_hour / NightConfig.power_hour_duration()
 
 
 ## Cuántas cosas están gastando energía ahora mismo, de 1 a 4, como el
 ## indicador de "usage" de FNAF 1. La oficina sola ya cuenta como 1.
-## Cuando entren la linterna y el breaker sumarán aquí.
+## Ya están las cuatro: la oficina, la chapa, la pantalla que esté arriba y
+## la linterna.
 func usage_level() -> int:
 	var level: int = 1
 	if is_door_closed:
@@ -92,6 +104,8 @@ func usage_level() -> int:
 	if are_cameras_open:
 		level += 1
 	if is_pc_open:
+		level += 1
+	if is_flashlight_on:
 		level += 1
 	return mini(level, 4)
 
@@ -151,6 +165,7 @@ func cooldown_progress() -> float:
 ## El cortaso de Audel: se va un pedazo de energía y la linterna queda muerta.
 func apply_cortaso() -> void:
 	drain(NightConfig.CORTASO_POWER_LOSS)
+	set_flashlight_on(false)  # El cortaso la apaga de inmediato.
 	is_flashlight_disabled = true
 	_flashlight_left = NightConfig.FLASHLIGHT_DISABLED_TIME
 
