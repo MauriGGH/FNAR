@@ -136,10 +136,13 @@ func _process(delta: float) -> void:
 # --- Teclado ------------------------------------------------------------------
 
 func _gui_input(event: InputEvent) -> void:
+	# Solo el clic izquierdo toma el foco: el derecho tiene que llegar a la PC,
+	# que es la que cierra con él.
 	var click: InputEventMouseButton = event as InputEventMouseButton
-	if click != null and click.pressed:
-		grab_focus()
-		accept_event()
+	if click != null:
+		if click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+			grab_focus()
+			accept_event()
 		return
 
 	var key: InputEventKey = event as InputEventKey
@@ -161,8 +164,7 @@ func _gui_input(event: InputEvent) -> void:
 		KEY_DOWN:
 			_recall_history(1)
 		KEY_ESCAPE:
-			_input = ""
-			_refresh()
+			return  # Escape sale de la PC; no se consume aquí.
 		_:
 			# unicode trae el carácter ya resuelto por la distribución del
 			# teclado. Las teclas que no escriben nada (F3, F4...) se dejan

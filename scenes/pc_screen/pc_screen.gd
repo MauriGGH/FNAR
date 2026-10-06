@@ -126,6 +126,24 @@ func close() -> void:
 	closed.emit()
 
 
+## De la PC se sale por el botón, con Escape o con clic derecho.
+## Va en _input y no en _unhandled_input porque un Control en STOP (la raíz de
+## la PC lo es, para no dejar pasar clics a la oficina) se queda con los
+## botones del mouse aunque no los use, y el clic derecho nunca llegaría.
+func _input(event: InputEvent) -> void:
+	if not is_open:
+		return
+	var key: InputEventKey = event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+		close()
+		get_viewport().set_input_as_handled()
+		return
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_RIGHT:
+		close()
+		get_viewport().set_input_as_handled()
+
+
 # --- Escritorio ---------------------------------------------------------------
 
 func _build_icons() -> void:

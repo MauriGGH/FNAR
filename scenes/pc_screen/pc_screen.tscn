@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/pc_screen/pc_screen.gd" id="1_pc"]
 [ext_resource type="Script" path="res://scenes/pc_screen/monitor_bezel.gd" id="2_bezel"]
@@ -13,6 +13,42 @@ shader_parameter/scanline_strength = 0.16
 shader_parameter/scanline_count = 260.0
 shader_parameter/tube_edge = 0.55
 shader_parameter/tube_center = 0.1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exit"]
+bg_color = Color(0.42, 0.11, 0.1, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.6, 0.55, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exit_hover"]
+bg_color = Color(0.58, 0.16, 0.14, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.8, 0.75, 0.9)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exit_pressed"]
+bg_color = Color(0.3, 0.08, 0.07, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.6, 0.55, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="PcScreen" type="Control"]
 visible = false
@@ -70,16 +106,6 @@ theme_override_colors/font_color = Color(0.3, 0.45, 0.5, 1)
 theme_override_font_sizes/font_size = 17
 text = "COORDINACION DE SISTEMAS"
 horizontal_alignment = 2
-
-[node name="ClosePcButton" type="Button" parent="Screen"]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 136.0
-offset_bottom = 36.0
-focus_mode = 0
-theme_override_font_sizes/font_size = 17
-text = "Bajar PC"
 
 [node name="Icons" type="Control" parent="Screen"]
 layout_mode = 0
@@ -227,6 +253,20 @@ offset_left = 8.0
 offset_top = 34.0
 offset_right = 502.0
 offset_bottom = 382.0
+
+[node name="ClosePcButton" type="Button" parent="Screen"]
+layout_mode = 0
+offset_left = 824.0
+offset_top = 74.0
+offset_right = 1014.0
+offset_bottom = 118.0
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.92, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_exit")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exit_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_exit_pressed")
+text = "BAJAR PC  [Esc]"
 
 [node name="CrtOverlay" type="ColorRect" parent="Screen"]
 material = SubResource("ShaderMaterial_crt")
