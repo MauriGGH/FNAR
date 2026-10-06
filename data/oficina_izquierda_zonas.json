@@ -1,0 +1,49 @@
+{
+  "source_image_size": [
+    1672,
+    941
+  ],
+  "note": "Coordenadas normalizadas (0 a 1) sobre la vista izquierda. clickable=true son zonas de clic.",
+  "zones": {
+    "breaker": {
+      "x": 0.7249,
+      "y": 0.3061,
+      "w": 0.1154,
+      "h": 0.3082,
+      "clickable": true,
+      "desc": "Clic: bajar el breaker unos segundos (contra Audel)"
+    },
+    "window": {
+      "x": 0.3577,
+      "y": 0.0106,
+      "w": 0.3182,
+      "h": 0.2678,
+      "clickable": false,
+      "desc": "Ventana alta con persianas"
+    },
+    "cork_board": {
+      "x": 0.3469,
+      "y": 0.3241,
+      "w": 0.308,
+      "h": 0.305,
+      "clickable": false,
+      "desc": "Corcho con avisos y calendario"
+    },
+    "shelves": {
+      "x": 0.0,
+      "y": 0.0,
+      "w": 0.2751,
+      "h": 1.0,
+      "clickable": false,
+      "desc": "Libreros"
+    },
+    "desk_monitor_edge": {
+      "x": 0.8553,
+      "y": 0.2444,
+      "w": 0.1447,
+      "h": 0.7556,
+      "clickable": false,
+      "desc": "Esquina del escritorio y monitor (ancla con la vista central)"
+    }
+  }
+}

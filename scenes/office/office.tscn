@@ -1,15 +1,23 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/office/office.gd" id="1_office"]
 [ext_resource type="Texture2D" path="res://assets/art/office/oficina_centro.jpeg" id="2_center"]
 [ext_resource type="Texture2D" path="res://assets/art/office/oficina_derecha.png" id="3_right"]
 [ext_resource type="Shader" path="res://scenes/office/office_view.gdshader" id="4_view"]
+[ext_resource type="Texture2D" path="res://assets/art/office/oficina_izquierda.png" id="5_left"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_center"]
 shader = ExtResource("4_view")
 shader_parameter/channel_gain = Vector3(1, 1, 1)
 shader_parameter/brightness = 1.0
 shader_parameter/saturation = 1.0
+shader_parameter/blur_amount = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_left"]
+shader = ExtResource("4_view")
+shader_parameter/channel_gain = Vector3(1.14, 0.94, 1)
+shader_parameter/brightness = 2.2
+shader_parameter/saturation = 0.84
 shader_parameter/blur_amount = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_right"]
@@ -49,7 +57,8 @@ offset_right = 1359.0
 offset_bottom = 765.0
 mouse_filter = 1
 
-[node name="Background" type="ColorRect" parent="Views/LeftView/Content"]
+[node name="Background" type="TextureRect" parent="Views/LeftView/Content"]
+material = SubResource("ShaderMaterial_left")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -57,28 +66,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.17, 0.17, 0.19, 1)
-
-[node name="NameLabel" type="Label" parent="Views/LeftView/Content"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -30.0
-offset_right = 300.0
-offset_bottom = 30.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.6, 0.6, 0.64, 1)
-theme_override_font_sizes/font_size = 30
-text = "VISTA IZQUIERDA
-(pared del breaker, pendiente)"
-horizontal_alignment = 1
-vertical_alignment = 1
+texture = ExtResource("5_left")
+expand_mode = 1
 
 [node name="Zones" type="Control" parent="Views/LeftView/Content"]
 layout_mode = 1

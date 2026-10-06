@@ -9,6 +9,9 @@ signal closed()
 signal camera_changed(camera: int)
 
 const MINIMAP_DATA_PATH: String = "res://data/minimapa_camaras.json"
+## Imagen de un estado de cámara. Si el archivo no existe, se queda el fondo
+## gris con la etiqueta de texto, así que basta agregar el png para que funcione.
+const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s.png"
 const DEFAULT_CAMERA: int = 1
 
 # Estática: medio segundo fuerte al cambiar de cámara y luego de reposo.
@@ -44,7 +47,12 @@ var _map_size: Vector2 = Vector2(640.0, 440.0)
 var _static_tween: Tween = null
 var _debug_elapsed: float = 0.0
 var _interference_active: bool = false
+var _come_trabas: ComeTrabas = null
+var _winding: bool = false
+var _image_cache: Dictionary = {}  # ruta -> Texture2D, o null si no existe
+var _current_image_key: String = ""
 
+@onready var feed_image: TextureRect = $FeedImage
 @onready var static_overlay: ColorRect = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
 @onready var rec_dot: ColorRect = $RecDot
@@ -52,6 +60,10 @@ var _interference_active: bool = false
 @onready var minimap_frame: Control = $Minimap
 @onready var minimap_scale: Control = $Minimap/MinimapScale
 @onready var minimap_buttons: Control = $Minimap/MinimapScale/CameraButtons
+@onready var wind_control: Control = $WindControl
+@onready var wind_button: Button = $WindControl/WindButton
+@onready var wind_gauge: Control = $WindControl/WindGauge
+@onready var wind_percent_label: Label = $WindControl/WindGauge/PercentLabel
 
 
 func _ready() -> void:
@@ -59,6 +71,11 @@ func _ready() -> void:
 	_set_static_strength(STATIC_IDLE)
 	_start_rec_blink()
 	_build_minimap_buttons()
+	feed_image.visible = false
+	wind_control.visible = false
+	wind_button.keep_pressed_outside = true  # Soltar fuera del botón no se traba.
+	wind_button.button_down.connect(_on_wind_button_down)
+	wind_button.button_up.connect(_on_wind_button_up)
 	minimap_frame.resized.connect(_fit_minimap)
 	_fit_minimap()
 
@@ -73,6 +90,9 @@ func set_animatronics(animatronics: Array[Animatronic]) -> void:
 	_animatronics = animatronics
 	for animatronic: Animatronic in _animatronics:
 		animatronic.moved.connect(_on_animatronic_moved)
+		if animatronic is ComeTrabas:
+			_come_trabas = animatronic as ComeTrabas
+			_come_trabas.wind_changed.connect(_on_wind_changed)
 
 
 func toggle() -> void:
@@ -122,8 +142,80 @@ func _unhandled_input(event: InputEvent) -> void:
 func _refresh_view() -> void:
 	var room: String = Rooms.room_of_camera(current_camera)
 	camera_name_label.text = "CAM %02d  %s" % [current_camera, Rooms.display_name(room).to_upper()]
+	_refresh_camera_image()
+	_refresh_wind_control()
 	_refresh_occupants(room)
 	_refresh_minimap_highlight()
+
+
+## Busca la imagen del estado en que está la habitación que se ve. Si no hay
+## archivo para ese estado, se queda el fondo gris con la etiqueta de texto.
+func _refresh_camera_image() -> void:
+	var state: String = _camera_state_of(Rooms.room_of_camera(current_camera))
+	var key: String = "%d:%s" % [current_camera, state]
+	if key == _current_image_key:
+		return
+	_current_image_key = key
+	var texture: Texture2D = _camera_texture(current_camera, state)
+	feed_image.texture = texture
+	feed_image.visible = texture != null
+
+
+## El primer profe de la habitación que tenga algo que decir define el estado.
+func _camera_state_of(room: String) -> String:
+	for animatronic: Animatronic in _animatronics:
+		if animatronic.current_room != room:
+			continue
+		var state: String = animatronic.camera_state()
+		if not state.is_empty():
+			return state
+	return ""
+
+
+func _camera_texture(camera: int, state: String) -> Texture2D:
+	if state.is_empty():
+		return null
+	var path: String = CAMERA_IMAGE_FORMAT % [camera, state]
+	if _image_cache.has(path):
+		return _image_cache[path]
+	var texture: Texture2D = null
+	if ResourceLoader.exists(path):
+		texture = load(path) as Texture2D
+	_image_cache[path] = texture  # Se guarda incluso si no existe, para no buscar dos veces.
+	return texture
+
+
+# --- Cuerda del Come Trabas ---------------------------------------------------
+
+## El control de la cuerda solo sale en la cámara donde está la botarga.
+func _refresh_wind_control() -> void:
+	var should_show: bool = false
+	if _come_trabas != null and _come_trabas.is_active and not _come_trabas.is_attacking:
+		should_show = current_camera == Rooms.camera_of(_come_trabas.current_room)
+	wind_control.visible = should_show
+	if should_show:
+		_on_wind_changed(_come_trabas.wind)
+
+
+func _on_wind_changed(percent: float) -> void:
+	wind_gauge.set_percent(percent)
+	wind_percent_label.text = "%d%%" % roundi(percent)
+
+
+func _on_wind_button_down() -> void:
+	_winding = true
+
+
+func _on_wind_button_up() -> void:
+	_winding = false
+
+
+## Se le da cuerda solo mientras el botón esté apretado Y su cámara esté arriba:
+## bajar las cámaras o cambiar de cámara deja de dar cuerda.
+func _apply_winding() -> void:
+	if _come_trabas == null:
+		return
+	_come_trabas.set_winding(_winding and is_open and wind_control.visible)
 
 
 ## Etiqueta de depuración: quién hay en la habitación que se está viendo, en qué
@@ -146,13 +238,19 @@ func _refresh_occupants(room: String) -> void:
 
 ## Las etapas cambian sin que nadie se mueva, así que la etiqueta se repinta sola.
 func _process(delta: float) -> void:
-	if not is_open or _interference_active or not debug_label.visible:
+	_apply_winding()
+	if not is_open or _interference_active:
 		return
+	_refresh_wind_control()
 	_debug_elapsed += delta
 	if _debug_elapsed < DEBUG_REFRESH_TIME:
 		return
 	_debug_elapsed = 0.0
-	_refresh_occupants(Rooms.room_of_camera(current_camera))
+	# El estado de la cámara cambia sin que nadie se mueva (la cuerda bajando),
+	# así que la imagen y la etiqueta se revisan solas.
+	_refresh_camera_image()
+	if debug_label.visible:
+		_refresh_occupants(Rooms.room_of_camera(current_camera))
 
 
 ## Si el movimiento toca justo la cámara que se está viendo, interfiere.
@@ -188,6 +286,7 @@ func _play_interference() -> void:
 
 func _on_interference_cleared() -> void:
 	_interference_active = false
+	_refresh_camera_image()
 	_refresh_occupants(Rooms.room_of_camera(current_camera))
 
 

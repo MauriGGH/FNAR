@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/camera_system/camera_system.gd" id="1_cameras"]
 [ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="2_static"]
 [ext_resource type="Shader" path="res://scenes/camera_system/camera_crt.gdshader" id="3_crt"]
 [ext_resource type="Script" path="res://scenes/camera_system/viewfinder_corners.gd" id="4_corners"]
+[ext_resource type="Script" path="res://scenes/camera_system/wind_gauge.gd" id="6_gauge"]
 [ext_resource type="Texture2D" path="res://assets/art/minimapa.svg" id="5_minimap"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_static"]
@@ -39,6 +40,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.16, 0.16, 0.17, 1)
+
+[node name="FeedImage" type="TextureRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
 
 [node name="StaticOverlay" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_static")
@@ -102,6 +114,56 @@ theme_override_colors/font_color = Color(0.45, 0.95, 0.55, 0.7)
 theme_override_font_sizes/font_size = 16
 text = "[F3] aqui: nadie"
 vertical_alignment = 1
+
+[node name="WindControl" type="Control" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 48.0
+offset_top = 288.0
+offset_right = 308.0
+offset_bottom = 500.0
+mouse_filter = 1
+
+[node name="TitleLabel" type="Label" parent="WindControl"]
+layout_mode = 0
+offset_right = 260.0
+offset_bottom = 26.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.82, 0.86, 0.88, 1)
+theme_override_font_sizes/font_size = 20
+text = "CUERDA"
+horizontal_alignment = 1
+
+[node name="WindGauge" type="Control" parent="WindControl"]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 30.0
+offset_right = 200.0
+offset_bottom = 170.0
+mouse_filter = 2
+script = ExtResource("6_gauge")
+
+[node name="PercentLabel" type="Label" parent="WindControl/WindGauge"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 32
+text = "100%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WindButton" type="Button" parent="WindControl"]
+layout_mode = 0
+offset_top = 176.0
+offset_right = 260.0
+offset_bottom = 212.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 17
+text = "MANTÉN PARA DAR CUERDA"
 
 [node name="Minimap" type="Control" parent="."]
 layout_mode = 1

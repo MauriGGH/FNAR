@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://scripts/characters/mamador.gd" id="8_mamador"]
 [ext_resource type="PackedScene" path="res://scenes/pc_screen/pc_screen.tscn" id="9_pc"]
 [ext_resource type="Script" path="res://scenes/night/notice_banner.gd" id="10_notice"]
+[ext_resource type="Script" path="res://scripts/characters/come_trabas.gd" id="11_come_trabas"]
+[ext_resource type="Script" path="res://scenes/night/warning_icon.gd" id="12_warning"]
 
 [node name="Night" type="Control"]
 layout_mode = 3
@@ -38,6 +40,10 @@ display_name = "Barcosa"
 [node name="Mamador" type="Node" parent="Animatronics"]
 script = ExtResource("8_mamador")
 display_name = "Mamador"
+
+[node name="ComeTrabas" type="Node" parent="Animatronics"]
+script = ExtResource("11_come_trabas")
+display_name = "Come Trabas"
 
 [node name="TestProfe" type="Node" parent="Animatronics"]
 script = ExtResource("4_test_profe")
@@ -121,6 +127,22 @@ script = ExtResource("10_notice")
 
 [node name="Timer" type="Timer" parent="Hud/NoticeBanner"]
 one_shot = true
+
+[node name="WarningIcon" type="Control" parent="Hud"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -192.0
+offset_top = -50.0
+offset_right = -148.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("12_warning")
 
 [node name="CameraBar" type="Control" parent="Hud"]
 anchors_preset = 7

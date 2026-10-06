@@ -16,15 +16,21 @@ const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 @onready var usage_bars: Control = $Hud/UsageBars
 @onready var camera_bar: Control = $Hud/CameraBar
 @onready var notice_banner: Label = $Hud/NoticeBanner
+@onready var warning_icon: Control = $Hud/WarningIcon
 
 var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
+var _come_trabas: ComeTrabas = null
 
 
 func _ready() -> void:
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.made_noise.connect(notice_banner.show_notice)
+		if animatronic is ComeTrabas:
+			_come_trabas = animatronic as ComeTrabas
+			# Al quedarse sin cuerda, la silla del cubículo 3 queda vacía.
+			_come_trabas.music_stopped.connect(office.set_right_view_empty.bind(true))
 
 	office.door_toggled.connect(_on_door_toggled)
 	office.pc_requested.connect(pc_screen.open)
@@ -81,6 +87,7 @@ func _collect_animatronics() -> Array[Animatronic]:
 
 func _on_night_started(night: int) -> void:
 	night_label.text = "Noche %d" % night
+	office.set_right_view_empty(false)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.start()
 
@@ -97,6 +104,8 @@ func _process(_delta: float) -> void:
 			at_window = animatronic.window_presence()
 	office.set_door_presence(at_door)
 	office.set_window_presence(at_window)
+	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
+	warning_icon.visible = _come_trabas != null and _come_trabas.is_warning()
 
 
 func _on_hour_changed(_hour: int) -> void:

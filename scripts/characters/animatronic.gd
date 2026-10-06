@@ -106,6 +106,12 @@ func window_presence() -> String:
 	return ""
 
 
+## Estado de la cámara que vigila a este profe, para buscar la imagen
+## camXX_<estado>.png. Cadena vacía = no aporta ningún estado.
+func camera_state() -> String:
+	return ""
+
+
 ## Mueve al profe al paso indicado de su ruta y avisa con la señal.
 func move_to_step(index: int) -> void:
 	var target: String = route[index]

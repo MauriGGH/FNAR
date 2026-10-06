@@ -13,6 +13,10 @@ signal notice_requested(text: String, duration: float)
 
 const CENTER_ZONES_PATH: String = "res://data/oficina_zonas.json"
 const RIGHT_ZONES_PATH: String = "res://data/oficina_derecha_zonas.json"
+const LEFT_ZONES_PATH: String = "res://data/oficina_izquierda_zonas.json"
+
+## Vista derecha con la silla del cubículo 3 vacía: el Come Trabas ya se levantó.
+const RIGHT_EMPTY_TEXTURE: Texture2D = preload("res://assets/art/office/oficina_derecha_vacia.png")
 
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
@@ -42,9 +46,16 @@ const RIGHT_CHANNEL_GAIN: Vector3 = Vector3(1.14, 0.94, 1.0)
 const RIGHT_SATURATION: float = 0.84
 const RIGHT_BRIGHTNESS: float = 0.92
 
+# La vista izquierda venía mucho más oscura que la central (luma 0.05 contra
+# 0.12), así que el brillo es el valor grueso a mover aquí.
+const LEFT_CHANNEL_GAIN: Vector3 = Vector3(1.14, 0.94, 1.0)
+const LEFT_SATURATION: float = 0.84
+const LEFT_BRIGHTNESS: float = 2.2
+
 const PHONE_NOTICE: String = "[el teléfono no suena todavía]"
 const FLASHLIGHT_NOTICE: String = "[la linterna todavía no funciona]"
 const SERVER_ROOM_NOTICE: String = "[sala de servidores: próximamente]"
+const BREAKER_NOTICE: String = "[breaker: próximamente]"
 const NOTICE_TIME: float = 1.6
 
 const PRESENCE_SIZE: Vector2 = Vector2(360.0, 34.0)
@@ -74,6 +85,7 @@ var _sweep_direction: int = 1
 @onready var left_content: Control = $Views/LeftView/Content
 @onready var center_content: Control = $Views/CenterView/Content
 @onready var right_content: Control = $Views/RightView/Content
+@onready var left_image: TextureRect = $Views/LeftView/Content/Background
 @onready var center_image: TextureRect = $Views/CenterView/Content/Background
 @onready var right_image: TextureRect = $Views/RightView/Content/Background
 
@@ -83,6 +95,7 @@ var door_state_label: Label = null
 
 var _view_nodes: Array[Control] = []
 var _content_nodes: Array[Control] = []
+var _right_normal_texture: Texture2D = null
 
 
 func _ready() -> void:
@@ -90,9 +103,12 @@ func _ready() -> void:
 	_view_nodes = [left_view, center_view, right_view]
 	_content_nodes = [left_content, center_content, right_content]
 
-	_apply_right_view_grade()
+	_right_normal_texture = right_image.texture
+	_apply_view_grade(left_image, LEFT_CHANNEL_GAIN, LEFT_SATURATION, LEFT_BRIGHTNESS)
+	_apply_view_grade(right_image, RIGHT_CHANNEL_GAIN, RIGHT_SATURATION, RIGHT_BRIGHTNESS)
 	_build_zones(CENTER_ZONES_PATH, $Views/CenterView/Content/Zones, CENTER_CLICKABLE)
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
+	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
 	_build_labels()
 	_layout()
 	resized.connect(_layout)
@@ -248,19 +264,24 @@ func _on_sweep_finished(target: int) -> void:
 
 
 func _set_blur(amount: float) -> void:
-	for image: TextureRect in [center_image, right_image]:
+	for image: TextureRect in [left_image, center_image, right_image]:
 		var material: ShaderMaterial = image.material as ShaderMaterial
 		if material != null:
 			material.set_shader_parameter("blur_amount", amount)
 
 
-func _apply_right_view_grade() -> void:
-	var material: ShaderMaterial = right_image.material as ShaderMaterial
+func _apply_view_grade(image: TextureRect, gain: Vector3, saturation: float, brightness: float) -> void:
+	var material: ShaderMaterial = image.material as ShaderMaterial
 	if material == null:
 		return
-	material.set_shader_parameter("channel_gain", RIGHT_CHANNEL_GAIN)
-	material.set_shader_parameter("saturation", RIGHT_SATURATION)
-	material.set_shader_parameter("brightness", RIGHT_BRIGHTNESS)
+	material.set_shader_parameter("channel_gain", gain)
+	material.set_shader_parameter("saturation", saturation)
+	material.set_shader_parameter("brightness", brightness)
+
+
+## Cuando el Come Trabas se levanta, la silla del cubículo 3 queda vacía.
+func set_right_view_empty(is_empty: bool) -> void:
+	right_image.texture = RIGHT_EMPTY_TEXTURE if is_empty else _right_normal_texture
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -374,6 +395,8 @@ func _on_zone_clicked(zone_id: String) -> void:
 			notice_requested.emit(FLASHLIGHT_NOTICE, NOTICE_TIME)
 		"server_room":
 			notice_requested.emit(SERVER_ROOM_NOTICE, NOTICE_TIME)
+		"breaker":
+			notice_requested.emit(BREAKER_NOTICE, NOTICE_TIME)
 
 
 # --- Puerta y presencias ------------------------------------------------------
