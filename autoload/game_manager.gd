@@ -7,15 +7,22 @@ signal night_started(night: int)
 signal hour_changed(hour: int)  # 0 = 12 AM ... 6 = 6 AM
 signal night_won(night: int)
 signal game_over(cause: String)
+signal task_completed(task_id: String)
+signal ai_window_changed(is_open: bool)
 
 var current_night: int = 1
 var current_hour: int = NightConfig.START_HOUR
 var is_night_active: bool = false
 var last_game_over_cause: String = ""
+## La ventana del Asistente IA sigue abierta aunque el jugador baje la PC:
+## es justo lo que delata al guardia ante Mamador.
+var is_ai_window_open: bool = false
 
 var _hour_elapsed: float = 0.0
 # Quién tiene reservado el pasillo ahora mismo, o null si está libre.
 var _hallway_holder: Node = null
+# Ids de las tareas que el jugador ya terminó esta noche.
+var _completed_tasks: Dictionary = {}
 
 
 func _ready() -> void:
@@ -29,6 +36,8 @@ func start_night(night: int = current_night) -> void:
 	_hour_elapsed = 0.0
 	last_game_over_cause = ""
 	_hallway_holder = null
+	_completed_tasks.clear()
+	is_ai_window_open = false
 	is_night_active = true
 	PowerManager.reset()
 	PowerManager.set_draining(true)
@@ -44,6 +53,41 @@ func trigger_game_over(cause: String) -> void:
 	PowerManager.set_draining(false)
 	last_game_over_cause = cause
 	game_over.emit(cause)
+
+
+# --- Tareas y pago ------------------------------------------------------------
+
+## Tareas que pide la noche actual.
+func night_tasks() -> Array:
+	return Tasks.tasks_for_night(current_night)
+
+
+func complete_task(task_id: String) -> void:
+	if _completed_tasks.has(task_id):
+		return
+	_completed_tasks[task_id] = true
+	task_completed.emit(task_id)
+
+
+func is_task_completed(task_id: String) -> bool:
+	return _completed_tasks.has(task_id)
+
+
+func completed_task_count() -> int:
+	return _completed_tasks.size()
+
+
+## Lo que le pagan al guardia por las tareas que terminó.
+func payment() -> int:
+	return completed_task_count() * Tasks.PAYMENT_PER_TASK
+
+
+## La PC avisa aquí cuando se abre o se cierra la ventana del asistente.
+func set_ai_window_open(is_open: bool) -> void:
+	if is_ai_window_open == is_open:
+		return
+	is_ai_window_open = is_open
+	ai_window_changed.emit(is_ai_window_open)
 
 
 # --- Reserva del pasillo ------------------------------------------------------

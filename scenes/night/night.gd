@@ -8,12 +8,14 @@ const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 
 @onready var office: Control = $Office
 @onready var camera_system: Control = $CameraSystem
+@onready var pc_screen: Control = $PcScreen
 @onready var animatronics_holder: Node = $Animatronics
 @onready var clock_label: Label = $Hud/ClockLabel
 @onready var night_label: Label = $Hud/NightLabel
 @onready var power_label: Label = $Hud/PowerLabel
 @onready var usage_bars: Control = $Hud/UsageBars
 @onready var camera_bar: Control = $Hud/CameraBar
+@onready var notice_banner: Label = $Hud/NoticeBanner
 
 var _animatronics: Array[Animatronic] = []
 
@@ -21,15 +23,20 @@ var _animatronics: Array[Animatronic] = []
 func _ready() -> void:
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
-		animatronic.made_noise.connect(office.show_notice)
+		animatronic.made_noise.connect(notice_banner.show_notice)
 
 	office.door_toggled.connect(_on_door_toggled)
+	office.pc_requested.connect(pc_screen.open)
 
 	camera_system.set_animatronics(_animatronics)
 	camera_system.opened.connect(_on_cameras_opened)
 	camera_system.closed.connect(_on_cameras_closed)
 	camera_system.camera_changed.connect(_on_camera_changed)
 	camera_bar.hovered.connect(camera_system.toggle)
+
+	# La PC y las cámaras no pueden estar abiertas a la vez.
+	pc_screen.opened.connect(camera_system.close)
+	camera_system.opened.connect(pc_screen.close)
 
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
@@ -53,6 +60,20 @@ func _on_night_started(night: int) -> void:
 	night_label.text = "Noche %d" % night
 	for animatronic: Animatronic in _animatronics:
 		animatronic.start()
+
+
+## Mientras no haya imágenes, la oficina dice por texto quién está en la
+## puerta y quién en el cristal.
+func _process(_delta: float) -> void:
+	var at_door: String = ""
+	var at_window: String = ""
+	for animatronic: Animatronic in _animatronics:
+		if at_door.is_empty():
+			at_door = animatronic.door_presence()
+		if at_window.is_empty():
+			at_window = animatronic.window_presence()
+	office.set_door_presence(at_door)
+	office.set_window_presence(at_window)
 
 
 func _on_hour_changed(_hour: int) -> void:
@@ -107,6 +128,8 @@ func _on_game_over(_cause: String) -> void:
 
 ## Deja de gastar energía y congela a los profes antes de cambiar de pantalla.
 func _end_night() -> void:
+	set_process(false)
 	camera_system.close()
+	pc_screen.close()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

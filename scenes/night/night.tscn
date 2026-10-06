@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
@@ -7,6 +7,9 @@
 [ext_resource type="Script" path="res://scenes/night/usage_bars.gd" id="5_usage_bars"]
 [ext_resource type="Script" path="res://scenes/night/camera_bar.gd" id="6_camera_bar"]
 [ext_resource type="Script" path="res://scripts/characters/barcosa.gd" id="7_barcosa"]
+[ext_resource type="Script" path="res://scripts/characters/mamador.gd" id="8_mamador"]
+[ext_resource type="PackedScene" path="res://scenes/pc_screen/pc_screen.tscn" id="9_pc"]
+[ext_resource type="Script" path="res://scenes/night/notice_banner.gd" id="10_notice"]
 
 [node name="Night" type="Control"]
 layout_mode = 3
@@ -23,11 +26,18 @@ layout_mode = 1
 [node name="CameraSystem" parent="." instance=ExtResource("3_cameras")]
 layout_mode = 1
 
+[node name="PcScreen" parent="." instance=ExtResource("9_pc")]
+layout_mode = 1
+
 [node name="Animatronics" type="Node" parent="."]
 
 [node name="Barcosa" type="Node" parent="Animatronics"]
 script = ExtResource("7_barcosa")
 display_name = "Barcosa"
+
+[node name="Mamador" type="Node" parent="Animatronics"]
+script = ExtResource("8_mamador")
+display_name = "Mamador"
 
 [node name="TestProfe" type="Node" parent="Animatronics"]
 script = ExtResource("4_test_profe")
@@ -91,6 +101,26 @@ offset_bottom = -46.0
 grow_vertical = 0
 mouse_filter = 2
 script = ExtResource("5_usage_bars")
+
+[node name="NoticeBanner" type="Label" parent="Hud"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -240.0
+offset_top = 18.0
+offset_right = 240.0
+offset_bottom = 58.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.95, 0.86, 0.45, 1)
+theme_override_font_sizes/font_size = 28
+text = "[pasos corriendo]"
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("10_notice")
+
+[node name="Timer" type="Timer" parent="Hud/NoticeBanner"]
+one_shot = true
 
 [node name="CameraBar" type="Control" parent="Hud"]
 anchors_preset = 7

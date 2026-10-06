@@ -95,6 +95,17 @@ func debug_text() -> String:
 	return ""
 
 
+## Texto provisional para la oficina mientras este profe está en la puerta.
+## Cadena vacía = no está ahí. Lo reemplazarán los sprites.
+func door_presence() -> String:
+	return ""
+
+
+## Lo mismo, para cuando está asomado al cristal.
+func window_presence() -> String:
+	return ""
+
+
 ## Mueve al profe al paso indicado de su ruta y avisa con la señal.
 func move_to_step(index: int) -> void:
 	var target: String = route[index]

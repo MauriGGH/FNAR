@@ -23,41 +23,69 @@ color = Color(0.29, 0.29, 0.31, 1)
 [node name="PlaceholderLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 48.0
-offset_top = 260.0
-offset_right = 760.0
-offset_bottom = 320.0
+offset_top = 120.0
+offset_right = 420.0
+offset_bottom = 160.0
 theme_override_colors/font_color = Color(0.72, 0.72, 0.74, 1)
 theme_override_font_sizes/font_size = 28
 text = "OFICINA (placeholder)"
 
-[node name="NoticeLabel" type="Label" parent="."]
+[node name="WindowPresenceLabel" type="Label" parent="."]
 visible = false
 layout_mode = 0
-offset_left = 48.0
-offset_top = 340.0
+offset_left = 380.0
+offset_top = 168.0
 offset_right = 760.0
-offset_bottom = 384.0
-theme_override_colors/font_color = Color(0.95, 0.86, 0.45, 1)
-theme_override_font_sizes/font_size = 30
-text = "[pasos corriendo]"
+offset_bottom = 204.0
+theme_override_colors/font_color = Color(0.95, 0.55, 0.3, 1)
+theme_override_font_sizes/font_size = 22
+text = "Mamador mirando por el cristal"
+horizontal_alignment = 1
 
-[node name="NoticeTimer" type="Timer" parent="."]
-one_shot = true
+[node name="WindowRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 420.0
+offset_top = 210.0
+offset_right = 720.0
+offset_bottom = 470.0
+color = Color(0.18, 0.26, 0.29, 1)
+
+[node name="WindowStateLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 420.0
+offset_top = 478.0
+offset_right = 720.0
+offset_bottom = 510.0
+theme_override_font_sizes/font_size = 22
+text = "CRISTAL"
+horizontal_alignment = 1
+
+[node name="DoorPresenceLabel" type="Label" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 780.0
+offset_top = 168.0
+offset_right = 1120.0
+offset_bottom = 204.0
+theme_override_colors/font_color = Color(0.95, 0.4, 0.35, 1)
+theme_override_font_sizes/font_size = 22
+text = "Barcosa golpeando la puerta"
+horizontal_alignment = 1
 
 [node name="DoorRect" type="ColorRect" parent="."]
 layout_mode = 0
 offset_left = 820.0
-offset_top = 150.0
+offset_top = 210.0
 offset_right = 1080.0
-offset_bottom = 520.0
+offset_bottom = 470.0
 color = Color(0.12, 0.12, 0.15, 1)
 
 [node name="DoorStateLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 820.0
-offset_top = 528.0
+offset_top = 478.0
 offset_right = 1080.0
-offset_bottom = 560.0
+offset_bottom = 510.0
 theme_override_font_sizes/font_size = 22
 text = "PUERTA: ABIERTA"
 horizontal_alignment = 1
@@ -68,4 +96,15 @@ offset_left = 820.0
 offset_top = 572.0
 offset_right = 1080.0
 offset_bottom = 616.0
+focus_mode = 0
 text = "Cerrar puerta"
+
+[node name="PcButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 470.0
+offset_right = 300.0
+offset_bottom = 514.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Usar PC"

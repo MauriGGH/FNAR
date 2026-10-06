@@ -40,6 +40,8 @@ const BANG_TIME: float = 5.0
 const KNOCK_INTERVAL: float = 1.0
 const KNOCK_POWER_COST: float = 1.0
 
+const DOOR_PRESENCE: String = "Barcosa golpeando la puerta"
+
 const GAME_OVER_CAUSE: String = "Barcosa"
 const RUN_NOTICE: String = "[pasos corriendo]"
 const KNOCK_NOTICE: String = "[golpes en la puerta]"
@@ -144,9 +146,7 @@ func _process_run(delta: float) -> void:
 ## Llegó a la puerta: la chapa cerrada lo detiene; abierta, te atrapa.
 func _arrive_at_door() -> void:
 	if not door_closed:
-		GameManager.release_hallway(self)
-		stop()
-		GameManager.trigger_game_over(GAME_OVER_CAUSE)
+		_catch_player()
 		return
 	_state = State.BANGING
 	_bang_elapsed = 0.0
@@ -155,6 +155,10 @@ func _arrive_at_door() -> void:
 
 
 func _process_banging(delta: float) -> void:
+	# Si abres la chapa mientras golpea, se mete de una.
+	if not door_closed:
+		_catch_player()
+		return
 	_bang_elapsed += delta
 	# El corte va antes del golpe: si no, el golpe del segundo 5 se cuela
 	# y serían 6 golpes en 5 s en vez de 5.
@@ -173,6 +177,16 @@ func _go_home() -> void:
 	_state = State.STALKING
 	move_to_step(STEP_SALON_B)
 	_set_stage(STAGE_HIDDEN)
+
+
+func _catch_player() -> void:
+	stop()
+	GameManager.release_hallway(self)
+	GameManager.trigger_game_over(GAME_OVER_CAUSE)
+
+
+func door_presence() -> String:
+	return DOOR_PRESENCE if _state == State.BANGING else ""
 
 
 func _set_stage(new_stage: int) -> void:

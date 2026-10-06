@@ -1,41 +1,46 @@
 extends Control
 
-## Oficina placeholder: fondo gris y una puerta que se abre y se cierra.
-## Avisa del estado de la puerta con una señal; no toca la energía directamente.
+## Oficina placeholder: fondo gris, el cristal al frente, la puerta de entrada
+## al fondo y el botón de la PC. Avisa de lo que hace el jugador con señales;
+## no toca la energía ni a los profes directamente.
 
 signal door_toggled(is_closed: bool)
+signal pc_requested()
 
 const DOOR_OPEN_COLOR: Color = Color(0.12, 0.12, 0.15)
 const DOOR_CLOSED_COLOR: Color = Color(0.72, 0.52, 0.14)
 
 var is_door_closed: bool = false
 
-const NOTICE_TIME: float = 2.0
-
 @onready var door_rect: ColorRect = $DoorRect
 @onready var door_state_label: Label = $DoorStateLabel
 @onready var door_button: Button = $DoorButton
-@onready var notice_label: Label = $NoticeLabel
-@onready var notice_timer: Timer = $NoticeTimer
+@onready var door_presence_label: Label = $DoorPresenceLabel
+@onready var window_presence_label: Label = $WindowPresenceLabel
+@onready var pc_button: Button = $PcButton
 
 
 func _ready() -> void:
 	door_button.pressed.connect(_on_door_button_pressed)
-	notice_timer.timeout.connect(_on_notice_timeout)
-	notice_label.visible = false
+	pc_button.pressed.connect(pc_requested.emit)
+	set_door_presence("")
+	set_window_presence("")
 	_refresh_door()
 
 
-## Aviso provisional de ruido, por ejemplo "[pasos corriendo]".
-## Cada aviso nuevo reemplaza al anterior y reinicia el tiempo.
-func show_notice(text: String, duration: float = NOTICE_TIME) -> void:
-	notice_label.text = text
-	notice_label.visible = true
-	notice_timer.start(maxf(duration, 0.1))
+## Quién se ve en la puerta, mientras no haya imágenes. Vacío = nadie.
+func set_door_presence(text: String) -> void:
+	_set_presence(door_presence_label, text)
 
 
-func _on_notice_timeout() -> void:
-	notice_label.visible = false
+## Quién se ve asomado al cristal. Vacío = nadie.
+func set_window_presence(text: String) -> void:
+	_set_presence(window_presence_label, text)
+
+
+func _set_presence(label: Label, text: String) -> void:
+	label.text = text
+	label.visible = not text.is_empty()
 
 
 func _on_door_button_pressed() -> void:
