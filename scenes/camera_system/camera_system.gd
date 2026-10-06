@@ -9,9 +9,11 @@ signal closed()
 signal camera_changed(camera: int)
 
 const MINIMAP_DATA_PATH: String = "res://data/minimapa_camaras.json"
-## Imagen de un estado de cámara. Si el archivo no existe, se queda el fondo
-## gris con la etiqueta de texto, así que basta agregar el png para que funcione.
+## Imagen de un estado de cámara: basta agregar el png para que funcione.
 const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s.png"
+## Si falta la imagen de un estado, se usa la imagen base de esa cámara y se
+## pone la etiqueta de texto encima. Así se pueden ir agregando de a poco.
+const BASE_STATES: Array[String] = ["etapa0", "vacia", "base"]
 const DEFAULT_CAMERA: int = 1
 
 # Estática: medio segundo fuerte al cambiar de cámara y luego de reposo.
@@ -50,12 +52,13 @@ var _interference_active: bool = false
 var _come_trabas: ComeTrabas = null
 var _winding: bool = false
 var _image_cache: Dictionary = {}  # ruta -> Texture2D, o null si no existe
-var _current_image_key: String = ""
+var _camera_signature: String = ""
 
 @onready var feed_image: TextureRect = $FeedImage
 @onready var static_overlay: ColorRect = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
 @onready var rec_dot: ColorRect = $RecDot
+@onready var fallback_label: Label = $FallbackLabel
 @onready var debug_label: Label = $DebugOccupantsLabel
 @onready var minimap_frame: Control = $Minimap
 @onready var minimap_scale: Control = $Minimap/MinimapScale
@@ -142,40 +145,84 @@ func _unhandled_input(event: InputEvent) -> void:
 func _refresh_view() -> void:
 	var room: String = Rooms.room_of_camera(current_camera)
 	camera_name_label.text = "CAM %02d  %s" % [current_camera, Rooms.display_name(room).to_upper()]
-	_refresh_camera_image()
+	_camera_signature = _signature_of(current_camera)
+	_refresh_camera_content()
 	_refresh_wind_control()
-	_refresh_occupants(room)
 	_refresh_minimap_highlight()
 
 
-## Busca la imagen del estado en que está la habitación que se ve. Si no hay
-## archivo para ese estado, se queda el fondo gris con la etiqueta de texto.
-func _refresh_camera_image() -> void:
-	var state: String = _camera_state_of(Rooms.room_of_camera(current_camera))
-	var key: String = "%d:%s" % [current_camera, state]
-	if key == _current_image_key:
-		return
-	_current_image_key = key
-	var texture: Texture2D = _camera_texture(current_camera, state)
-	feed_image.texture = texture
-	feed_image.visible = texture != null
-
-
-## El primer profe de la habitación que tenga algo que decir define el estado.
-func _camera_state_of(room: String) -> String:
+## Lo que define si la cámara "cambió": el estado que reportan los profes más
+## quiénes están en la habitación. Si cambia cualquiera de los dos mientras la
+## estás viendo, entra la interferencia.
+func _signature_of(camera: int) -> String:
+	var room: String = Rooms.room_of_camera(camera)
+	var names: PackedStringArray = PackedStringArray()
 	for animatronic: Animatronic in _animatronics:
-		if animatronic.current_room != room:
-			continue
-		var state: String = animatronic.camera_state()
+		if animatronic.current_room == room:
+			names.append(animatronic.display_name)
+	names.sort()
+	return "%d|%s|%s" % [camera, _state_of(camera), "/".join(names)]
+
+
+## El primer profe que tenga algo que decir de esta cámara define el estado.
+func _state_of(camera: int) -> String:
+	for animatronic: Animatronic in _animatronics:
+		var state: String = animatronic.camera_state_for(camera)
 		if not state.is_empty():
 			return state
 	return ""
 
 
+## Busca la imagen del estado. Si no existe, usa la imagen base de la cámara y
+## deja la etiqueta de texto encima; si tampoco hay base, queda el fondo gris.
+func _refresh_camera_content() -> void:
+	var room: String = Rooms.room_of_camera(current_camera)
+	var state: String = _state_of(current_camera)
+	var texture: Texture2D = _camera_texture(current_camera, state)
+	var is_exact: bool = texture != null
+	if not is_exact:
+		texture = _base_texture(current_camera, state)
+
+	feed_image.texture = texture
+	feed_image.visible = texture != null
+	_refresh_fallback_label(state, is_exact, room)
+	_refresh_occupants(room)
+
+
+## La etiqueta provisional: solo sale cuando la imagen no es la del estado.
+func _refresh_fallback_label(state: String, is_exact: bool, room: String) -> void:
+	if is_exact:
+		fallback_label.visible = false
+		return
+	var parts: PackedStringArray = PackedStringArray()
+	if not state.is_empty():
+		parts.append(state)
+	for animatronic: Animatronic in _animatronics:
+		if animatronic.current_room == room:
+			parts.append(animatronic.display_name)
+	fallback_label.visible = not parts.is_empty()
+	if fallback_label.visible:
+		fallback_label.text = "[sin imagen] " + " - ".join(parts)
+
+
 func _camera_texture(camera: int, state: String) -> Texture2D:
 	if state.is_empty():
 		return null
-	var path: String = CAMERA_IMAGE_FORMAT % [camera, state]
+	return _load_texture(CAMERA_IMAGE_FORMAT % [camera, state])
+
+
+## La imagen base de la cámara, la que sirve de respaldo.
+func _base_texture(camera: int, state: String) -> Texture2D:
+	for base: String in BASE_STATES:
+		if base == state:
+			continue
+		var texture: Texture2D = _load_texture(CAMERA_IMAGE_FORMAT % [camera, base])
+		if texture != null:
+			return texture
+	return null
+
+
+func _load_texture(path: String) -> Texture2D:
 	if _image_cache.has(path):
 		return _image_cache[path]
 	var texture: Texture2D = null
@@ -246,24 +293,28 @@ func _process(delta: float) -> void:
 	if _debug_elapsed < DEBUG_REFRESH_TIME:
 		return
 	_debug_elapsed = 0.0
-	# El estado de la cámara cambia sin que nadie se mueva (la cuerda bajando),
-	# así que la imagen y la etiqueta se revisan solas.
-	_refresh_camera_image()
+	# El estado cambia sin que nadie se mueva (la cuerda bajando, Barcosa
+	# asomándose), así que la firma se revisa sola.
+	check_camera_change()
 	if debug_label.visible:
 		_refresh_occupants(Rooms.room_of_camera(current_camera))
 
 
-## Si el movimiento toca justo la cámara que se está viendo, interfiere.
-## Si pasa en otra habitación, la etiqueta se actualiza sin más.
-func _on_animatronic_moved(from_room: String, to_room: String) -> void:
-	if not is_open:
+## Cualquier cambio en la cámara que se está viendo tapa la imagen: que un
+## profe entre o salga, y también que cambie de estado sin moverse (la botarga
+## despertando, Barcosa asomándose).
+func _on_animatronic_moved(_from_room: String, _to_room: String) -> void:
+	check_camera_change()
+
+
+func check_camera_change() -> void:
+	if not is_open or _interference_active:
 		return
-	var watched_room: String = Rooms.room_of_camera(current_camera)
-	if from_room == watched_room or to_room == watched_room:
-		_play_interference()
+	var signature: String = _signature_of(current_camera)
+	if signature == _camera_signature:
 		return
-	if not _interference_active:
-		_refresh_occupants(watched_room)
+	_camera_signature = signature
+	_play_interference()
 
 
 ## Tapa la imagen con estática fuerte entre 0.5 y 1 s. Al aclararse, y solo
@@ -286,8 +337,7 @@ func _play_interference() -> void:
 
 func _on_interference_cleared() -> void:
 	_interference_active = false
-	_refresh_camera_image()
-	_refresh_occupants(Rooms.room_of_camera(current_camera))
+	_refresh_camera_content()
 
 
 func _set_static_strength(value: float) -> void:

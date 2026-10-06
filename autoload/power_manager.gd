@@ -11,6 +11,8 @@ var is_draining: bool = false
 var is_door_closed: bool = false
 var are_cameras_open: bool = false
 var is_pc_open: bool = false
+## Depuración (F8): la energía deja de bajar, pero todo lo demás sigue igual.
+var is_infinite: bool = false
 
 
 ## Deja la energía al 100 % para empezar una noche.
@@ -27,16 +29,28 @@ func set_draining(draining: bool) -> void:
 	is_draining = draining
 
 
+# Cada vez que cambia algo que gasta, se avisa: así el HUD repinta las barras
+# de consumo aunque la energía no se esté moviendo (energía infinita, o la
+# noche ya terminada).
 func set_door_closed(closed: bool) -> void:
+	if is_door_closed == closed:
+		return
 	is_door_closed = closed
+	power_changed.emit(power)
 
 
 func set_cameras_open(open: bool) -> void:
+	if are_cameras_open == open:
+		return
 	are_cameras_open = open
+	power_changed.emit(power)
 
 
 func set_pc_open(open: bool) -> void:
+	if is_pc_open == open:
+		return
 	is_pc_open = open
+	power_changed.emit(power)
 
 
 ## Porcentaje que se pierde por segundo real con el estado actual.
@@ -48,7 +62,8 @@ func drain_per_second() -> float:
 		per_hour += NightConfig.CAMERA_DRAIN_PER_HOUR
 	if is_pc_open:
 		per_hour += NightConfig.PC_DRAIN_PER_HOUR
-	return per_hour / NightConfig.hour_duration()
+	# Contra la hora normal, no contra la del modo prueba.
+	return per_hour / NightConfig.power_hour_duration()
 
 
 ## Cuántas cosas están gastando energía ahora mismo, de 1 a 4, como el
@@ -73,6 +88,13 @@ func drain(amount: float) -> void:
 	_apply_drain(amount)
 
 
+## F8: prende y apaga la energía infinita. No toca el consumo ni las barras,
+## solo deja de restar; al apagarla sigue desde donde se quedó.
+func toggle_infinite() -> void:
+	is_infinite = not is_infinite
+	power_changed.emit(power)
+
+
 func _process(delta: float) -> void:
 	if not is_draining:
 		return
@@ -80,6 +102,8 @@ func _process(delta: float) -> void:
 
 
 func _apply_drain(amount: float) -> void:
+	if is_infinite:
+		return
 	power = maxf(power - amount, 0.0)
 	power_changed.emit(power)
 	if is_zero_approx(power):

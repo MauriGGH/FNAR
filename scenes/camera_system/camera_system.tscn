@@ -104,12 +104,26 @@ theme_override_font_sizes/font_size = 22
 text = "CAM 01  PASILLO NORTE"
 vertical_alignment = 1
 
+[node name="FallbackLabel" type="Label" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 48.0
+offset_top = 74.0
+offset_right = 700.0
+offset_bottom = 102.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 19
+text = "[sin imagen] etapa1 - Barcosa"
+vertical_alignment = 1
+
 [node name="DebugOccupantsLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 48.0
-offset_top = 76.0
+offset_top = 108.0
 offset_right = 620.0
-offset_bottom = 98.0
+offset_bottom = 240.0
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.45, 0.95, 0.55, 0.7)
 theme_override_font_sizes/font_size = 16
 text = "[F3] aqui: nadie"

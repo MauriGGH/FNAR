@@ -15,9 +15,9 @@ shader_parameter/blur_amount = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_left"]
 shader = ExtResource("4_view")
-shader_parameter/channel_gain = Vector3(1.14, 0.94, 1)
-shader_parameter/brightness = 2.2
-shader_parameter/saturation = 0.84
+shader_parameter/channel_gain = Vector3(1.06, 0.96, 1)
+shader_parameter/brightness = 2.95
+shader_parameter/saturation = 0.92
 shader_parameter/blur_amount = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_right"]

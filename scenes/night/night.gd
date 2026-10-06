@@ -6,6 +6,9 @@ extends Control
 const GAME_OVER_SCENE: String = "res://scenes/game_over/game_over.tscn"
 const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 
+## Lo que muestra el HUD con la energía infinita de depuración puesta.
+const INFINITE_POWER_TEXT: String = "ENERGÍA ∞ (debug)"
+
 @onready var office: Control = $Office
 @onready var camera_system: Control = $CameraSystem
 @onready var pc_screen: Control = $PcScreen
@@ -63,10 +66,16 @@ func _ready() -> void:
 ## de clic de la oficina.
 func _unhandled_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo or key.keycode != KEY_F3:
+	if key == null or not key.pressed or key.echo:
 		return
-	_debug_shown = not _debug_shown
-	_apply_debug_shown()
+	match key.keycode:
+		KEY_F3:
+			_debug_shown = not _debug_shown
+			_apply_debug_shown()
+		KEY_F8:
+			PowerManager.toggle_infinite()
+		_:
+			return
 	get_viewport().set_input_as_handled()
 
 
@@ -113,7 +122,7 @@ func _on_hour_changed(_hour: int) -> void:
 
 
 func _on_power_changed(percent: float) -> void:
-	power_label.text = "Energía: %d%%" % roundi(percent)
+	power_label.text = INFINITE_POWER_TEXT if PowerManager.is_infinite else "Energía: %d%%" % roundi(percent)
 	usage_bars.set_level(PowerManager.usage_level())
 
 

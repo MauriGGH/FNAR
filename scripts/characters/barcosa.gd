@@ -42,6 +42,8 @@ const KNOCK_POWER_COST: float = 1.0
 
 const DOOR_PRESENCE: String = "Barcosa golpeando la puerta"
 
+const CAMERA_STATE_LEFT: String = "salio"
+
 const GAME_OVER_CAUSE: String = "Barcosa"
 const RUN_NOTICE: String = "[pasos corriendo]"
 const KNOCK_NOTICE: String = "[golpes en la puerta]"
@@ -89,6 +91,23 @@ func advance() -> void:
 		_set_stage(stage + 1)
 		return
 	_try_start_run()
+
+
+## Estados de la CAM 10: una etapa por cada paso de su salida, y "salio"
+## desde que deja el salón hasta que regresa.
+func camera_state() -> String:
+	if _state != State.STALKING:
+		return CAMERA_STATE_LEFT
+	return "etapa%d" % stage
+
+
+## Sigue reportando la CAM 10 aunque ya ande por el pasillo, y no reporta
+## nada en las demás: sus etapas son del salón B y no significan nada en el
+## pasillo. Cuando haya imágenes suyas corriendo, aquí van sus estados.
+func camera_state_for(camera: int) -> String:
+	if camera == Rooms.camera_of(ROUTE[STEP_SALON_B]):
+		return camera_state()
+	return ""
 
 
 func debug_text() -> String:

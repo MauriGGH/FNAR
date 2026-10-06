@@ -20,8 +20,9 @@ const END_HOUR: int = 6    # 6 AM, la noche termina
 
 
 # --- Energía -----------------------------------------------------------------
-# El gasto se define por hora de juego y no por segundo real, para que el modo
-# prueba no vuelva la energía irrelevante.
+# Los consumos se escriben por hora, pero se gastan contra la hora NORMAL de
+# 75 s, nunca contra la del modo prueba: el modo prueba acorta la noche, no
+# acelera la energía. Así la energía baja a la misma velocidad siempre.
 const MAX_POWER: float = 100.0
 const IDLE_DRAIN_PER_HOUR: float = 11.0  # consumo base de la oficina
 const DOOR_DRAIN_PER_HOUR: float = 22.0    # extra mientras la puerta está cerrada
@@ -29,6 +30,12 @@ const CAMERA_DRAIN_PER_HOUR: float = 14.0  # extra mientras las cámaras están 
 const PC_DRAIN_PER_HOUR: float = 12.0      # extra mientras la PC está encendida
 
 
-## Cuánto dura una hora de juego en segundos reales.
+## Cuánto dura una hora de juego en segundos reales. Solo para el reloj.
 static func hour_duration() -> float:
 	return TEST_HOUR_DURATION if TEST_MODE else HOUR_DURATION
+
+
+## Los segundos contra los que se mide el consumo de energía. A diferencia de
+## hour_duration(), este no cambia en modo prueba.
+static func power_hour_duration() -> float:
+	return HOUR_DURATION

@@ -46,11 +46,18 @@ const RIGHT_CHANNEL_GAIN: Vector3 = Vector3(1.14, 0.94, 1.0)
 const RIGHT_SATURATION: float = 0.84
 const RIGHT_BRIGHTNESS: float = 0.92
 
-# La vista izquierda venía mucho más oscura que la central (luma 0.05 contra
-# 0.12), así que el brillo es el valor grueso a mover aquí.
-const LEFT_CHANNEL_GAIN: Vector3 = Vector3(1.14, 0.94, 1.0)
-const LEFT_SATURATION: float = 0.84
-const LEFT_BRIGHTNESS: float = 2.2
+# La vista izquierda viene mucho más oscura que la central (luma 0.040 contra
+# 0.119) y con menos cian que la derecha, así que lleva poco ajuste de canal y
+# un brillo alto. Medido: deja luma 0.117 y verde/rojo 1.25 (la central, 1.23).
+const LEFT_CHANNEL_GAIN: Vector3 = Vector3(1.06, 0.96, 1.0)
+const LEFT_SATURATION: float = 0.92
+const LEFT_BRIGHTNESS: float = 2.95
+
+# La vista derecha vacía se renderizó aparte y salió más cian que la normal
+# (verde/rojo 1.75 contra 1.65), así que lleva su propia corrección.
+const RIGHT_EMPTY_CHANNEL_GAIN: Vector3 = Vector3(1.26, 0.93, 0.99)
+const RIGHT_EMPTY_SATURATION: float = 0.9
+const RIGHT_EMPTY_BRIGHTNESS: float = 0.98
 
 const PHONE_NOTICE: String = "[el teléfono no suena todavía]"
 const FLASHLIGHT_NOTICE: String = "[la linterna todavía no funciona]"
@@ -280,8 +287,13 @@ func _apply_view_grade(image: TextureRect, gain: Vector3, saturation: float, bri
 
 
 ## Cuando el Come Trabas se levanta, la silla del cubículo 3 queda vacía.
+## La imagen vacía trae su propio color, así que el ajuste también cambia.
 func set_right_view_empty(is_empty: bool) -> void:
 	right_image.texture = RIGHT_EMPTY_TEXTURE if is_empty else _right_normal_texture
+	if is_empty:
+		_apply_view_grade(right_image, RIGHT_EMPTY_CHANNEL_GAIN, RIGHT_EMPTY_SATURATION, RIGHT_EMPTY_BRIGHTNESS)
+	else:
+		_apply_view_grade(right_image, RIGHT_CHANNEL_GAIN, RIGHT_SATURATION, RIGHT_BRIGHTNESS)
 
 
 func _unhandled_input(event: InputEvent) -> void:

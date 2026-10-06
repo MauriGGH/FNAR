@@ -112,6 +112,16 @@ func camera_state() -> String:
 	return ""
 
 
+## Estado que este profe reporta para una cámara concreta. Por defecto solo
+## habla de la cámara de la habitación donde está, pero quien quiera puede
+## sobrescribirlo para seguir reportando una cámara que ya dejó (Barcosa
+## diciendo "salio" en la CAM 10 mientras corre por el pasillo).
+func camera_state_for(camera: int) -> String:
+	if camera != Rooms.NO_CAMERA and camera == Rooms.camera_of(current_room):
+		return camera_state()
+	return ""
+
+
 ## Mueve al profe al paso indicado de su ruta y avisa con la señal.
 func move_to_step(index: int) -> void:
 	var target: String = route[index]
