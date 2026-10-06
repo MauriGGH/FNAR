@@ -6,6 +6,8 @@ extends Control
 ## partir de los 30 px de arriba.
 
 signal close_requested()
+## Avisa que le hicieron clic, para pasar al frente de las demás ventanas.
+signal focused()
 
 @export var window_title: String = "Ventana"
 @export var closable: bool = true
@@ -57,6 +59,14 @@ func _layout_chrome() -> void:
 		close_button.position = Vector2(size.x - 28.0, 3.0)
 		close_button.size = Vector2(24.0, TITLE_HEIGHT - 6.0)
 	queue_redraw()
+
+
+## Cualquier clic en la ventana la trae al frente, pero no se consume: el
+## control de abajo (un botón, la consola) igual recibe el clic.
+func _gui_input(event: InputEvent) -> void:
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click != null and click.pressed:
+		focused.emit()
 
 
 func _draw() -> void:

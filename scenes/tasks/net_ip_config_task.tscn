@@ -1,0 +1,59 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/tasks/net_ip_config_task.gd" id="1_card"]
+
+[node name="NetIpConfigTask" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_card")
+
+[node name="InstructionsLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 70.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 17
+text = "Abre cada PC en el simulador y escribe su configuracion de red."
+autowrap_mode = 2
+
+[node name="HeaderLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 76.0
+offset_right = 282.0
+offset_bottom = 128.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 0.68, 0.72, 1)
+theme_override_font_sizes/font_size = 16
+text = "Mascara
+Puerta de enlace"
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 136.0
+offset_right = 282.0
+offset_bottom = 260.0
+theme_override_constants/separation = 6
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -70.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 17
+text = "Sin empezar."
+autowrap_mode = 2
+vertical_alignment = 1

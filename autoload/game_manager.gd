@@ -23,6 +23,8 @@ var _hour_elapsed: float = 0.0
 var _hallway_holder: Node = null
 # Ids de las tareas que el jugador ya terminó esta noche.
 var _completed_tasks: Dictionary = {}
+# Las tareas de la noche se sortean una sola vez, al empezar.
+var _night_tasks: Array = []
 
 
 func _ready() -> void:
@@ -37,6 +39,7 @@ func start_night(night: int = current_night) -> void:
 	last_game_over_cause = ""
 	_hallway_holder = null
 	_completed_tasks.clear()
+	_night_tasks = Tasks.pick_for_night(current_night)
 	is_ai_window_open = false
 	is_night_active = true
 	PowerManager.reset()
@@ -57,9 +60,9 @@ func trigger_game_over(cause: String) -> void:
 
 # --- Tareas y pago ------------------------------------------------------------
 
-## Tareas que pide la noche actual.
+## Tareas que pide la noche actual, sorteadas al empezar.
 func night_tasks() -> Array:
-	return Tasks.tasks_for_night(current_night)
+	return _night_tasks
 
 
 func complete_task(task_id: String) -> void:

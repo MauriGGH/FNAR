@@ -47,7 +47,7 @@ res://
 | 1 | Pasillo norte | Barcosa |
 | 2 | Pasillo sur, frente al cristal | Barcosa, Mamador, Ureña |
 | 3 | Cubículo 2 | Rochis |
-| 4 | Cubículo 3 | Caja musical de Santi |
+| 4 | Cubículo 3 | Botarga del Come Trabas |
 | 5 | Escalera al techo | Audel |
 | 6 | Techo, pararrayos | Audel |
 | 7 | Escalera a planta baja | Mamador |
@@ -87,7 +87,7 @@ Las tareas imitan herramientas reales de un coordinador de sistemas, con diseño
 
 ## Niveles de IA por noche
 
-| Noche | Barcosa | Mamador | Ureña | Rochis | Audel | Santi | Cuéllar | Tareas |
+| Noche | Barcosa | Mamador | Ureña | Rochis | Audel | Come Trabas | Cuéllar | Tareas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 0 | 3 | 0 | 0 | 0 | Lenta | 0 | 2 |
 | 2 | 3 | 5 | 0 | 0 | 0 | Lenta | 0 | 3 |
@@ -104,6 +104,6 @@ Custom Night: cada nivel de 0 a 20.
 2. Grafo de habitaciones, clase Animatronic y sistema de 12 cámaras con etiquetas de texto.
 3. Barcosa completo.
 4. PC con ventana de IA, una tarea de ejemplo y Mamador.
-5. Santi y las Trabas, Ureña con linterna, Rochis con el audio, Audel con el breaker.
+5. Come Trabas y las Trabas, Ureña con linterna, Rochis con el audio, Audel con el breaker.
 6. Configuración por noche, menú, selección de noche, Custom Night y guardado.
 7. Resto de tareas, Cuéllar y jumpscares.

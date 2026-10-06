@@ -1,0 +1,70 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/tasks/lab_diagnostic_task.gd" id="1_lab"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_form"]
+bg_color = Color(0.06, 0.08, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.33, 0.45, 0.48, 1)
+
+[node name="LabDiagnosticTask" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lab")
+
+[node name="InstructionsLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 50.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 18
+text = "Uno de estos equipos no responde. Pruebalos con ping desde la
+Terminal y reporta el que falle con: reportar <ip>"
+autowrap_mode = 2
+
+[node name="ListPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 58.0
+offset_bottom = 218.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_form")
+
+[node name="HostList" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 14.0
+offset_top = 66.0
+offset_right = -14.0
+offset_bottom = 212.0
+grow_horizontal = 2
+theme_override_constants/separation = 3
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "Sin reportar todavia."
+vertical_alignment = 1

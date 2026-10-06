@@ -2,7 +2,8 @@ extends Control
 
 ## La PC de la oficina. La pantalla va enmarcada por el bisel del monitor CRT y
 ## adentro hay un escritorio retro con cuatro íconos: Terminal, Simulador de
-## red, Tareas y Asistente IA. La tarea de IPs se abre desde el simulador.
+## red, Tareas y Asistente IA. Las ventanas se pueden tapar entre ellas y la
+## que se clica pasa al frente, como en un escritorio de verdad.
 ## La ventana del asistente sigue trabajando aunque el jugador baje la PC, y
 ## eso es justo lo que lo delata ante Mamador.
 
@@ -22,7 +23,12 @@ var is_ai_window_open: bool = false
 
 var _open_task_index: int = -1
 var _task_instance: Node = null
+## Cómo está resolviendo el asistente: tecleando en la consola o con su
+## barra de progreso de siempre.
+enum SolveMode { NONE, TIMER, TYPING, ACTIONS }
+
 var _solving: bool = false
+var _solve_mode: SolveMode = SolveMode.NONE
 var _solve_elapsed: float = 0.0
 var _chat: PackedStringArray = PackedStringArray()
 var _icons: Array[DesktopIcon] = []
@@ -33,21 +39,24 @@ var _icons: Array[DesktopIcon] = []
 @onready var close_pc_button: Button = $Screen/ClosePcButton
 @onready var icons_holder: Control = $Screen/Icons
 
-@onready var tasks_window: PcWindow = $Screen/TasksWindow
-@onready var task_list: VBoxContainer = $Screen/TasksWindow/TaskList
-@onready var task_progress_label: Label = $Screen/TasksWindow/ProgressLabel
+@onready var tasks_window: PcWindow = $Screen/Windows/TasksWindow
+@onready var task_list: VBoxContainer = $Screen/Windows/TasksWindow/TaskList
+@onready var task_progress_label: Label = $Screen/Windows/TasksWindow/ProgressLabel
 
-@onready var terminal_window: PcWindow = $Screen/TerminalWindow
-@onready var network_window: PcWindow = $Screen/NetworkWindow
-@onready var network_list: VBoxContainer = $Screen/NetworkWindow/DeviceList
+@onready var windows: Control = $Screen/Windows
+@onready var terminal_window: PcWindow = $Screen/Windows/TerminalWindow
+@onready var terminal: PcTerminal = $Screen/Windows/TerminalWindow/Terminal
+@onready var network_window: PcWindow = $Screen/Windows/NetworkWindow
+@onready var network_sim: Control = $Screen/Windows/NetworkWindow/NetworkSim
 
-@onready var task_window: PcWindow = $Screen/TaskWindow
-@onready var task_content: Control = $Screen/TaskWindow/Content
+@onready var task_window: PcWindow = $Screen/Windows/TaskWindow
+@onready var task_content: Control = $Screen/Windows/TaskWindow/Content
 
-@onready var ai_window: PcWindow = $Screen/AiWindow
-@onready var ai_chat_label: Label = $Screen/AiWindow/ChatLabel
-@onready var ai_solve_button: Button = $Screen/AiWindow/SolveButton
-@onready var ai_progress: ProgressBar = $Screen/AiWindow/SolveProgress
+@onready var ai_window: PcWindow = $Screen/Windows/AiWindow
+@onready var ai_chat_label: Label = $Screen/Windows/AiWindow/ChatLabel
+@onready var ai_solve_button: Button = $Screen/Windows/AiWindow/SolveButton
+@onready var ai_hint_button: Button = $Screen/Windows/AiWindow/HintButton
+@onready var ai_progress: ProgressBar = $Screen/Windows/AiWindow/SolveProgress
 
 
 func _ready() -> void:
@@ -57,6 +66,11 @@ func _ready() -> void:
 
 	close_pc_button.pressed.connect(close)
 	ai_solve_button.pressed.connect(_request_solve)
+	ai_hint_button.pressed.connect(_request_hint)
+	terminal.typing_finished.connect(_on_typing_finished)
+	network_sim.actions_finished.connect(_on_actions_finished)
+	for window: PcWindow in [tasks_window, terminal_window, network_window, task_window, ai_window]:
+		window.focused.connect(_bring_to_front.bind(window))
 	ai_window.close_requested.connect(_close_ai_window)
 	task_window.close_requested.connect(_close_task)
 	tasks_window.close_requested.connect(func() -> void: tasks_window.visible = false)
@@ -65,6 +79,7 @@ func _ready() -> void:
 
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.task_completed.connect(_on_any_task_completed)
+	_solve_mode = SolveMode.NONE
 
 	_build_icons()
 	_set_ai_window_open(false)
@@ -132,13 +147,25 @@ func _add_icon(icon_id: String, glyph: DesktopIcon.Glyph, text: String) -> void:
 func _on_icon_pressed(icon_id: String) -> void:
 	match icon_id:
 		"terminal":
-			terminal_window.visible = true
+			_show_window(terminal_window)
+			terminal.grab_focus()  # Para poder escribir de inmediato.
 		"network":
-			network_window.visible = true
+			_show_window(network_window)
 		"tasks":
-			tasks_window.visible = true
+			_show_window(tasks_window)
 		"ai":
 			_set_ai_window_open(true)
+			_bring_to_front(ai_window)
+
+
+func _show_window(window: PcWindow) -> void:
+	window.visible = true
+	_bring_to_front(window)
+
+
+## La ventana clicada se dibuja encima de las demás.
+func _bring_to_front(window: PcWindow) -> void:
+	windows.move_child(window, -1)
 
 
 # --- Lista de tareas y simulador de red ---------------------------------------
@@ -146,47 +173,47 @@ func _on_icon_pressed(icon_id: String) -> void:
 func _on_night_started(_night: int) -> void:
 	_close_task()
 	_set_ai_window_open(false)
+	terminal.reset_for_night()
 	_build_task_list()
-	_build_network_list()
 
 
-## La ventana de Tareas es solo la lista con casillas [ ] o [X].
+## Cada tarea es un botón de tres líneas: nombre, en qué app se hace con su
+## estado, y la descripción corta. Al clicarlo se abre su panel.
 func _build_task_list() -> void:
-	for child: Node in task_list.get_children():
-		child.queue_free()
-	for task: Dictionary in GameManager.night_tasks():
-		var label: Label = Label.new()
-		label.add_theme_font_size_override("font_size", 17)
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		task_list.add_child(label)
+	_clear_children(task_list)
+	for i: int in GameManager.night_tasks().size():
+		var button: Button = Button.new()
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.focus_mode = Control.FOCUS_NONE
+		button.add_theme_font_size_override("font_size", 16)
+		button.pressed.connect(_open_task.bind(i))
+		task_list.add_child(button)
 	_refresh_task_list()
 
 
 func _refresh_task_list() -> void:
 	var tasks: Array = GameManager.night_tasks()
-	var labels: Array[Node] = task_list.get_children()
-	for i: int in mini(labels.size(), tasks.size()):
-		var done: bool = GameManager.is_task_completed(str(tasks[i].get("id", "")))
-		(labels[i] as Label).text = "%s %s" % ["[X]" if done else "[ ]", tasks[i].get("title", "Tarea")]
+	var buttons: Array[Node] = task_list.get_children()
+	for i: int in mini(buttons.size(), tasks.size()):
+		var task: Dictionary = tasks[i]
+		var done: bool = GameManager.is_task_completed(str(task.get("id", "")))
+		(buttons[i] as Button).text = "%s %s\n    %s - %s\n    %s" % [
+			"[X]" if done else "[ ]",
+			task.get("title", "Tarea"),
+			task.get("app", "?"),
+			"terminada" if done else "pendiente",
+			task.get("description", ""),
+		]
 	task_progress_label.text = "%d de %d terminadas" % [GameManager.completed_task_count(), tasks.size()]
 
 
-## El simulador de red lista los equipos configurables de la noche.
-func _build_network_list() -> void:
-	for child: Node in network_list.get_children():
+## queue_free() es diferido, así que los hijos viejos seguirían en el árbol
+## este frame y las listas se llenarían en los nodos equivocados. Hay que
+## sacarlos del árbol de inmediato.
+func _clear_children(container: Node) -> void:
+	for child: Node in container.get_children():
+		container.remove_child(child)
 		child.queue_free()
-	var tasks: Array = GameManager.night_tasks()
-	for i: int in tasks.size():
-		if str(tasks[i].get("type", "")) != Tasks.TYPE_IP_CONFIG:
-			continue
-		var button: Button = Button.new()
-		button.text = str(tasks[i].get("title", "Segmento"))
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.focus_mode = Control.FOCUS_NONE
-		button.clip_text = true
-		button.add_theme_font_size_override("font_size", 16)
-		button.pressed.connect(_open_task.bind(i))
-		network_list.add_child(button)
 
 
 func _open_task(index: int) -> void:
@@ -208,12 +235,26 @@ func _open_task(index: int) -> void:
 	task_content.add_child(_task_instance)
 	if _task_instance.has_method("setup"):
 		_task_instance.setup(task)
+	# Las tareas de consola escuchan lo que el jugador teclea, y las de red
+	# cargan su escenario en el simulador.
+	if _task_instance.has_method("bind_terminal"):
+		_task_instance.bind_terminal(terminal)
+	if _task_instance.has_method("bind_network"):
+		_task_instance.bind_network(network_sim)
 	if _task_instance.has_signal("completed"):
 		_task_instance.completed.connect(_on_open_task_completed)
 
 	_open_task_index = index
-	task_window.set_window_title("Configuración de equipos: %s" % task.get("title", "Tarea"))
-	task_window.visible = true
+	task_window.set_window_title(str(task.get("title", "Tarea")))
+	_show_window(task_window)
+	# La app donde se hace la tarea se abre junto con su tarjeta.
+	match str(task.get("app", "")):
+		Tasks.APP_TERMINAL:
+			_show_window(terminal_window)
+			terminal.grab_focus()
+		Tasks.APP_NETWORK:
+			_show_window(network_window)
+	_bring_to_front(task_window)
 
 
 func _close_task() -> void:
@@ -253,6 +294,8 @@ func _set_ai_window_open(is_window_open: bool) -> void:
 
 
 func _request_solve() -> void:
+	if not is_ai_window_open:
+		return
 	if _task_instance == null:
 		_log("Abre una tarea primero.")
 		return
@@ -261,16 +304,50 @@ func _request_solve() -> void:
 		return
 	if _solving:
 		return
+
 	_solving = true
 	_solve_elapsed = 0.0
 	ai_progress.value = 0.0
+	# Las de red se resuelven haciendo los pasos en el simulador, a la vista.
+	if _task_instance.has_method("solve_actions"):
+		_solve_mode = SolveMode.ACTIONS
+		_show_window(network_window)
+		network_sim.queue_actions(_task_instance.solve_actions())
+		_log("Haciendo los pasos en el simulador... no cierres esta ventana.")
+		return
+	# Las de consola se resuelven tecleando los comandos a la vista.
+	if _task_instance.has_method("solve_commands"):
+		_solve_mode = SolveMode.TYPING
+		_show_window(terminal_window)
+		terminal.queue_commands(_task_instance.solve_commands())
+		_log("Tecleando los comandos... no cierres esta ventana.")
+		return
+	_solve_mode = SolveMode.TIMER
 	_log("Resolviendo... no cierres esta ventana.")
+
+
+## Explica qué comandos usar, sin resolver nada.
+func _request_hint() -> void:
+	if not is_ai_window_open:
+		return
+	if _task_instance == null:
+		_log("Abre una tarea primero.")
+		return
+	if not _task_instance.has_method("hint"):
+		_log("De esa tarea no tengo pistas.")
+		return
+	_log(str(_task_instance.hint()))
 
 
 func _cancel_solve(message: String) -> void:
 	if not _solving:
 		return
+	if _solve_mode == SolveMode.TYPING:
+		terminal.cancel_typing()
+	elif _solve_mode == SolveMode.ACTIONS:
+		network_sim.cancel_actions()
 	_solving = false
+	_solve_mode = SolveMode.NONE
 	_solve_elapsed = 0.0
 	ai_progress.value = 0.0
 	if not message.is_empty():
@@ -279,10 +356,31 @@ func _cancel_solve(message: String) -> void:
 
 func _finish_solve() -> void:
 	_solving = false
+	_solve_mode = SolveMode.NONE
 	ai_progress.value = 100.0
 	if _task_instance != null and _task_instance.has_method("solve"):
 		_task_instance.solve()
 	_log("Tarea resuelta. De nada.")
+
+
+## El simulador terminó todos los pasos que le pasó el asistente.
+func _on_actions_finished() -> void:
+	if not _solving or _solve_mode != SolveMode.ACTIONS:
+		return
+	_solving = false
+	_solve_mode = SolveMode.NONE
+	ai_progress.value = 100.0
+	_log("Pasos terminados. De nada.")
+
+
+## La consola terminó de teclear todo lo que le pasó el asistente.
+func _on_typing_finished() -> void:
+	if not _solving or _solve_mode != SolveMode.TYPING:
+		return
+	_solving = false
+	_solve_mode = SolveMode.NONE
+	ai_progress.value = 100.0
+	_log("Comandos enviados. De nada.")
 
 
 ## El asistente trabaja aunque la PC esté bajada, pero solo mientras su
@@ -292,6 +390,12 @@ func _process(delta: float) -> void:
 		return
 	if not is_ai_window_open:
 		_cancel_solve("Resolución cancelada: cerraste el asistente.")
+		return
+	if _solve_mode == SolveMode.TYPING:
+		ai_progress.value = terminal.typing_progress() * 100.0
+		return
+	if _solve_mode == SolveMode.ACTIONS:
+		ai_progress.value = network_sim.automation_progress() * 100.0
 		return
 	_solve_elapsed += delta
 	ai_progress.value = _solve_elapsed / AI_SOLVE_TIME * 100.0

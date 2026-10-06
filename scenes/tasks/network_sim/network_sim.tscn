@@ -1,0 +1,296 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/tasks/network_sim/network_sim.gd" id="1_sim"]
+[ext_resource type="Script" path="res://scenes/tasks/network_sim/network_canvas.gd" id="2_canvas"]
+[ext_resource type="PackedScene" path="res://scenes/tasks/network_sim/device_console.tscn" id="3_console"]
+[ext_resource type="PackedScene" path="res://scenes/tasks/network_sim/router_cli.tscn" id="4_cli"]
+
+[node name="NetworkSim" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_sim")
+
+[node name="ModeToggle" type="CheckButton" parent="."]
+layout_mode = 0
+offset_left = 356.0
+offset_right = 520.0
+offset_bottom = 28.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 16
+text = "Tiempo real"
+
+[node name="Canvas" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_top = 32.0
+offset_right = 520.0
+offset_bottom = 254.0
+script = ExtResource("2_canvas")
+
+[node name="BottomBar" type="Control" parent="."]
+layout_mode = 0
+offset_top = 260.0
+offset_right = 520.0
+offset_bottom = 346.0
+mouse_filter = 1
+
+[node name="DevicesLabel" type="Label" parent="BottomBar"]
+layout_mode = 0
+offset_right = 70.0
+offset_bottom = 28.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "Equipos:"
+vertical_alignment = 1
+
+[node name="RouterButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 74.0
+offset_right = 166.0
+offset_bottom = 28.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Router"
+
+[node name="SwitchButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 170.0
+offset_right = 262.0
+offset_bottom = 28.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Switch"
+
+[node name="PcButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 266.0
+offset_right = 358.0
+offset_bottom = 28.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "PC"
+
+[node name="ServerButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 362.0
+offset_right = 470.0
+offset_bottom = 28.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Servidor"
+
+[node name="CablesLabel" type="Label" parent="BottomBar"]
+layout_mode = 0
+offset_top = 32.0
+offset_right = 70.0
+offset_bottom = 60.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "Cables:"
+vertical_alignment = 1
+
+[node name="StraightButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 74.0
+offset_top = 32.0
+offset_right = 166.0
+offset_bottom = 60.0
+focus_mode = 0
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+text = "Recto"
+
+[node name="CrossButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 32.0
+offset_right = 262.0
+offset_bottom = 60.0
+focus_mode = 0
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+text = "Cruzado"
+
+[node name="FiberButton" type="Button" parent="BottomBar"]
+layout_mode = 0
+offset_left = 266.0
+offset_top = 32.0
+offset_right = 358.0
+offset_bottom = 60.0
+focus_mode = 0
+toggle_mode = true
+theme_override_font_sizes/font_size = 15
+text = "Fibra"
+
+[node name="StatusLabel" type="Label" parent="BottomBar"]
+layout_mode = 0
+offset_top = 64.0
+offset_right = 520.0
+offset_bottom = 86.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "Elige un cable y arrastra de un puerto a otro."
+
+[node name="DeviceWindow" type="Control" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 36.0
+offset_right = 496.0
+offset_bottom = 300.0
+
+[node name="Body" type="ColorRect" parent="DeviceWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.12, 0.15, 1)
+
+[node name="TitleBar" type="ColorRect" parent="DeviceWindow"]
+layout_mode = 0
+offset_right = 472.0
+offset_bottom = 28.0
+mouse_filter = 2
+color = Color(0.08, 0.32, 0.34, 1)
+
+[node name="TitleLabel" type="Label" parent="DeviceWindow"]
+layout_mode = 0
+offset_left = 10.0
+offset_right = 430.0
+offset_bottom = 28.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+text = "Equipo"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="DeviceWindow"]
+layout_mode = 0
+offset_left = 444.0
+offset_top = 3.0
+offset_right = 468.0
+offset_bottom = 25.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "X"
+
+[node name="Tabs" type="TabContainer" parent="DeviceWindow"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 32.0
+offset_right = 466.0
+offset_bottom = 258.0
+theme_override_font_sizes/font_size = 16
+
+[node name="Config" type="Control" parent="DeviceWindow/Tabs"]
+layout_mode = 2
+
+[node name="IpLabel" type="Label" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 10.0
+offset_right = 160.0
+offset_bottom = 38.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+text = "Direccion IP"
+vertical_alignment = 1
+
+[node name="IpField" type="LineEdit" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 164.0
+offset_top = 10.0
+offset_right = 364.0
+offset_bottom = 38.0
+theme_override_font_sizes/font_size = 17
+placeholder_text = "192.168.30.11"
+
+[node name="MaskLabel" type="Label" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 46.0
+offset_right = 160.0
+offset_bottom = 74.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+text = "Mascara"
+vertical_alignment = 1
+
+[node name="MaskField" type="LineEdit" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 164.0
+offset_top = 46.0
+offset_right = 364.0
+offset_bottom = 74.0
+theme_override_font_sizes/font_size = 17
+placeholder_text = "255.255.255.0"
+
+[node name="GatewayLabel" type="Label" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 82.0
+offset_right = 160.0
+offset_bottom = 110.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+text = "Puerta de enlace"
+vertical_alignment = 1
+
+[node name="GatewayField" type="LineEdit" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 164.0
+offset_top = 82.0
+offset_right = 364.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 17
+placeholder_text = "192.168.30.1"
+
+[node name="ApplyButton" type="Button" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 374.0
+offset_top = 10.0
+offset_right = 452.0
+offset_bottom = 38.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 16
+text = "Aplicar"
+
+[node name="StatusLabel" type="Label" parent="DeviceWindow/Tabs/Config"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 122.0
+offset_right = 452.0
+offset_bottom = 166.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "Sin cablear."
+autowrap_mode = 2
+
+[node name="Console" parent="DeviceWindow/Tabs" instance=ExtResource("3_console")]
+layout_mode = 2
+
+[node name="Cli" parent="DeviceWindow/Tabs" instance=ExtResource("4_cli")]
+layout_mode = 2
+
+[node name="Info" type="Control" parent="DeviceWindow/Tabs"]
+layout_mode = 2
+
+[node name="InfoLabel" type="Label" parent="DeviceWindow/Tabs/Info"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 450.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+text = "Equipo"
