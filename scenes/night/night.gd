@@ -171,15 +171,6 @@ func _on_menu_requested() -> void:
 	get_tree().change_scene_to_file(Screens.MAIN_MENU)
 
 
-## F1 abre y cierra el panel de pruebas. Es la única tecla de depuración que
-## queda: todo lo demás se hace con sus botones.
-func _unhandled_input(event: InputEvent) -> void:
-	if not DebugKeys.is_toggle(event):
-		return
-	mod_menu.toggle()
-	get_viewport().set_input_as_handled()
-
-
 ## Un solo interruptor: la ayuda de teclas, la etiqueta de los profes y las
 ## zonas de clic de la oficina.
 func _apply_debug_shown() -> void:

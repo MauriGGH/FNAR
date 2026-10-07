@@ -1,7 +1,7 @@
 extends Control
 
 ## Armando Prompts tomando la pantalla de la PC. Pone de fondo la carta de
-## ajuste de assets/art/pc/armando_standby, le escribe una de sus frases
+## ajuste de assets/art/office/pc/armando_standby, le escribe una de sus frases
 ## dentro del círculo central y abajo, sobre las franjas oscuras, pide
 ## escribir "YA BÁJALE" contra reloj.
 ##
@@ -14,7 +14,7 @@ signal survived()
 ## Se acabó el tiempo: hay que borrar el progreso de la tarea y quitar energía.
 signal failed()
 
-const BACKGROUND_PATH: String = "res://assets/art/pc/armando_standby"
+const BACKGROUND_PATH: String = "res://assets/art/office/pc/armando_standby"
 
 ## El círculo central de la carta de ajuste, medido sobre la imagen: el centro
 ## en fracción del ancho y del alto, el radio en fracción del alto.
@@ -54,7 +54,16 @@ const TYPED_OK: Color = Color(0.6, 1.0, 0.65)
 const TYPED_BAD: Color = Color(1.0, 0.45, 0.4)
 const BAR_BACK: Color = Color(0.0, 0.0, 0.0, 0.55)
 const CARET_COLOR: Color = Color(1.0, 1.0, 1.0, 0.8)
-const BACKDROP: Color = Color(0.06, 0.03, 0.02, 0.96)
+## Si la imagen no está, se dibuja una carta de ajuste por código: negro con
+## barras de colores. Nunca se deja ver el escritorio por debajo.
+const BACKDROP: Color = Color(0.0, 0.0, 0.0)
+const BARS: Array[Color] = [
+	Color(0.75, 0.75, 0.75), Color(0.75, 0.75, 0.0), Color(0.0, 0.75, 0.75),
+	Color(0.0, 0.75, 0.0), Color(0.75, 0.0, 0.75), Color(0.75, 0.0, 0.0),
+	Color(0.0, 0.0, 0.75),
+]
+## Lo alto que llegan las barras, en fracción de la pantalla.
+const BARS_HEIGHT: float = 0.68
 const PLACEHOLDER_TOP: Color = Color(0.4, 0.17, 0.12)
 const PLACEHOLDER_BOTTOM: Color = Color(0.18, 0.07, 0.05)
 
@@ -90,6 +99,8 @@ func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP  # No deja clicar el escritorio.
 	_texture = GameAssets.load_texture(BACKGROUND_PATH)
+	if _texture == null:
+		push_warning("Falta %s: la pantalla de Armando usa la carta dibujada" % BACKGROUND_PATH)
 	_target = _normalize(ArmandoPrompts.TAKEOVER_ANSWER)
 
 
@@ -196,15 +207,22 @@ func _shake_offset() -> Vector2:
 func _draw_background() -> void:
 	# Un poco más grande que la pantalla: con el temblor no se ven los bordes.
 	var rect: Rect2 = Rect2(Vector2.ZERO, size).grow(SHAKE_PIXELS + STATIC_SLIP + 2.0)
+	# El negro va siempre primero: pase lo que pase, el escritorio no se ve.
+	draw_rect(rect, BACKDROP)
 	if _texture != null:
 		draw_texture_rect(_texture, rect, false)
 		return
-	draw_rect(rect, BACKDROP)
-	var box: Rect2 = Rect2(size * 0.5 - Vector2(size.y * 0.22, size.y * 0.22),
-		Vector2(size.y * 0.44, size.y * 0.44))
-	DrawKit.gradient_rect(self, box, PLACEHOLDER_TOP, PLACEHOLDER_BOTTOM)
-	DrawKit.soft_outline(self, box, ORDER_COLOR)
-	_draw_centered_lines(box.get_center(), "ARMANDO\nPROMPTS", NAME_SIZE)
+	# Sin imagen, la carta de ajuste dibujada: barras de colores y el círculo.
+	var bar_width: float = rect.size.x / float(BARS.size())
+	for i: int in BARS.size():
+		draw_rect(Rect2(Vector2(rect.position.x + bar_width * float(i), rect.position.y),
+			Vector2(bar_width + 1.0, rect.size.y * BARS_HEIGHT)), BARS[i])
+	var center: Vector2 = Vector2(CIRCLE_CENTER.x * size.x, CIRCLE_CENTER.y * size.y)
+	var radius: float = CIRCLE_RADIUS * size.y
+	draw_circle(center, radius, Color(0.08, 0.08, 0.09))
+	draw_arc(center, radius, 0.0, TAU, 48, Color(0.9, 0.9, 0.92), 3.0, true)
+	_draw_centered_lines(Vector2(center.x, rect.end.y - rect.size.y * 0.16),
+		"ARMANDO PROMPTS", NAME_SIZE)
 
 
 ## La frase dentro del círculo central, en el tamaño más grande que quepa.

@@ -38,7 +38,9 @@ var _sections: Dictionary = {}  # título -> VBoxContainer del cuerpo
 
 
 func _ready() -> void:
-	# Con el árbol pausado el panel tiene que seguir respondiendo.
+	# Con el árbol pausado el panel tiene que seguir respondiendo, y su input
+	# también: si la tecla la escuchara la escena de la noche, con el árbol
+	# pausado no llegaría nunca y el panel no se podría cerrar.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
@@ -50,6 +52,22 @@ func bind(night: Node) -> void:
 		return
 	_night = night
 	_build()
+
+
+## F1 abre y cierra; Escape cierra. Va en _input y no en _unhandled_input
+## para ganarle a cualquier otro que use esas teclas (la pausa, la PC, el
+## visor de la foto), y porque este nodo sigue vivo con el árbol pausado.
+func _input(event: InputEvent) -> void:
+	if DebugKeys.is_toggle(event):
+		toggle()
+		get_viewport().set_input_as_handled()
+		return
+	if not is_open:
+		return
+	var key: InputEventKey = event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+		close()
+		get_viewport().set_input_as_handled()
 
 
 func toggle() -> void:
@@ -73,7 +91,9 @@ func close() -> void:
 		return
 	is_open = false
 	visible = false
+	# Pase lo que pase, el juego se despausa y el ratón vuelve a lo normal.
 	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _apply_pause() -> void:
@@ -131,6 +151,14 @@ func _add_header() -> void:
 	_keep_running.add_theme_color_override("font_color", DIM)
 	_keep_running.toggled.connect(func(_on: bool) -> void: _apply_pause())
 	_column.add_child(_keep_running)
+
+	# Un botón de salida bien visible, por si la tecla falla.
+	var close_button: Button = Button.new()
+	close_button.text = "CERRAR  (%s o Escape)" % DebugKeys.toggle_label()
+	close_button.focus_mode = Control.FOCUS_NONE
+	close_button.add_theme_font_size_override("font_size", SECTION_SIZE)
+	close_button.pressed.connect(close)
+	_column.add_child(close_button)
 
 
 ## Una sección plegable: su título es un botón que enseña u oculta el cuerpo.
@@ -227,10 +255,16 @@ func _build_night_section() -> void:
 		func(on: bool) -> void: GameManager.force_short_hours = on)
 
 
-func _go_to_night(night: int) -> void:
+## Cambiar de pantalla pasa siempre por aquí: cierra el panel (que despausa)
+## y después cambia. Con el árbol pausado la escena nueva nacería congelada.
+func _go_to(path: String) -> void:
 	close()
+	get_tree().change_scene_to_file(path)
+
+
+func _go_to_night(night: int) -> void:
 	GameManager.prepare_night(night)
-	get_tree().change_scene_to_file(Screens.NIGHT)
+	_go_to(Screens.NIGHT)
 
 
 # --- Un apartado por profe ----------------------------------------------------
@@ -355,9 +389,7 @@ func _build_events_section() -> void:
 func _build_screens_section() -> void:
 	var body: VBoxContainer = _section("Pantallas")
 	body.visible = false
-	_add_button(body, "6 AM (pantalla de pago)", func() -> void:
-		close()
-		get_tree().change_scene_to_file(Screens.WIN))
+	_add_button(body, "6 AM (pantalla de pago)", func() -> void: _go_to(Screens.WIN))
 
 	_add_label(body, "Game over con esta causa:")
 	var causes: OptionButton = OptionButton.new()
@@ -381,26 +413,20 @@ func _build_screens_section() -> void:
 	if not papers.is_empty():
 		_add_row(body, papers)
 
-	_add_button(body, "Intro de noche", func() -> void:
-		close()
-		get_tree().change_scene_to_file(Screens.NIGHT_INTRO))
-	_add_button(body, "Pantalla final", func() -> void:
-		close()
-		get_tree().change_scene_to_file(Screens.ENDING))
+	_add_button(body, "Intro de noche", func() -> void: _go_to(Screens.NIGHT_INTRO))
+	_add_button(body, "Pantalla final", func() -> void: _go_to(Screens.ENDING))
 	_add_button(body, "Extras con todo desbloqueado", _unlock_everything)
 
 
 func _show_newspaper(index: int) -> void:
-	close()
 	SaveGame.unlock_newspaper(index)
 	NewspaperScreen.pending_index = index
 	NewspaperScreen.next_scene = Screens.MAIN_MENU
-	get_tree().change_scene_to_file(Screens.NEWSPAPER)
+	_go_to(Screens.NEWSPAPER)
 
 
 ## Abre todo lo que se desbloquea jugando, para poder revisar Extras.
 func _unlock_everything() -> void:
-	close()
 	SaveGame.night_reached = NightConfig.LAST_NIGHT
 	for i: int in Newspapers.count():
 		SaveGame.unlock_newspaper(i)
@@ -408,7 +434,7 @@ func _unlock_everything() -> void:
 		SaveGame.unlock_dossier(character_id)
 	for cause: String in CAUSES:
 		SaveGame.unlock_jumpscare(cause)
-	get_tree().change_scene_to_file(Screens.EXTRAS_MENU)
+	_go_to(Screens.EXTRAS_MENU)
 
 
 # --- Vista --------------------------------------------------------------------

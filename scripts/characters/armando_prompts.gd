@@ -23,8 +23,9 @@ const GAME_OVER_CAUSE: String = "Armando Prompts"
 
 ## Lo que tarda en irse si el jugador no escribe la frase.
 const TAKEOVER_TIME: float = 6.0
-## Lo que hay que escribir para quitárselo de encima.
-const TAKEOVER_ANSWER: String = "YA BÁJALE"
+## Lo que hay que escribir para quitárselo de encima. Se acepta sin acento y
+## en minúsculas: la pantalla compara en mayúsculas y sin tildes.
+const TAKEOVER_ANSWER: String = "APÁGATE"
 ## Lo que cuesta no lograrlo.
 const TAKEOVER_POWER_COST: float = 5.0
 ## Probabilidad de aparecer, en fracción por punto de nivel de IA: con nivel 6
