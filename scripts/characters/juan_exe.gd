@@ -35,8 +35,3 @@ func step_interval() -> float:
 
 func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
-
-
-## Tecla 5: lo manda directo al cristal.
-func debug_action() -> String:
-	return DebugKeys.JUAN_GLASS

@@ -50,6 +50,11 @@ var speed: int = Speed.SLOW
 var _attack_elapsed: float = 0.0
 
 
+## Su imagen se llama cometrabas, sin el guion bajo del id.
+func jumpscare_id() -> String:
+	return "cometrabas"
+
+
 func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
 
@@ -161,9 +166,6 @@ func debug_low_wind() -> void:
 	wind_changed.emit(wind)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, DebugKeys.COME_TRABAS_WIND):
-		debug_low_wind()
 
 
 ## La cuerda llegó a cero: de aquí ya no hay vuelta.
@@ -178,3 +180,8 @@ func _start_attack() -> void:
 func _catch_player() -> void:
 	stop()
 	GameManager.trigger_game_over(GAME_OVER_CAUSE)
+
+
+## El panel de pruebas lo manda a atacar por aquí.
+func debug_force_attack() -> void:
+	debug_low_wind()

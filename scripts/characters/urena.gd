@@ -45,6 +45,3 @@ func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
 
 
-## Tecla 1: lo manda directo al cristal, para no esperar al dado.
-func debug_action() -> String:
-	return DebugKeys.URENA_GLASS

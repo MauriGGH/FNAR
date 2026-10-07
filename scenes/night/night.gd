@@ -45,12 +45,19 @@ const FLASH_TIME: float = 0.28
 @onready var pause_menu: Control = $Hud/PauseMenu
 @onready var ticket_label: Label = $Hud/TicketLabel
 @onready var ticket_chime: AudioStreamPlayer = $Hud/TicketChime
+@onready var jumpscare: Control = $Hud/JumpscareOverlay
+@onready var blackout_death: Control = $Hud/BlackoutDeath
+@onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
 
 const ARMANDO_NOTICE: String = "[Armando borró tu progreso]"
 const URENA_SNUB_NOTICE: String = "[Ureña se quedo esperando...]"
+## La causa cuando el apagón te alcanza. Es cosa del Mago, no de la energía.
+const NO_CALL_NOTICE: String = "[esta noche no tiene guion de llamada]"
+const BLACKOUT_CAUSE: String = "Mago Eléctrico"
+const BLACKOUT_JUMPSCARE: String = "audel"
 const TICKET_NOTICE: String = "[ticket nuevo: %s]"
 const TICKET_EXPIRED_NOTICE: String = "[se te vencio un ticket]"
 ## Cada cuánto se repinta el contador de tickets.
@@ -83,7 +90,7 @@ func _ready() -> void:
 			pc_screen.set_armando(animatronic as ArmandoPrompts)
 		elif animatronic is Audel:
 			_audel = animatronic as Audel
-			_audel.cortaso_started.connect(cortaso_overlay.play)
+			_audel.cortaso_started.connect(_on_cortaso_started)
 			_audel.discharge_started.connect(_on_discharge)
 
 	office.door_toggled.connect(_on_door_toggled)
@@ -107,6 +114,9 @@ func _ready() -> void:
 	breaker_panel.closed.connect(office.zoom_out)
 	breaker_panel.lever_pulled.connect(_on_breaker_pulled)
 	PowerManager.blackout_changed.connect(_on_blackout_changed)
+	PowerManager.power_depleted.connect(_on_power_depleted)
+	blackout_death.strike.connect(_on_blackout_strike)
+	jumpscare.finished.connect(_on_jumpscare_finished)
 
 	camera_system.set_animatronics(_animatronics)
 	camera_system.opened.connect(_on_cameras_opened)
@@ -132,6 +142,7 @@ func _ready() -> void:
 
 	_apply_debug_shown()
 
+	mod_menu.bind(self)
 	pause_menu.resumed.connect(_on_resumed)
 	pause_menu.menu_requested.connect(_on_menu_requested)
 	GameManager.start_night()
@@ -157,18 +168,12 @@ func _on_menu_requested() -> void:
 	get_tree().change_scene_to_file(Screens.MAIN_MENU)
 
 
-## Las teclas de depuración salen de data/debug_keys.gd, así que con
-## DEBUG_KEYS en false ninguna responde.
+## F1 abre y cierra el panel de pruebas. Es la única tecla de depuración que
+## queda: todo lo demás se hace con sus botones.
 func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, DebugKeys.HELP):
-		_debug_shown = not _debug_shown
-		_apply_debug_shown()
-	elif DebugKeys.matches(event, DebugKeys.INFINITE_POWER):
-		PowerManager.toggle_infinite()
-	elif DebugKeys.matches(event, DebugKeys.URENA_CALL):
-		trigger_urena_call()
-	else:
+	if not DebugKeys.is_toggle(event):
 		return
+	mod_menu.toggle()
 	get_viewport().set_input_as_handled()
 
 
@@ -177,9 +182,22 @@ func _unhandled_input(event: InputEvent) -> void:
 func _apply_debug_shown() -> void:
 	camera_system.set_debug_visible(_debug_shown)
 	office.set_zones_visible(_debug_shown)
-	debug_help.visible = _debug_shown and NightConfig.DEBUG_KEYS
-	if debug_help.visible:
-		debug_help.text = "\n".join(DebugKeys.help_lines())
+	debug_help.visible = false  # La ayuda vive ahora en el panel de pruebas.
+
+
+## La lista de profes, para el panel de pruebas.
+func animatronics() -> Array[Animatronic]:
+	return _animatronics
+
+
+## El panel de pruebas dispara la llamada de inicio de noche. Si esa noche no
+## tiene guion escrito, avisa en vez de quedarse callado.
+func debug_night_call() -> void:
+	var lines: PackedStringArray = NightCalls.for_night(GameManager.current_night)
+	if lines.is_empty():
+		notice_banner.show_notice(NO_CALL_NOTICE, NOTICE_SHORT)
+		return
+	phone_call.queue_message(lines, NightCalls.RING_TIME)
 
 
 ## Los profes son hijos del nodo Animatronics, así se agregan sin tocar código.
@@ -259,6 +277,9 @@ func _refresh_office_presence() -> void:
 	for zone_id: String in office.presence_zone_ids():
 		var view: int = office.view_of_zone(zone_id)
 		var label: String = ""
+		# Hay que recorrer a todos, no quedarse con el primero: en el cristal
+		# pueden coincidir Mamador, Ureña, Juan y Armando, y sus recortes ya
+		# vienen colocados para no encimarse.
 		for animatronic: Animatronic in _animatronics:
 			if not animatronic.is_in_zone(zone_id):
 				continue
@@ -268,9 +289,10 @@ func _refresh_office_presence() -> void:
 					"slug": slug,
 					"lit_only": animatronic.needs_flashlight(zone_id),
 				})
-			else:
+				continue
+			# Sin recorte se queda su etiqueta; si hay varios, la del primero.
+			if label.is_empty():
 				label = animatronic.zone_presence(zone_id)
-			break
 		office.set_zone_presence(zone_id, label)
 	for view: int in office.view_count():
 		office.set_view_present(view, by_view[view])
@@ -476,6 +498,35 @@ func _on_breaker_pulled() -> void:
 
 ## Sin corriente se apagan las cámaras y la PC, y la oficina se oscurece.
 ## La chapa de la puerta sigue, porque está en el no-break.
+# --- Apagón, susto y jumpscares -----------------------------------------------
+
+## El cortaso: primero el susto del Mago y después la estática de siempre.
+func _on_cortaso_started() -> void:
+	jumpscare.play_scare()
+	cortaso_overlay.play()
+
+
+## Se acabó la energía: la noche sigue a oscuras y el Mago viene a cobrar.
+func _on_power_depleted() -> void:
+	if not GameManager.is_night_active:
+		return
+	camera_system.close()
+	pc_screen.close()
+	blackout_death.start()
+
+
+## Llegó el salto del apagón.
+func _on_blackout_strike() -> void:
+	if not GameManager.is_night_active:
+		return
+	GameManager.trigger_game_over(BLACKOUT_CAUSE)
+
+
+## El salto terminó: ahora sí se cambia a la pantalla de game over.
+func _on_jumpscare_finished() -> void:
+	get_tree().change_scene_to_file(Screens.GAME_OVER)
+
+
 func _on_blackout_changed(is_blackout: bool) -> void:
 	office.set_blackout(is_blackout)
 	if not is_blackout:
@@ -490,6 +541,7 @@ func _on_blackout_changed(is_blackout: bool) -> void:
 ## estuvieron activos y se deja apuntado el recorte que toca.
 func _on_night_won(night: int) -> void:
 	_end_night()
+	blackout_death.cancel()
 	if not GameManager.is_custom_night:
 		SaveGame.mark_night_cleared(night)
 		SaveGame.unlock_newspaper(Newspapers.index_for_cleared_night(night))
@@ -513,13 +565,23 @@ func _unlock_night_dossiers() -> void:
 ## Te atraparon: se abre la ficha y el jumpscare de quien fue.
 func _on_game_over(cause: String) -> void:
 	_end_night()
+	blackout_death.cancel()
+	var jumpscare_id: String = BLACKOUT_JUMPSCARE if cause == BLACKOUT_CAUSE else ""
 	for animatronic: Animatronic in _animatronics:
 		if animatronic.game_over_cause() != cause:
 			continue
 		SaveGame.unlock_dossier(animatronic.image_slug())
-		SaveGame.unlock_jumpscare(cause)
+		jumpscare_id = animatronic.jumpscare_id()
 		break
-	get_tree().change_scene_to_file(Screens.GAME_OVER)
+	SaveGame.unlock_jumpscare(cause)
+	# Mamador no salta: su pantalla es la de los militares.
+	if cause == Mamador.GAME_OVER_CAUSE:
+		jumpscare.play_mamador()
+		return
+	if jumpscare_id.is_empty():
+		get_tree().change_scene_to_file(Screens.GAME_OVER)
+		return
+	jumpscare.play(jumpscare_id)
 
 
 ## Deja de gastar energía y congela a los profes antes de cambiar de pantalla.

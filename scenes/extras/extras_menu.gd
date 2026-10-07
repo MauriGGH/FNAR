@@ -152,8 +152,9 @@ func _build_jumpscares() -> void:
 		var sheet: Array = SHEETS.get(character_id, [character_id, "", ""])
 		var cause: String = str(sheet[0])
 		var seen: bool = SaveGame.has_jumpscare(cause)
+		# La galería usa las imágenes de jumpscare, no los expedientes.
 		grid.add_child(_make_card(
-			Extras.dossier_texture(character_id) if seen else null,
+			Extras.jumpscare_texture(character_id) if seen else null,
 			cause if seen else LOCKED_TEXT,
 			"visto" if seen else "",
 			"Te atrapó al menos una vez." if seen else ""))

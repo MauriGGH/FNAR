@@ -19,7 +19,7 @@ extends RefCounted
 # que mandan a cada profe a su posición de ataque. En false no responde
 # ninguna, ni siquiera F3, así que no hay manera de ver nada de depuración.
 const TEST_MODE: bool = false
-const DEBUG_KEYS: bool = false
+const DEBUG_KEYS: bool = true
 
 const HOUR_DURATION: float = 75.0
 const TEST_HOUR_DURATION: float = 10.0
@@ -64,6 +64,9 @@ const FLASHLIGHT_DISABLED_TIME: float = 45.0
 
 ## Cuánto dura una hora de juego en segundos reales. Solo para el reloj.
 static func hour_duration() -> float:
+	# El panel de pruebas puede forzarlas cortas sin tocar la constante.
+	if GameManager.force_short_hours:
+		return TEST_HOUR_DURATION
 	return TEST_HOUR_DURATION if TEST_MODE else HOUR_DURATION
 
 

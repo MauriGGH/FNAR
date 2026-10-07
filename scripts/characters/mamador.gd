@@ -56,6 +56,11 @@ func stalks_before_leaving() -> bool:
 	return true
 
 
+## Mamador no salta: su pantalla es la de los militares llegando.
+func jumpscare_id() -> String:
+	return "mamador_militares"
+
+
 func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
 
@@ -193,6 +198,6 @@ func debug_force_to_stairs() -> void:
 	made_noise.emit(HALLWAY_NOTICE, NOTICE_TIME)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, DebugKeys.MAMADOR_HALLWAY):
-		debug_force_to_stairs()
+## El panel de pruebas lo manda a atacar por aquí.
+func debug_force_attack() -> void:
+	debug_force_to_stairs()

@@ -7,6 +7,8 @@ extends RefCounted
 ## No es autoload: se usa como Rooms.display_name("oficina") gracias al class_name.
 
 const NO_CAMERA: int = 0
+## Cuántas cámaras hay en total, de la 1 a la 13.
+const CAMERA_COUNT: int = 13
 
 const ROOMS: Dictionary = {
 	# --- Oficina y recepción ------------------------------------------------

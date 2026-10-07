@@ -36,23 +36,38 @@ BASE_STATES = ["etapa0", "vacia", "base"]
 # camara -> lista de listas: cada lista son las opciones de un profe (el ""
 # significa "ese profe no está"). La combinación se une con "_".
 TOKENS = {
-    1: [["", "barcosa"], ["", "mamador", "mamador-acecho"], ["", "juan", "juan-acecho"],
-        ["", "armando", "armando-acecho"]],
+    # El pasillo no es el sitio inicial de nadie, así que ahí no se acecha.
+    1: [["", "barcosa"], ["", "mamador"], ["", "juan"], ["", "armando"]],
     2: [["", "barcosa-corriendo", "barcosa-golpeando"], ["", "mamador"], ["", "urena"],
         ["", "juan"], ["", "armando"]],
     3: [["sentado", "medio", "de_pie", "vacia"]],
     4: [["desplomada", "despertando", "vacia"]],
-    5: [["", "audel", "audel-acecho"]],
-    6: [["", "audel", "audel-acecho"]],
+    # El Mago solo acecha en su sitio inicial (el techo, CAM 6): en la
+    # escalera ya va de paso.
+    5: [["", "audel"]],
+    6: [["", "audel", "audel-acecho", "audel-descarga"]],
     7: [["", "mamador-escalera", "armando-escalera"]],
     8: [["", "mamador"], ["", "armando"]],
     9: [["", "armando"]],
     10: [["etapa0", "etapa1", "etapa2", "salio"]],
-    11: [["", "urena", "urena-acecho"]],
+    # Ureña solo acecha en los baños, que es su sitio inicial.
+    11: [["", "urena"]],
     12: [["", "urena", "urena-acecho"]],
     13: [["", "mamador", "mamador-acecho"], ["", "juan", "juan-acecho"],
          ["", "armando", "armando-acecho"]],
 }
+
+# Sucesos raros de las cámaras de ambiente (ambient_events.gd): tienen su
+# propia imagen y también cuentan como estado usado.
+AMBIENT_EVENTS = {
+    8: ["evento1", "evento2"],
+    9: ["evento1", "evento2"],
+}
+
+# Barcosa corriendo tapa a todos, y nunca coincide con Mamador porque los dos
+# reservan el pasillo: esas combinaciones no existen.
+EXCLUSIVE_TOKENS = ["barcosa-corriendo", "barcosa"]
+NEVER_TOGETHER = [("barcosa-golpeando", "mamador")]
 
 # Capas y recortes que el código encima aparte del estado (camera_overlays.gd)
 # y que por lo tanto también son imágenes usadas.
@@ -80,10 +95,22 @@ def states_for(camera):
         # token de acecho nunca aparece acompañado.
         if len(present) > 1 and any(token.endswith("-acecho") for token in present):
             continue
+        # Barcosa corriendo se muestra solo.
+        if len(present) > 1 and any(token in EXCLUSIVE_TOKENS for token in present):
+            continue
+        # Los que se excluyen por la reserva del pasillo.
+        skip = False
+        for first, second in NEVER_TOGETHER:
+            if first in present and second in present:
+                skip = True
+        if skip:
+            continue
         # La señal saturada no lleva imagen, salvo la excepción de la CAM 13.
         if len(present) >= SATURATED_COUNT and camera != SATURATED_EXCEPTION_CAMERA:
             continue
         states.add("_".join(present))
+    for name in AMBIENT_EVENTS.get(camera, []):
+        states.add(name)
     return sorted(states)
 
 

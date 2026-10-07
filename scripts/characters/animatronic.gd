@@ -117,6 +117,12 @@ func others_in_room() -> int:
 	return count
 
 
+## Gancho: el nombre de su imagen de jumpscare. Casi siempre es el mismo id
+## que usa en las cámaras; la botarga es la excepción.
+func jumpscare_id() -> String:
+	return image_slug()
+
+
 ## Gancho: con qué causa termina la noche si este profe te atrapa. Cadena
 ## vacía si no mata. Lo usa el guardado para abrir su ficha y su jumpscare.
 func game_over_cause() -> String:
@@ -147,11 +153,31 @@ func night_ai_level() -> int:
 
 
 ## Gancho de depuración: lo pone a moverse aunque la noche le haya dado
-## nivel 0. Lo usan las teclas que mandan a un profe a su posición de ataque.
+## nivel 0. Lo usa el panel de pruebas y los atajos que lo mandan a atacar.
 func debug_activate() -> void:
 	if route.is_empty():
 		return
 	is_active = true
+
+
+## Lo prende o lo apaga desde el panel de pruebas.
+func debug_set_active(active: bool) -> void:
+	if active:
+		debug_activate()
+	else:
+		is_active = false
+
+
+## Lo deja mirando fijo a la cámara, sin esperar su oportunidad.
+func debug_force_stalk() -> void:
+	debug_activate()
+	is_stalking = true
+
+
+## Gancho: lo manda a su posición de ataque. Cada profe sabe cuál es la suya;
+## los que no la tengan se quedan como están.
+func debug_force_attack() -> void:
+	pass
 
 
 ## Gancho: cada profe decide si puede moverse ahora mismo

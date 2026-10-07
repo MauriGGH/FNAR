@@ -80,6 +80,10 @@ var _image_cache: Dictionary = {}  # ruta -> Texture2D, o null si no existe
 var _camera_signature: String = ""
 var _ambient_elapsed: float = 0.0
 var _ambient_tween: Tween = null
+## El suceso que se está enseñando ahora mismo, y lo que le queda.
+var _ambient_event: Dictionary = {}
+var _ambient_event_left: float = 0.0
+var _ambient_camera: int = Rooms.NO_CAMERA
 
 @onready var feed_image: TextureRect = $FeedImage
 ## Recortes encimados sobre el video, como la cortina de la puerta.
@@ -172,6 +176,8 @@ func switch_to_camera(camera: int) -> void:
 	if camera == current_camera:
 		return
 	current_camera = camera
+	_ambient_event = {}
+	_ambient_event_left = 0.0
 	_refresh_view()
 	_play_strong_static()
 	camera_changed.emit(current_camera)
@@ -290,6 +296,9 @@ func _refresh_camera_content() -> void:
 		return
 	saturated_label.visible = false
 	var state: String = _state_of(current_camera)
+	var event_state: String = _ambient_event_state()
+	if not event_state.is_empty():
+		state = event_state
 	var texture: Texture2D = _camera_texture(current_camera, state)
 	var is_exact: bool = texture != null
 	if not is_exact:
@@ -462,6 +471,14 @@ func _process(delta: float) -> void:
 ## En las cámaras de ambiente, cada tanto pasa algo raro sin consecuencias:
 ## la imagen parpadea y sale un aviso. Solo mientras el jugador las mira.
 func _process_ambient(delta: float) -> void:
+	# El suceso puesto se cuenta aparte: dura unos segundos y se va.
+	if _ambient_event_left > 0.0:
+		_ambient_event_left -= delta
+		if _ambient_event_left <= 0.0:
+			_clear_ambient_event()
+		elif bool(_ambient_event.get("blink", false)):
+			_refresh_camera_content()
+		return
 	if not AmbientEvents.is_ambient(current_camera) or no_signal_label.visible or saturated_label.visible:
 		_ambient_elapsed = 0.0
 		return
@@ -469,15 +486,49 @@ func _process_ambient(delta: float) -> void:
 	if _ambient_elapsed < AmbientEvents.CHECK_TIME:
 		return
 	_ambient_elapsed = 0.0
-	if randf() >= AmbientEvents.CHANCE:
+	if randf() >= AmbientEvents.chance(GameManager.current_night):
+		return
+	# Si hay algún profe en la cámara, no es momento de rarezas.
+	if not _tokens_of(current_camera).is_empty():
 		return
 	_play_ambient_event()
+
+
+## El suceso se acabó: la cámara vuelve a su imagen normal.
+func _clear_ambient_event() -> void:
+	_ambient_event = {}
+	_ambient_event_left = 0.0
+	_ambient_camera = Rooms.NO_CAMERA
+	_refresh_camera_content()
+
+
+## El estado que hay que enseñar: el del suceso si hay uno puesto en esta
+## cámara, o el que toque por los profes. El que parpadea alterna con vacia.
+func _ambient_event_state() -> String:
+	if _ambient_event.is_empty() or _ambient_camera != current_camera:
+		return ""
+	if bool(_ambient_event.get("blink", false)):
+		var on: bool = fmod(_blink_elapsed(), AmbientEvents.BLINK_TIME * 2.0) < AmbientEvents.BLINK_TIME
+		if not on:
+			return BASE_STATES[1]  # vacia
+	return str(_ambient_event["state"])
 
 
 ## El parpadeo va en la propia imagen, no en la estática: así no pelea con la
 ## interferencia de los profes, que es la que de verdad importa.
 func _play_ambient_event() -> void:
-	var notice: String = AmbientEvents.pick_notice(current_camera)
+	# Las cámaras con imagen propia la enseñan; las demás solo parpadean.
+	var event: Dictionary = AmbientEvents.pick_event(current_camera)
+	var notice: String = ""
+	if not event.is_empty() and _load_texture(CAMERA_IMAGE_FORMAT % [
+			current_camera, str(event["state"])]) != null:
+		_ambient_event = event
+		_ambient_event_left = AmbientEvents.EVENT_TIME
+		_ambient_camera = current_camera
+		notice = str(event.get("notice", ""))
+		_refresh_camera_content()
+	else:
+		notice = AmbientEvents.pick_notice(current_camera)
 	if not notice.is_empty():
 		notice_requested.emit(notice, AmbientEvents.NOTICE_TIME)
 	if _ambient_tween != null and _ambient_tween.is_valid():
@@ -574,6 +625,35 @@ func _start_rec_blink() -> void:
 	var tween: Tween = create_tween().set_loops()
 	tween.tween_property(rec_dot, "modulate:a", 0.15, REC_BLINK_TIME)
 	tween.tween_property(rec_dot, "modulate:a", 1.0, REC_BLINK_TIME)
+
+
+# --- Ganchos del panel de pruebas ---------------------------------------------
+
+## El estado que reporta una cámara ahora mismo, para listarlo en el panel.
+func camera_state_of(camera: int) -> String:
+	if GameManager.patch_panel.is_camera_down(camera):
+		return "SIN SEÑAL"
+	if is_saturated(camera):
+		return "SEÑAL SATURADA"
+	return _state_of(camera)
+
+
+## Enseña un suceso raro a la fuerza. index -1 es solo el parpadeo.
+func debug_play_ambient(camera: int, index: int) -> void:
+	if not is_open:
+		open()
+	switch_to_camera(camera)
+	var events: Array = AmbientEvents.EVENTS.get(camera, [])
+	if index < 0 or index >= events.size():
+		_play_ambient_event()
+		return
+	_ambient_event = events[index]
+	_ambient_event_left = AmbientEvents.EVENT_TIME
+	_ambient_camera = camera
+	_refresh_camera_content()
+	var notice: String = str(_ambient_event.get("notice", ""))
+	if not notice.is_empty():
+		notice_requested.emit(notice, AmbientEvents.NOTICE_TIME)
 
 
 # --- Minimapa -----------------------------------------------------------------

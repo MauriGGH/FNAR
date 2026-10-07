@@ -25,6 +25,10 @@
 [ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
 [ext_resource type="Script" path="res://scenes/night/pause_menu.gd" id="50_pause"]
 [ext_resource type="Script" path="res://scenes/night/ticket_chime.gd" id="60_chime"]
+[ext_resource type="Script" path="res://scenes/night/jumpscare_overlay.gd" id="70_jump"]
+[ext_resource type="Script" path="res://scenes/night/scream_sound.gd" id="71_scream"]
+[ext_resource type="Script" path="res://scenes/night/blackout_death.gd" id="72_blackout"]
+[ext_resource type="Script" path="res://scenes/night/mod_menu.gd" id="80_mod"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
 shader = ExtResource("16_static")
@@ -280,6 +284,41 @@ script = ExtResource("18_fade")
 
 [node name="PhoneCall" parent="Hud" instance=ExtResource("20_phone")]
 
+[node name="BlackoutDeath" type="Control" parent="Hud"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("72_blackout")
+
+[node name="JumpscareOverlay" type="Control" parent="Hud"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("70_jump")
+
+[node name="StaticOverlay" type="ColorRect" parent="Hud/JumpscareOverlay"]
+material = SubResource("ShaderMaterial_cortaso")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="Scream" type="AudioStreamPlayer" parent="Hud/JumpscareOverlay"]
+script = ExtResource("71_scream")
+
 [node name="PauseMenu" type="Control" parent="Hud"]
 visible = false
 layout_mode = 1
@@ -289,3 +328,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("50_pause")
+
+[node name="ModMenu" type="Control" parent="Hud"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("80_mod")

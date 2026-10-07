@@ -141,11 +141,6 @@ func debug_force_to_glass() -> void:
 	advance()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, debug_action()):
-		debug_force_to_glass()
-
-
 # --- Ganchos que cambia cada profe --------------------------------------------
 
 ## Su ruta. El último paso es siempre el cristal.
@@ -189,11 +184,6 @@ func repel_notice() -> String:
 	return "[%s se aleja]" % display_name
 
 
-## La acción del registro de depuración que lo manda al cristal.
-func debug_action() -> String:
-	return ""
-
-
 # --- Interno ------------------------------------------------------------------
 
 func _arrive_at_glass() -> void:
@@ -220,3 +210,8 @@ func _repel() -> void:
 func _catch_player() -> void:
 	stop()
 	GameManager.trigger_game_over(game_over_cause())
+
+
+## El panel de pruebas lo manda a atacar por aquí.
+func debug_force_attack() -> void:
+	debug_force_to_glass()

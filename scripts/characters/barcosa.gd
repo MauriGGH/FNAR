@@ -161,11 +161,6 @@ func debug_force_run() -> void:
 	_try_start_run()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, DebugKeys.BARCOSA_RUN):
-		debug_force_run()
-
-
 # --- La carrera ---------------------------------------------------------------
 
 ## Solo sale si el pasillo está libre; si lo tiene otro, se queda en la etapa 2.
@@ -247,3 +242,8 @@ func zone_presence(zone_id: String) -> String:
 func _set_stage(new_stage: int) -> void:
 	stage = clampi(new_stage, STAGE_HIDDEN, STAGE_LEAVING)
 	stage_changed.emit(stage)
+
+
+## El panel de pruebas lo manda a atacar por aquí.
+func debug_force_attack() -> void:
+	debug_force_run()

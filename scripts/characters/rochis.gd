@@ -200,11 +200,6 @@ func debug_stand_up() -> void:
 	_set_stage(Stage.STANDING)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, DebugKeys.ROCHIS_STAND):
-		debug_stand_up()
-
-
 # --- Entrada ------------------------------------------------------------------
 
 func _set_stage(new_stage: int) -> void:
@@ -245,3 +240,8 @@ func _spanish_voice() -> String:
 func _catch_player() -> void:
 	stop()
 	GameManager.trigger_game_over(GAME_OVER_CAUSE)
+
+
+## El panel de pruebas lo manda a atacar por aquí.
+func debug_force_attack() -> void:
+	debug_stand_up()

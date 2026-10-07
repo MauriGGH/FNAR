@@ -31,6 +31,9 @@ const CORTASO_TIME: float = 1.6
 const DISCHARGE_CHANCE: int = 40
 
 const DISCHARGE_NOTICE: String = "[chispazo en el techo]"
+## Lo que se ve el chispazo en la CAM 6, y el sufijo de su estado.
+const DISCHARGE_TIME: float = 2.5
+const STATE_DISCHARGE: String = "-descarga"
 const LADDER_NOTICE: String = "[zumbido eléctrico]"
 const CORTASO_NOTICE: String = "[cortaso]"
 const NOTICE_TIME: float = 2.5
@@ -44,11 +47,20 @@ signal discharge_started(cameras: PackedInt32Array)
 
 var _state: State = State.WALKING
 var _cortaso_elapsed: float = 0.0
+## Lo que le queda al chispazo que se ve en la CAM 6.
+var _discharge_left: float = 0.0
 
 
 ## Nombre corto para los archivos de imagen: cam07_audel.png y demás.
 func image_slug() -> String:
 	return "audel"
+
+
+## Soltando la descarga se ve distinto en el techo: cam06_audel-descarga.
+func _slug_token() -> String:
+	if _discharge_left > 0.0:
+		return "%s%s" % [image_slug(), STATE_DISCHARGE]
+	return super()
 
 
 ## Antes de salir de su lugar inicial se queda mirando fijo a la cámara.
@@ -72,6 +84,8 @@ func start() -> void:
 func _process(delta: float) -> void:
 	if not is_active:
 		return
+	if _discharge_left > 0.0:
+		_discharge_left = maxf(_discharge_left - delta, 0.0)
 	match _state:
 		State.WALKING:
 			super(delta)  # El dado de la IA de la clase base
@@ -96,6 +110,8 @@ func try_move() -> bool:
 ## La descarga: tumba de 1 a 3 cámaras y avisa para el destello y la estática.
 func cause_discharge() -> void:
 	var affected: PackedInt32Array = GameManager.patch_panel.cause_discharge(GameManager.current_night)
+	# Mientras dura, la CAM 6 lo enseña soltando el chispazo.
+	_discharge_left = DISCHARGE_TIME
 	if affected.is_empty():
 		return
 	made_noise.emit(DISCHARGE_NOTICE, NOTICE_TIME)
@@ -153,12 +169,6 @@ func debug_force_to_ladder() -> void:
 	made_noise.emit(LADDER_NOTICE, NOTICE_TIME)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if DebugKeys.matches(event, DebugKeys.AUDEL_LADDER):
-		debug_force_to_ladder()
-	elif DebugKeys.matches(event, DebugKeys.AUDEL_DISCHARGE):
-		debug_activate()
-		cause_discharge()
 
 
 func _do_cortaso() -> void:
@@ -173,3 +183,14 @@ func _go_back_to_roof() -> void:
 	_state = State.WALKING
 	_cortaso_elapsed = 0.0
 	move_to_step(STEP_TECHO)
+
+
+## El cortaso sin esperar a que entre, para probar el susto.
+func debug_force_cortaso() -> void:
+	debug_activate()
+	_do_cortaso()
+
+
+## El panel de pruebas lo manda a atacar por aquí.
+func debug_force_attack() -> void:
+	debug_force_to_ladder()

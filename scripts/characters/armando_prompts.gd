@@ -85,11 +85,6 @@ func retreats_walking() -> bool:
 	return true
 
 
-## Tecla 6: lo manda directo al cristal.
-func debug_action() -> String:
-	return DebugKeys.ARMANDO_GLASS
-
-
 # --- Lo de la PC --------------------------------------------------------------
 
 ## true si esta noche ya puede aparecerse en la pantalla de Claudio.
@@ -112,8 +107,3 @@ func force_takeover() -> void:
 	takeover_requested.emit(PHRASES[randi() % PHRASES.size()])
 
 
-## Además de la tecla que lo manda al cristal, la 7 lo aparece en la PC.
-func _unhandled_input(event: InputEvent) -> void:
-	super(event)
-	if DebugKeys.matches(event, DebugKeys.ARMANDO_PC):
-		force_takeover()

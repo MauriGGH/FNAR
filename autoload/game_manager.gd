@@ -48,6 +48,9 @@ var is_in_server_room: bool = false
 
 ## Custom Night: cuando está activa, los niveles de IA salen de aquí en vez
 ## de la tabla de data/nights.gd. La clave es la del profe (Nights.BARCOSA...).
+## El panel de pruebas puede forzar horas cortas en caliente, sin recompilar.
+var force_short_hours: bool = false
+
 var is_custom_night: bool = false
 var custom_levels: Dictionary = {}
 
@@ -295,6 +298,53 @@ func hour_text() -> String:
 	return "%d AM" % hour
 
 
+# --- Ganchos del panel de pruebas ---------------------------------------------
+
+## Adelanta el reloj una hora, sin saltarse los avisos de hora.
+func debug_skip_hour() -> void:
+	if current_hour >= NightConfig.END_HOUR:
+		return
+	_hour_elapsed = NightConfig.hour_duration()
+
+
+## Deja el reloj justo antes de las 6 AM, para probar el final de la noche.
+func debug_go_to_last_minute() -> void:
+	current_hour = NightConfig.END_HOUR - 1
+	_hour_elapsed = NightConfig.hour_duration() * 0.98
+	hour_changed.emit(current_hour)
+
+
+## Gana la noche ya, como si hubieran dado las 6.
+func debug_win_night() -> void:
+	if is_night_active:
+		_win_night()
+
+
+## Hace llegar el siguiente ticket que falte, sin esperar su hora.
+func debug_arrive_next_ticket() -> bool:
+	for i: int in _tickets.size():
+		if bool(_tickets[i]["arrived"]):
+			continue
+		_tickets[i]["arrived"] = true
+		ticket_arrived.emit(i)
+		return true
+	return false
+
+
+## Vence el primer ticket que esté corriendo.
+func debug_expire_next_ticket() -> bool:
+	for i: int in _tickets.size():
+		var ticket: Dictionary = _tickets[i]
+		if not bool(ticket["arrived"]) or bool(ticket["expired"]):
+			continue
+		if is_task_completed(str(_night_tasks[i].get("id", ""))):
+			continue
+		ticket["expired"] = true
+		ticket_expired.emit(i)
+		return true
+	return false
+
+
 func _process(delta: float) -> void:
 	if is_night_active:
 		_process_ai_boosts(delta)
@@ -318,5 +368,8 @@ func _win_night() -> void:
 	night_won.emit(current_night)
 
 
+## Quedarse sin energía ya no mata de inmediato: la noche sigue corriendo a
+## oscuras y el Mago Eléctrico viene a cobrar. Si dan las 6 AM antes, el
+## jugador se salva, así que aquí no se termina nada.
 func _on_power_depleted() -> void:
-	trigger_game_over("Te quedaste sin energía.")
+	pass

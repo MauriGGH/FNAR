@@ -125,6 +125,16 @@ func toggle_infinite() -> void:
 	power_changed.emit(power)
 
 
+## El panel de pruebas pone la energía donde quiera. En 0 dispara el apagón
+## igual que si se hubiera gastado sola.
+func debug_set_power(percent: float) -> void:
+	power = clampf(percent, 0.0, NightConfig.MAX_POWER)
+	power_changed.emit(power)
+	if is_zero_approx(power):
+		is_draining = false
+		power_depleted.emit()
+
+
 func _process(delta: float) -> void:
 	_process_breaker(delta)
 	if not is_draining:
