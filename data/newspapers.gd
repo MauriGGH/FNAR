@@ -29,13 +29,13 @@ const CLIPPINGS: Array[Dictionary] = [
 		],
 	},
 	{
-		"title": "DESAPARECE PROFESOR DURANTE LA BIENVENIDA",
+		"title": "DESAPARECE UN ALUMNO DURANTE LA BIENVENIDA",
 		"date": "3 de septiembre",
 		"body": [
-			"El profesor Santi no volvió a casa tras el evento de bienvenida.",
-			"Compañeros declaran que la última vez que lo vieron traía puesta",
-			"la botarga de la mascota de la universidad. La botarga apareció",
-			"al día siguiente, doblada en su silla. De él, ni una pista.",
+			"Santi, alumno de Sistemas, no volvió a casa tras el evento de",
+			"bienvenida. Compañeros declaran que la última vez que lo vieron",
+			"traía puesta la botarga de la mascota de la universidad. La",
+			"botarga apareció al día siguiente, doblada en su silla.",
 		],
 	},
 	{
@@ -43,9 +43,9 @@ const CLIPPINGS: Array[Dictionary] = [
 		"date": "19 de septiembre",
 		"body": [
 			"Alumnos de la coordinación reportan que la botarga guardada en el",
-			"cubículo 3 toca el himno de la universidad de madrugada, sin que",
-			"nadie le dé cuerda. La jefatura lo atribuye a \"un juguete viejo\"",
-			"y pide no difundir rumores entre los de primer semestre.",
+			"cubículo 3 toca de madrugada una cancioncita de cajita musical,",
+			"sin que nadie le dé cuerda. La jefatura lo atribuye a \"un juguete",
+			"viejo\" y pide no difundir rumores entre los de primer semestre.",
 		],
 	},
 	{

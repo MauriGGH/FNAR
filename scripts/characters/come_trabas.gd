@@ -1,9 +1,10 @@
 class_name ComeTrabas
 extends Animatronic
 
-## Come Trabas (rol Puppet; antes el profe Santi). La botarga de la mascota con
-## el alma de Santi dentro. Mientras tenga cuerda sigue desplomada en la silla
-## del cubículo 3 y toca el himno; la cuerda baja sola y se le da manteniendo
+## Come Trabas (rol Puppet; antes Santi, un alumno de Sistemas). La botarga de
+## la mascota con el alma de Santi dentro. Mientras tenga cuerda sigue
+## desplomada en la silla del cubículo 3 y toca una canción de cajita musical
+## sin nombre; la cuerda baja sola y se le da manteniendo
 ## el botón de la CAM 4. En cero levanta la cabeza, deja la silla vacía y va
 ## por el jugador: el salto es la botarga misma.
 ## No usa el dado de la IA: su reloj es la cuerda.
