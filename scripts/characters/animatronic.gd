@@ -22,6 +22,8 @@ signal made_noise(text: String, duration: float)
 
 var current_room: String = ""
 var is_active: bool = false
+## Mirando fijo a la cámara, a punto de salir de su lugar inicial.
+var is_stalking: bool = false
 
 # Lo que está haciendo el jugador. El night.gd lo mantiene al día para todos.
 var watched_camera: int = Rooms.NO_CAMERA  # 0 = no está viendo cámaras
@@ -35,6 +37,7 @@ var _elapsed: float = 0.0
 func start() -> void:
 	_route_index = 0
 	_elapsed = 0.0
+	is_stalking = false
 	current_room = route[0] if not route.is_empty() else ""
 	is_active = ai_level > 0 and not route.is_empty()
 	moved.emit("", current_room)
@@ -79,8 +82,39 @@ func try_move() -> bool:
 		return false
 	if randi_range(1, 20) > ai_level:
 		return false
+	# Acecho: la primera oportunidad en su lugar inicial no lo mueve, solo lo
+	# pone a mirar fijo a la cámara; la siguiente ya lo saca.
+	if _should_start_stalking():
+		is_stalking = true
+		return true
 	advance()
 	return true
+
+
+## Solo acecha el último que quede en su lugar inicial: en la sala de juntas,
+## mientras haya más de uno, nadie se queda mirando a la cámara.
+func _should_start_stalking() -> bool:
+	return (stalks_before_leaving() and not is_stalking
+		and _route_index == 0 and others_in_room() == 0)
+
+
+## Gancho: este profe hace una pausa de acecho antes de salir de su lugar.
+func stalks_before_leaving() -> bool:
+	return false
+
+
+## Cuántos otros profes activos están en la misma habitación que este. Son
+## todos hermanos del mismo nodo Animatronics, así que se preguntan ahí.
+func others_in_room() -> int:
+	var parent: Node = get_parent()
+	if parent == null:
+		return 0
+	var count: int = 0
+	for sibling: Node in parent.get_children():
+		var other: Animatronic = sibling as Animatronic
+		if other != null and other != self and other.is_active and other.current_room == current_room:
+			count += 1
+	return count
 
 
 ## Gancho: la clave de este profe en la tabla de niveles de data/nights.gd.
@@ -130,30 +164,44 @@ func zone_presence(_zone_id: String) -> String:
 	return ""
 
 
-## Nombre corto, en minúsculas y sin acentos, para buscar imágenes del tipo
-## camXX_<slug>.png. Lo usa la CAM 7 para mostrar a quien esté en el pasillo.
+## Gancho: ¿se ve este profe en esa zona de la oficina? A diferencia de
+## zone_presence(), no depende de la linterna: eso lo dice needs_flashlight().
+func is_in_zone(_zone_id: String) -> bool:
+	return false
+
+
+## true si en esa zona solo se ve dentro del haz de la linterna.
+func needs_flashlight(_zone_id: String) -> bool:
+	return false
+
+
+## El nombre corto con el que este profe sale en los archivos de imagen:
+## barcosa, mamador, urena, juan, armando, rochis, audel. Cada uno lo pone.
 func image_slug() -> String:
-	var slug: String = display_name.to_lower()
-	for pair: Array in [["á", "a"], ["é", "e"], ["í", "i"], ["ó", "o"], ["ú", "u"],
-			["ü", "u"], ["ñ", "n"], [" ", "_"], [".", "_"]]:
-		slug = slug.replace(str(pair[0]), str(pair[1]))
-	return slug
-
-
-## Estado de la cámara que vigila a este profe, para buscar la imagen
-## camXX_<estado>.png. Cadena vacía = no aporta ningún estado.
-func camera_state() -> String:
 	return ""
 
 
-## Estado que este profe reporta para una cámara concreta. Por defecto solo
-## habla de la cámara de la habitación donde está, pero quien quiera puede
-## sobrescribirlo para seguir reportando una cámara que ya dejó (Barcosa
-## diciendo "salio" en la CAM 10 mientras corre por el pasillo).
-func camera_state_for(camera: int) -> String:
-	if camera != Rooms.NO_CAMERA and camera == Rooms.camera_of(current_room):
-		return camera_state()
-	return ""
+## El pedazo que este profe aporta al nombre del estado de una cámara, o
+## cadena vacía si no se ve ahí. Cuando hay varios en la misma cámara, el
+## sistema los une en el orden fijo: cam02_mamador_urena.
+func camera_token(camera: int) -> String:
+	if camera == Rooms.NO_CAMERA or camera != Rooms.camera_of(current_room):
+		return ""
+	return _slug_token()
+
+
+## true si en esa cámara este profe tapa a los demás. Barcosa corriendo por el
+## pasillo es el único caso: se muestra solo a él.
+func hides_others(_camera: int) -> bool:
+	return false
+
+
+## El nombre corto, con el sufijo de acecho si está mirando a la cámara.
+func _slug_token() -> String:
+	var slug: String = image_slug()
+	if slug.is_empty():
+		return ""
+	return "%s-acecho" % slug if is_stalking else slug
 
 
 ## Mueve al profe al paso indicado de su ruta y avisa con la señal.
@@ -161,6 +209,7 @@ func move_to_step(index: int) -> void:
 	var target: String = route[index]
 	assert(Rooms.has_room(target), "Habitación desconocida en la ruta: " + target)
 	var previous: String = current_room
+	is_stalking = false
 	_route_index = index
 	current_room = target
 	moved.emit(previous, current_room)

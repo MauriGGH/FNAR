@@ -34,6 +34,9 @@ var _glass_elapsed: float = 0.0
 ## Lo que lleva encendida la linterna, acumulado con el delta del juego. Con
 ## el reloj de pared no serviría: el tiempo del juego es el que cuenta.
 var _flash_elapsed: float = -1.0
+## +1 avanzando por la ruta, -1 de regreso. Solo lo usa el que se retira
+## caminando (Armando), que sale del edificio y después da la vuelta.
+var _direction: int = 1
 
 
 func start() -> void:
@@ -44,6 +47,7 @@ func start() -> void:
 	_state = State.WALKING
 	_glass_elapsed = 0.0
 	_flash_elapsed = -1.0
+	_direction = 1
 	flashes = 0
 
 
@@ -61,10 +65,14 @@ func _process(delta: float) -> void:
 				_catch_player()
 
 
-## Le ganó el dado: un paso más. El último paso de la ruta es el cristal.
+## Le ganó el dado: un paso en el sentido que lleva. Al llegar al final de la
+## ruta da la vuelta, así que el que se retira caminando regresa por donde vino.
 func advance() -> void:
-	var next_step: int = _route_index + 1
-	if next_step >= route.size():
+	var next_step: int = _route_index + _direction
+	if next_step < 0 or next_step >= route.size():
+		_direction = -_direction
+		next_step = _route_index + _direction
+	if next_step < 0 or next_step >= route.size():
 		return
 	move_to_step(next_step)
 	if next_step == glass_step():
@@ -90,6 +98,16 @@ func set_flashlight_on(is_on: bool) -> void:
 
 
 ## Solo se ve pegado al cristal si la linterna está encendida.
+## Está pegado al cristal, alumbrado o no.
+func is_in_zone(zone_id: String) -> bool:
+	return zone_id == GLASS_ZONE and _state == State.AT_GLASS
+
+
+## En el cristal solo se ve dentro del haz.
+func needs_flashlight(zone_id: String) -> bool:
+	return zone_id == GLASS_ZONE
+
+
 func zone_presence(zone_id: String) -> String:
 	if zone_id != GLASS_ZONE or _state != State.AT_GLASS:
 		return ""
@@ -100,7 +118,12 @@ func debug_text() -> String:
 	if _state == State.AT_GLASS:
 		return "en el cristal, %d/%d destellos, %.1f s" % [
 			flashes, FLASHES_TO_REPEL, maxf(GLASS_TIME - _glass_elapsed, 0.0)]
-	return "en %s" % Rooms.display_name(current_room)
+	var text: String = "en %s" % Rooms.display_name(current_room)
+	if is_stalking:
+		text += " (acechando)"
+	if retreats_walking():
+		text += ", subiendo" if _direction < 0 else ", bajando"
+	return text
 
 
 ## true mientras esté pegado al cristal. Lo usan las pruebas y la depuración.
@@ -113,6 +136,7 @@ func debug_force_to_glass() -> void:
 	debug_activate()
 	if _state != State.WALKING or route.size() < 2:
 		return
+	_direction = 1
 	move_to_step(glass_step() - 1)
 	advance()
 
@@ -142,9 +166,16 @@ func glass_step() -> int:
 	return maxi(route.size() - 1, 0)
 
 
-## A qué paso regresa cuando lo ahuyentan.
+## A qué paso regresa cuando lo ahuyentan, si se retira de un salto.
 func retreat_step() -> int:
 	return 0
+
+
+## Por defecto, al ahuyentarlo vuelve de un salto a su lugar inicial. Armando
+## no: sigue caminando hacia abajo, sale del edificio, llega a la cafetería y
+## de ahí da la vuelta para volver a subir.
+func retreats_walking() -> bool:
+	return false
 
 
 ## La causa del game over y lo que dice la etiqueta de presencia. Por defecto
@@ -180,7 +211,13 @@ func _repel() -> void:
 	_state = State.WALKING
 	_glass_elapsed = 0.0
 	flashes = 0
-	move_to_step(retreat_step())
+	if not retreats_walking():
+		_direction = 1
+		move_to_step(retreat_step())
+		return
+	# Se va caminando hacia abajo, un paso de inmediato para despegarse.
+	_direction = 1
+	advance()
 
 
 func _catch_player() -> void:

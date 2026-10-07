@@ -10,7 +10,14 @@ extends GlassStalker
 ## la pantalla. Eso lo maneja la pantalla de la PC; aquí solo vive la
 ## probabilidad, las frases y la tecla de depuración.
 
-const ROUTE: Array[String] = ["sala_juntas", "pasillo_norte", "pasillo_sur"]
+## Su recorrido completo. Al ahuyentarlo con la linterna no vuelve de un salto
+## a la sala de juntas: sigue bajando, sale del edificio, cruza el
+## estacionamiento hasta la cafetería y de ahí da la vuelta.
+const ROUTE: Array[String] = ["sala_juntas", "pasillo_norte", "pasillo_sur",
+	"escalera_pb", "estacionamiento", "cafeteria"]
+## El cristal queda a media ruta, no al final.
+const GLASS_STEP: int = 2
+const STEP_ESCALERA_PB: int = 3
 const MOVE_INTERVAL: float = 7.0
 const GAME_OVER_CAUSE: String = "Armando Prompts"
 
@@ -37,6 +44,16 @@ const PHRASES: Array[String] = [
 signal takeover_requested(phrase: String)
 
 
+## Nombre corto para los archivos de imagen: cam07_armando.png y demás.
+func image_slug() -> String:
+	return "armando"
+
+
+## Antes de salir de su lugar inicial se queda mirando fijo a la cámara.
+func stalks_before_leaving() -> bool:
+	return true
+
+
 func ai_key() -> String:
 	return Nights.ARMANDO
 
@@ -51,6 +68,21 @@ func step_interval() -> float:
 
 func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
+
+
+func glass_step() -> int:
+	return GLASS_STEP
+
+
+## Parado en la escalera lleva su sufijo: cam07_armando-escalera.
+func _slug_token() -> String:
+	if current_room == ROUTE[STEP_ESCALERA_PB]:
+		return "%s-escalera" % image_slug()
+	return super()
+
+
+func retreats_walking() -> bool:
+	return true
 
 
 ## Tecla 6: lo manda directo al cristal.

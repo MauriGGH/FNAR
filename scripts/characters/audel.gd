@@ -43,6 +43,16 @@ var _state: State = State.WALKING
 var _cortaso_elapsed: float = 0.0
 
 
+## Nombre corto para los archivos de imagen: cam07_audel.png y demás.
+func image_slug() -> String:
+	return "audel"
+
+
+## Antes de salir de su lugar inicial se queda mirando fijo a la cámara.
+func stalks_before_leaving() -> bool:
+	return true
+
+
 func ai_key() -> String:
 	return Nights.AUDEL
 
@@ -82,6 +92,7 @@ func try_move() -> bool:
 
 ## La descarga: tumba de 1 a 3 cámaras y avisa para el destello y la estática.
 func cause_discharge() -> void:
+	debug_activate()
 	var affected: PackedInt32Array = GameManager.patch_panel.cause_discharge(GameManager.current_night)
 	if affected.is_empty():
 		return
@@ -108,6 +119,11 @@ func on_blackout() -> void:
 	move_to_step(STEP_TECHO)
 
 
+## Se ve en la escalera al techo mientras baja.
+func is_in_zone(zone_id: String) -> bool:
+	return zone_id == LADDER_ZONE and _state == State.WALKING and _route_index == STEP_ESCALERA
+
+
 func zone_presence(zone_id: String) -> String:
 	if zone_id == LADDER_ZONE and _state == State.WALKING and _route_index == STEP_ESCALERA:
 		return LADDER_PRESENCE
@@ -128,6 +144,7 @@ func debug_text() -> String:
 
 ## F10: lo manda directo a la escalera, para no esperar al dado.
 func debug_force_to_ladder() -> void:
+	debug_activate()
 	if _state != State.WALKING:
 		return
 	move_to_step(STEP_ESCALERA)

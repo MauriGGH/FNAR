@@ -28,8 +28,12 @@ const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay
 const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
+const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
+
+## Nombre de cada vista en los archivos de recorte: layers/centro_urena.png.
+const VIEW_LAYER_NAMES: Array[String] = ["izquierda", "centro", "derecha"]
 ## Si existe la foto de Ureña se usa; si no, una etiqueta.
-const URENA_PHOTO_PATH: String = "res://assets/art/office/urena_foto"
+const URENA_PHOTO_PATH: String = "res://assets/art/office/layers/urena_foto"
 
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
@@ -148,6 +152,7 @@ var _urena_photos: int = 0
 var flashlight_overlay: Control = null
 var phone_light: Control = null
 var door_shutter: Control = null
+var _layers: Array[Control] = []
 var _shake_left: float = 0.0
 
 var _view_nodes: Array[Control] = []
@@ -166,6 +171,10 @@ func _ready() -> void:
 	_build_zones(CENTER_ZONES_PATH, $Views/CenterView/Content/Zones, CENTER_CLICKABLE)
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
+	# El orden importa: los recortes de los profes van debajo de la cortina
+	# (quien golpea la puerta queda detrás del metal) y las etiquetas de
+	# presencia encima de todo, para que se lean con la cortina cerrada.
+	_build_layers()
 	_build_door_shutter()
 	_build_labels()
 	_build_blackout_overlays()
@@ -199,6 +208,9 @@ func _update_flashlight() -> void:
 		flashlight_failed.emit()
 		return
 	_flashlight_on = wants_on
+	# Los que solo se ven alumbrados aparecen y desaparecen con el haz.
+	for layer: Control in _layers:
+		layer.set_lit(_flashlight_on, zone_rect(GLASS_ZONE))
 	flashlight_overlay.set_on(_flashlight_on)
 	flashlight_changed.emit(_flashlight_on)
 
@@ -319,6 +331,10 @@ func _layout_flashlight() -> void:
 		flashlight_overlay.size = content_size
 		flashlight_overlay.set_beam(zone_rect(GLASS_ZONE),
 			Vector2(content_size.x * 0.5, content_size.y))
+	for layer: Control in _layers:
+		layer.position = Vector2.ZERO
+		layer.size = content_size
+		layer.set_lit(_flashlight_on, zone_rect(GLASS_ZONE))
 	if door_shutter != null:
 		door_shutter.position = Vector2.ZERO
 		door_shutter.size = content_size
@@ -656,6 +672,46 @@ func _content_for_zone(zone_id: String) -> Control:
 	if not _zones.has(zone_id):
 		return center_content
 	return (_zones[zone_id] as OfficeZone).get_parent().get_parent() as Control
+
+
+## Una capa de recortes por vista, debajo de las etiquetas de presencia: si
+## algún día existe el recorte, la etiqueta se apaga sola desde el night.gd.
+func _build_layers() -> void:
+	_layers.clear()
+	for i: int in _content_nodes.size():
+		var layer: Control = OFFICE_LAYERS.new()
+		layer.name = "Layers"
+		layer.view_name = VIEW_LAYER_NAMES[i]
+		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_content_nodes[i].add_child(layer)
+		_layers.append(layer)
+
+
+## Quiénes se ven en cada vista. El night.gd lo arma con los profes presentes;
+## cada entrada es {"slug": String, "lit_only": bool}.
+func set_view_present(view: int, present: Array[Dictionary]) -> void:
+	if view < 0 or view >= _layers.size():
+		return
+	_layers[view].set_present(present)
+
+
+## En qué vista vive una zona, como índice de View.
+func view_of_zone(zone_id: String) -> int:
+	var content: Control = _content_for_zone(zone_id)
+	var index: int = _content_nodes.find(content)
+	return index if index >= 0 else View.CENTER
+
+
+## Cuántas vistas hay, para que el night.gd las recorra.
+func view_count() -> int:
+	return _layers.size()
+
+
+## true si ya existe el recorte de ese profe para esa vista.
+func has_layer(view: int, slug: String) -> bool:
+	if view < 0 or view >= _layers.size():
+		return false
+	return _layers[view].has_layer(slug)
 
 
 ## Sacude la vista un momento. Lo usa el golpe de la cortina.

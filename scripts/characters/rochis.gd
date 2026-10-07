@@ -59,6 +59,11 @@ var _state_elapsed: float = 0.0
 var _annoyed: bool = false
 
 
+## Nombre corto para los archivos de imagen: cam07_rochis.png y demás.
+func image_slug() -> String:
+	return "rochis"
+
+
 func ai_key() -> String:
 	return Nights.ROCHIS
 
@@ -155,12 +160,17 @@ func camera_state() -> String:
 	return STATE_SITTING
 
 
-## Una vez que salió, la CAM 3 tiene que seguir diciendo que la silla quedó
-## vacía, aunque Rochis ya esté en otra habitación.
-func camera_state_for(camera: int) -> String:
+## Su cámara lleva sus etapas, no su nombre. Una vez que salió sigue
+## diciendo que la silla quedó vacía, aunque él ya esté en otra habitación.
+func camera_token(camera: int) -> String:
 	if camera != Rooms.camera_of(ROOM):
 		return ""
 	return camera_state() if _state == State.CUBICLE else STATE_EMPTY
+
+
+## Se ve asomado en el marco lateral, en las dos vistas.
+func is_in_zone(zone_id: String) -> bool:
+	return _state == State.INSIDE and zone_id in SIDE_ZONES
 
 
 func zone_presence(zone_id: String) -> String:
@@ -180,6 +190,7 @@ func debug_text() -> String:
 
 ## Tecla 3: lo deja de pie, para no esperar las etapas.
 func debug_stand_up() -> void:
+	debug_activate()
 	if _state != State.CUBICLE:
 		return
 	_set_stage(Stage.STANDING)

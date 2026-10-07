@@ -15,9 +15,15 @@ const CLOSED_IMAGE_PATH: String = "res://assets/art/office/oficina_centro_cortin
 ## Qué recortar de esa foto, en coordenadas normalizadas de la vista (la foto
 ## está alineada con oficina_centro). El recorte incluye el cajón de la cortina.
 const IMAGE_AREA: Rect2 = Rect2(0.289, 0.293, 0.122, 0.391)
-## De aquí hacia abajo está la lámina, y es lo único que se anima. El cajón,
-## que es lo que queda arriba, aparece de golpe al cerrar la chapa.
+## De aquí hacia abajo está la lámina, y es lo único que se anima.
 const CURTAIN_TOP: float = 0.335
+
+## El cajón del rodillo es lo que queda arriba de CURTAIN_TOP. El diseño pide
+## que esté pintado en la foto de la oficina y no se dibuje nunca, pero
+## oficina_centro todavía no lo trae: ahí arriba solo hay un travesaño. Hasta
+## que se re-renderice la foto con el cajón, se dibuja de golpe (sin animar)
+## para que la lámina no cuelgue de la nada. Con la foto nueva, poner false.
+const DRAW_ROLLER_BOX: bool = true
 
 # Bajar: 0.3 s de caída y 0.05 s de rebote, 0.35 s en total.
 const CLOSE_TIME: float = 0.3
@@ -100,7 +106,7 @@ func _draw() -> void:
 func _draw_from_image() -> void:
 	var area: Rect2 = Rect2(IMAGE_AREA.position * size, IMAGE_AREA.size * size)
 	var top: float = CURTAIN_TOP * size.y
-	if top > area.position.y:
+	if DRAW_ROLLER_BOX and top > area.position.y:
 		_blit(Rect2(area.position, Vector2(area.size.x, top - area.position.y)))
 	var height: float = (area.end.y - top) * clampf(progress, 0.0, 1.0)
 	if height <= 0.0:

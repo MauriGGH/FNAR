@@ -19,10 +19,20 @@ const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s"
 const BASE_STATES: Array[String] = ["etapa0", "vacia", "base"]
 const DEFAULT_CAMERA: int = 1
 
-## La CAM 7 mira hacia arriba de la escalera y alcanza a ver el final del
-## pasillo, así que además de su cuarto muestra a quien esté en pasillo_sur.
+## El orden fijo en que se nombran los profes en el archivo de una cámara:
+## cam02_mamador_urena, nunca cam02_urena_mamador. Los que no están en la
+## lista (Rochis, Audel, la botarga) van después, pero siempre están solos.
+const NAME_ORDER: Array[String] = ["barcosa", "mamador", "urena", "juan", "armando"]
+## La escalera a planta baja: Mamador y Armando pueden coincidir ahí, pero el
+## arte solo tiene a cada uno por separado, así que se muestra al primero del
+## orden fijo y el otro no se ve.
 const STAIRS_CAMERA: int = 7
-const STAIRS_EXTRA_ROOM: String = "pasillo_sur"
+
+## Con tantos profes o más en la misma cámara, la señal se satura.
+const SATURATED_COUNT: int = 3
+## La única cámara que sí tiene imagen con tres: la sala de juntas.
+const SATURATED_EXCEPTION_CAMERA: int = 13
+const SATURATED_STATIC: float = 0.85
 
 # Estática: medio segundo fuerte al cambiar de cámara y luego de reposo.
 const STATIC_IDLE: float = 0.07
@@ -72,10 +82,13 @@ var _ambient_elapsed: float = 0.0
 var _ambient_tween: Tween = null
 
 @onready var feed_image: TextureRect = $FeedImage
+## Recortes encimados sobre el video, como la cortina de la puerta.
+@onready var camera_overlay: Control = $CameraOverlay
 @onready var static_overlay: ColorRect = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
 @onready var rec_dot: ColorRect = $RecDot
 @onready var no_signal_label: Label = $NoSignalLabel
+@onready var saturated_label: Label = $SaturatedLabel
 @onready var fallback_label: Label = $FallbackLabel
 @onready var debug_label: Label = $DebugOccupantsLabel
 @onready var minimap_frame: Control = $Minimap
@@ -96,7 +109,9 @@ func _ready() -> void:
 	_start_rec_blink()
 	_build_minimap_buttons()
 	feed_image.visible = false
+	camera_overlay.hide_region()
 	no_signal_label.visible = false
+	saturated_label.visible = false
 	wind_control.visible = false
 	audio_control.visible = false
 	audio_control.pressed.connect(_on_audio_pressed)
@@ -186,15 +201,15 @@ func _refresh_view() -> void:
 func _signature_of(camera: int) -> String:
 	var names: PackedStringArray = _occupants_of(camera)
 	names.sort()
-	return "%d|%s|%s" % [camera, _state_of(camera), "/".join(names)]
+	var state: String = _state_of(camera)
+	var curtain: bool = CameraOverlays.needs_door_curtain(camera, state, PowerManager.is_door_closed)
+	return "%d|%s|%s|%s" % [camera, state, "/".join(names), curtain]
 
 
-## Qué habitaciones alcanza a ver una cámara. Casi siempre solo la suya.
+## Qué habitaciones alcanza a ver una cámara: solo la suya. La CAM 7 ya no
+## alcanza a ver el final del pasillo, así que ninguna mira de reojo.
 func _rooms_seen_by(camera: int) -> PackedStringArray:
-	var rooms: PackedStringArray = PackedStringArray([Rooms.room_of_camera(camera)])
-	if camera == STAIRS_CAMERA:
-		rooms.append(STAIRS_EXTRA_ROOM)
-	return rooms
+	return PackedStringArray([Rooms.room_of_camera(camera)])
 
 
 ## Quiénes se ven en esa cámara, contando lo que alcanza a ver de reojo.
@@ -207,20 +222,46 @@ func _occupants_of(camera: int) -> PackedStringArray:
 	return names
 
 
-## El primer profe que tenga algo que decir de esta cámara define el estado.
+## El estado de una cámara: los nombres de los profes presentes, en el orden
+## fijo y unidos con guion bajo (cam02_mamador_urena). Cada profe aporta su
+## pedazo, que puede ser su nombre, su nombre con -acecho o un estado propio
+## (las etapas de Barcosa, la botarga, Rochis).
 func _state_of(camera: int) -> String:
+	return "_".join(_tokens_of(camera))
+
+
+## true cuando hay tantos profes que no hay imagen para esa combinación.
+func is_saturated(camera: int) -> bool:
+	if camera == SATURATED_EXCEPTION_CAMERA:
+		return false
+	return _tokens_of(camera).size() >= SATURATED_COUNT
+
+
+## Los pedazos del nombre, ya ordenados y con las reglas de cada cámara.
+func _tokens_of(camera: int) -> PackedStringArray:
+	var found: Array[Dictionary] = []
 	for animatronic: Animatronic in _animatronics:
-		var state: String = animatronic.camera_state_for(camera)
-		if not state.is_empty():
-			return state
-	# Lo que ve de reojo no tiene estado propio, así que el estado es el
-	# nombre del profe: la CAM 7 busca cam07_barcosa.png y así.
-	var extra: PackedStringArray = _rooms_seen_by(camera)
-	for i: int in range(1, extra.size()):
-		for animatronic: Animatronic in _animatronics:
-			if animatronic.current_room == extra[i]:
-				return animatronic.image_slug()
-	return ""
+		var token: String = animatronic.camera_token(camera)
+		if token.is_empty():
+			continue
+		# Barcosa corriendo tapa a los demás: se muestra solo a él.
+		if animatronic.hides_others(camera):
+			return PackedStringArray([token])
+		found.append({"token": token, "rank": _rank_of(animatronic.image_slug())})
+	found.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a["rank"]) < int(b["rank"]))
+
+	var tokens: PackedStringArray = PackedStringArray()
+	for entry: Dictionary in found:
+		tokens.append(str(entry["token"]))
+	if camera == STAIRS_CAMERA and tokens.size() > 1:
+		return PackedStringArray([tokens[0]])
+	return tokens
+
+
+func _rank_of(slug: String) -> int:
+	var rank: int = NAME_ORDER.find(slug)
+	return rank if rank >= 0 else NAME_ORDER.size()
 
 
 ## Busca la imagen del estado. Si no existe, usa la imagen base de la cámara y
@@ -230,12 +271,24 @@ func _refresh_camera_content() -> void:
 	# Sin señal no se ve nada: estática fija y el cartel parpadeando.
 	if GameManager.patch_panel.is_camera_down(current_camera):
 		feed_image.visible = false
+		camera_overlay.hide_region()
 		fallback_label.visible = false
+		saturated_label.visible = false
 		no_signal_label.visible = true
 		_set_static_strength(NO_SIGNAL_STATIC)
 		_refresh_occupants(room)
 		return
 	no_signal_label.visible = false
+	# Demasiados profes juntos: no hay imagen para eso, se satura.
+	if is_saturated(current_camera):
+		feed_image.visible = false
+		camera_overlay.hide_region()
+		fallback_label.visible = false
+		saturated_label.visible = true
+		_set_static_strength(SATURATED_STATIC)
+		_refresh_occupants(room)
+		return
+	saturated_label.visible = false
 	var state: String = _state_of(current_camera)
 	var texture: Texture2D = _camera_texture(current_camera, state)
 	var is_exact: bool = texture != null
@@ -244,6 +297,7 @@ func _refresh_camera_content() -> void:
 
 	feed_image.texture = texture
 	feed_image.visible = texture != null
+	_refresh_door_curtain(state, texture != null)
 	_refresh_fallback_label(state, is_exact, room)
 	_refresh_occupants(room)
 
@@ -260,6 +314,20 @@ func _refresh_fallback_label(state: String, is_exact: bool, room: String) -> voi
 	fallback_label.visible = not parts.is_empty()
 	if fallback_label.visible:
 		fallback_label.text = "[sin imagen] " + " - ".join(parts)
+
+
+## La cortina de la puerta cerrada, encimada sobre el estado que toque. Los
+## estados que ya la traen pintada (Barcosa golpeando) no llevan nada.
+func _refresh_door_curtain(state: String, has_image: bool) -> void:
+	if not has_image or not CameraOverlays.needs_door_curtain(
+			current_camera, state, PowerManager.is_door_closed):
+		camera_overlay.hide_region()
+		return
+	var texture: Texture2D = _load_texture(CameraOverlays.DOOR_IMAGE)
+	if texture == null:
+		camera_overlay.hide_region()
+		return
+	camera_overlay.show_region(texture, CameraOverlays.DOOR_RECT)
 
 
 func _camera_texture(camera: int, state: String) -> Texture2D:
@@ -373,6 +441,9 @@ func _process(delta: float) -> void:
 	if no_signal_label.visible:
 		no_signal_label.modulate.a = 1.0 if fmod(_blink_elapsed(), NO_SIGNAL_BLINK_TIME * 2.0) < NO_SIGNAL_BLINK_TIME else 0.1
 		_set_static_strength(NO_SIGNAL_STATIC)
+	if saturated_label.visible:
+		saturated_label.modulate.a = 1.0 if fmod(_blink_elapsed(), NO_SIGNAL_BLINK_TIME * 2.0) < NO_SIGNAL_BLINK_TIME else 0.25
+		_set_static_strength(SATURATED_STATIC)
 	_process_ambient(delta)
 	_debug_elapsed += delta
 	if _debug_elapsed < DEBUG_REFRESH_TIME:
@@ -388,7 +459,7 @@ func _process(delta: float) -> void:
 ## En las cámaras de ambiente, cada tanto pasa algo raro sin consecuencias:
 ## la imagen parpadea y sale un aviso. Solo mientras el jugador las mira.
 func _process_ambient(delta: float) -> void:
-	if not AmbientEvents.is_ambient(current_camera) or no_signal_label.visible:
+	if not AmbientEvents.is_ambient(current_camera) or no_signal_label.visible or saturated_label.visible:
 		_ambient_elapsed = 0.0
 		return
 	_ambient_elapsed += delta

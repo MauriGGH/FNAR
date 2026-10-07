@@ -117,7 +117,7 @@ const ROOMS: Dictionary = {
 	"escalera_pb": {
 		"display_name": "Escalera a planta baja",
 		"camera": 7,
-		"links": ["pasillo_sur", "cafeteria"],
+		"links": ["pasillo_sur", "cafeteria", "estacionamiento"],
 	},
 	"cafeteria": {
 		"display_name": "Cafetería sur",
@@ -127,7 +127,7 @@ const ROOMS: Dictionary = {
 	"estacionamiento": {
 		"display_name": "Estacionamiento",
 		"camera": 8,
-		"links": ["cafeteria"],
+		"links": ["cafeteria", "escalera_pb"],
 	},
 }
 

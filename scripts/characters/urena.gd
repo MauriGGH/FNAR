@@ -18,6 +18,16 @@ const MOVE_INTERVAL: float = 8.0
 const GAME_OVER_CAUSE: String = "Ureña"
 
 
+## Nombre corto para los archivos de imagen: cam07_urena.png y demás.
+func image_slug() -> String:
+	return "urena"
+
+
+## Antes de salir de su lugar inicial se queda mirando fijo a la cámara.
+func stalks_before_leaving() -> bool:
+	return true
+
+
 func ai_key() -> String:
 	return Nights.URENA
 

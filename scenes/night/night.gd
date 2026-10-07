@@ -164,19 +164,40 @@ func _on_night_started(night: int) -> void:
 		animatronic.start()
 
 
-## Mientras no haya imágenes, la oficina dice por texto quién se ve en cada
-## zona: la puerta, el cristal y la escalera.
+## Quién se ve en cada vista de la oficina. Si ya existe su recorte PNG, se
+## dibuja el recorte; si no, se queda la etiqueta de texto de siempre.
 func _process(delta: float) -> void:
 	_process_calls(delta)
-	for zone_id: String in office.presence_zone_ids():
-		var text: String = ""
-		for animatronic: Animatronic in _animatronics:
-			text = animatronic.zone_presence(zone_id)
-			if not text.is_empty():
-				break
-		office.set_zone_presence(zone_id, text)
+	_refresh_office_presence()
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
 	warning_icon.set_level(0 if _come_trabas == null else _come_trabas.warning_level())
+
+
+## Por cada zona de presencia busca al primer profe que se vea ahí. Con
+## recorte va a la capa de su vista; sin recorte, a su etiqueta.
+func _refresh_office_presence() -> void:
+	# Una lista por vista, tipada, como la pide la capa de recortes.
+	var by_view: Dictionary = {}
+	for view: int in office.view_count():
+		by_view[view] = [] as Array[Dictionary]
+	for zone_id: String in office.presence_zone_ids():
+		var view: int = office.view_of_zone(zone_id)
+		var label: String = ""
+		for animatronic: Animatronic in _animatronics:
+			if not animatronic.is_in_zone(zone_id):
+				continue
+			var slug: String = animatronic.image_slug()
+			if not slug.is_empty() and office.has_layer(view, slug):
+				by_view[view].append({
+					"slug": slug,
+					"lit_only": animatronic.needs_flashlight(zone_id),
+				})
+			else:
+				label = animatronic.zone_presence(zone_id)
+			break
+		office.set_zone_presence(zone_id, label)
+	for view: int in office.view_count():
+		office.set_view_present(view, by_view[view])
 
 
 func _on_hour_changed(_hour: int) -> void:

@@ -11,6 +11,16 @@ const MOVE_INTERVAL: float = 7.0
 const GAME_OVER_CAUSE: String = "Juan.exe"
 
 
+## Nombre corto para los archivos de imagen: cam07_juan.png y demás.
+func image_slug() -> String:
+	return "juan"
+
+
+## Antes de salir de su lugar inicial se queda mirando fijo a la cámara.
+func stalks_before_leaving() -> bool:
+	return true
+
+
 func ai_key() -> String:
 	return Nights.JUAN_EXE
 

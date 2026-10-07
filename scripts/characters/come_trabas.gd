@@ -119,6 +119,13 @@ func camera_state() -> String:
 	return STATE_WAKING
 
 
+## Su cámara no usa nombres de profe: lleva sus tres estados de siempre.
+func camera_token(camera: int) -> String:
+	if camera != Rooms.camera_of(ROOM):
+		return ""
+	return camera_state()
+
+
 ## Nunca se mueve por su cuenta.
 func can_move() -> bool:
 	return false
