@@ -26,6 +26,14 @@ func _ready() -> void:
 	mouse_exited.connect(_on_mouse_exited)
 
 
+## Prende o apaga el clic en caliente. La foto de Ureña solo se puede clicar
+## después de que la deje, así que su zona empieza apagada.
+func set_clickable(clickable: bool) -> void:
+	is_clickable = clickable
+	mouse_filter = Control.MOUSE_FILTER_STOP if clickable else Control.MOUSE_FILTER_IGNORE
+	queue_redraw()
+
+
 func set_debug_shown(shown: bool) -> void:
 	debug_shown = shown
 	queue_redraw()

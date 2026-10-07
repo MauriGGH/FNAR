@@ -202,8 +202,8 @@ func _signature_of(camera: int) -> String:
 	var names: PackedStringArray = _occupants_of(camera)
 	names.sort()
 	var state: String = _state_of(camera)
-	var curtain: bool = CameraOverlays.needs_door_curtain(camera, state, PowerManager.is_door_closed)
-	return "%d|%s|%s|%s" % [camera, state, "/".join(names), curtain]
+	var overlay: Dictionary = CameraOverlays.overlay_for(camera, state, PowerManager.is_door_closed)
+	return "%d|%s|%s|%s" % [camera, state, "/".join(names), overlay.get("image", "")]
 
 
 ## Qué habitaciones alcanza a ver una cámara: solo la suya. La CAM 7 ya no
@@ -297,7 +297,7 @@ func _refresh_camera_content() -> void:
 
 	feed_image.texture = texture
 	feed_image.visible = texture != null
-	_refresh_door_curtain(state, texture != null)
+	_refresh_overlay(state, texture != null)
 	_refresh_fallback_label(state, is_exact, room)
 	_refresh_occupants(room)
 
@@ -316,18 +316,21 @@ func _refresh_fallback_label(state: String, is_exact: bool, room: String) -> voi
 		fallback_label.text = "[sin imagen] " + " - ".join(parts)
 
 
-## La cortina de la puerta cerrada, encimada sobre el estado que toque. Los
-## estados que ya la traen pintada (Barcosa golpeando) no llevan nada.
-func _refresh_door_curtain(state: String, has_image: bool) -> void:
-	if not has_image or not CameraOverlays.needs_door_curtain(
-			current_camera, state, PowerManager.is_door_closed):
+## Lo que va encimado sobre el video de esta cámara: la cortina de la puerta
+## cerrada en la CAM 2 o la foto de la pared en la CAM 3. Va debajo de la
+## estática, así que la interferencia también lo tapa.
+func _refresh_overlay(state: String, has_image: bool) -> void:
+	var overlay: Dictionary = {}
+	if has_image:
+		overlay = CameraOverlays.overlay_for(current_camera, state, PowerManager.is_door_closed)
+	if overlay.is_empty():
 		camera_overlay.hide_region()
 		return
-	var texture: Texture2D = _load_texture(CameraOverlays.DOOR_IMAGE)
+	var texture: Texture2D = _load_texture(str(overlay["image"]))
 	if texture == null:
 		camera_overlay.hide_region()
 		return
-	camera_overlay.show_region(texture, CameraOverlays.DOOR_RECT)
+	camera_overlay.show_region(texture, overlay["region"])
 
 
 func _camera_texture(camera: int, state: String) -> Texture2D:

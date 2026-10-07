@@ -29,6 +29,7 @@ const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_ove
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
+const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
 
 ## Máscara de oclusión de la puerta: los pedazos de la foto que están más
 ## cerca de la cámara que la puerta (el mueble de la recepción, su base y los
@@ -50,6 +51,8 @@ const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashl
 const GLASS_ZONE: String = "front_glass"
 ## Cuántas fotos puede llegar a dejar en una noche.
 const MAX_URENA_PHOTOS: int = 4
+## La zona de clic de la foto, que solo se enciende cuando ya la dejó.
+const URENA_PHOTO_ZONE: String = "urena_photo"
 
 ## Cada vista se dibuja este factor más grande que la pantalla. Lo que sobra a
 ## lo ancho es el recorrido del mouse; a cambio se recorta un poco arriba y abajo.
@@ -158,6 +161,7 @@ var flashlight_overlay: Control = null
 var phone_light: Control = null
 var door_shutter: Control = null
 var door_occluder: TextureRect = null
+var photo_viewer: Control = null
 var _layers: Array[Control] = []
 var _shake_left: float = 0.0
 
@@ -187,6 +191,7 @@ func _ready() -> void:
 	_build_door_occluder()
 	_build_layers()
 	_build_labels()
+	_build_photo_viewer()
 	_build_blackout_overlays()
 	_build_flashlight()
 	_layout()
@@ -198,6 +203,7 @@ func _ready() -> void:
 
 	for entry: Dictionary in PRESENCE_ZONES:
 		set_zone_presence(str(entry["zone"]), "")
+	_refresh_urena_photos()
 	_refresh_door()
 
 
@@ -268,6 +274,10 @@ func _refresh_urena_photos() -> void:
 		if layer.has_pinned(file_name):
 			names.append(file_name)
 	layer.set_pinned(names)
+	# Sin foto puesta no hay nada que abrir.
+	if _zones.has(URENA_PHOTO_ZONE):
+		var zone: OfficeZone = _zones[URENA_PHOTO_ZONE]
+		zone.set_clickable(not names.is_empty() and photo_viewer != null and photo_viewer.has_photo())
 
 
 ## El night.gd apaga la interacción mientras las cámaras están arriba, para que
@@ -381,6 +391,8 @@ func _layout_blackout_overlays() -> void:
 
 func _process(delta: float) -> void:
 	_update_shake(delta)
+	if photo_viewer != null and photo_viewer.is_open:
+		return  # Mirando la foto: la cabeza no gira ni la linterna se prende.
 	_update_flashlight()
 	if _state != ViewState.PANNING or not is_interactive:
 		return
@@ -624,6 +636,8 @@ func _on_zone_clicked(zone_id: String) -> void:
 			server_room_requested.emit()
 		"breaker":
 			zoom_to_breaker()
+		URENA_PHOTO_ZONE:
+			photo_viewer.open()
 
 
 # --- Puerta y presencias ------------------------------------------------------
@@ -720,6 +734,15 @@ func has_layer(view: int, slug: String) -> bool:
 	if view < 0 or view >= _layers.size():
 		return false
 	return _layers[view].has_layer(slug)
+
+
+## La foto en grande vive fuera de las vistas: ocupa toda la pantalla y no se
+## mueve con el giro de la cabeza.
+func _build_photo_viewer() -> void:
+	photo_viewer = PHOTO_VIEWER.new()
+	photo_viewer.name = "PhotoViewer"
+	photo_viewer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(photo_viewer)
 
 
 ## La máscara de oclusión: va justo encima de la cortina, así que la lámina

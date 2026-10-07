@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cgjmvgkd627p7"
-path="res://.godot/imported/ref_cometrabas.jpeg-901e1ea0649d7c23822ec2d951492084.ctex"
+uid="uid://bsbtk5ebrtnf6"
+path="res://.godot/imported/expediente_rochis.jpeg-e7aed18ac4af65d550a5d92018381aa8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art_refs/ref_cometrabas.jpeg"
-dest_files=["res://.godot/imported/ref_cometrabas.jpeg-901e1ea0649d7c23822ec2d951492084.ctex"]
+source_file="res://assets/art/extras/expediente_rochis.jpeg"
+dest_files=["res://.godot/imported/expediente_rochis.jpeg-e7aed18ac4af65d550a5d92018381aa8.ctex"]
 
 [params]
 

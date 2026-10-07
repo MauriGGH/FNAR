@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c3jhoifkih8r"
-path="res://.godot/imported/ref_mamador_2.jpeg-58dcfa56475f62b73ab2775acab426f7.ctex"
+uid="uid://dpjsf8rt815ay"
+path="res://.godot/imported/expediente_mamador.jpeg-9f10559ce1fd69d8053faa22ceb20654.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art_refs/ref_mamador_2.jpeg"
-dest_files=["res://.godot/imported/ref_mamador_2.jpeg-58dcfa56475f62b73ab2775acab426f7.ctex"]
+source_file="res://assets/art/extras/expediente_mamador.jpeg"
+dest_files=["res://.godot/imported/expediente_mamador.jpeg-9f10559ce1fd69d8053faa22ceb20654.ctex"]
 
 [params]
 

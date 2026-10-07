@@ -67,6 +67,13 @@
       "w": 0.2297,
       "h": 0.4557,
       "desc": "Lado de los cubículos"
+    },
+    "urena_photo": {
+      "x": 0.541,
+      "y": 0.861,
+      "w": 0.09,
+      "h": 0.074,
+      "desc": "Clic: ver en grande la foto que dejó Ureña (solo si ya la dejó)"
     }
   }
 }

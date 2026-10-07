@@ -119,6 +119,12 @@ func camera_state() -> String:
 	return STATE_WAKING
 
 
+## Id del personaje, el mismo que usa su expediente de Extras. Su cámara no
+## lo usa: la CAM 4 lleva sus propios estados.
+func image_slug() -> String:
+	return "come_trabas"
+
+
 ## Su cámara no usa nombres de profe: lleva sus tres estados de siempre.
 func camera_token(camera: int) -> String:
 	if camera != Rooms.camera_of(ROOM):

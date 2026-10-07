@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://iqkohkedbvbs"
-path="res://.godot/imported/ref_audel.jpeg-06b4a528f9fc06f292526b06dad2e836.ctex"
+uid="uid://c815jlqv6o0vq"
+path="res://.godot/imported/expediente_juan.jpeg-688bdee43540dd732bc1e51a81a841b4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art_refs/ref_audel.jpeg"
-dest_files=["res://.godot/imported/ref_audel.jpeg-06b4a528f9fc06f292526b06dad2e836.ctex"]
+source_file="res://assets/art/extras/expediente_juan.jpeg"
+dest_files=["res://.godot/imported/expediente_juan.jpeg-688bdee43540dd732bc1e51a81a841b4.ctex"]
 
 [params]
 
