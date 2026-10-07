@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
 [ext_resource type="PackedScene" path="res://scenes/camera_system/camera_system.tscn" id="3_cameras"]
-[ext_resource type="Script" path="res://scripts/characters/test_profe.gd" id="4_test_profe"]
 [ext_resource type="Script" path="res://scenes/night/usage_bars.gd" id="5_usage_bars"]
 [ext_resource type="Script" path="res://scenes/night/camera_bar.gd" id="6_camera_bar"]
 [ext_resource type="Script" path="res://scripts/characters/barcosa.gd" id="7_barcosa"]
@@ -93,13 +92,6 @@ display_name = "Juan.exe"
 [node name="Armando" type="Node" parent="Animatronics"]
 script = ExtResource("24_armando")
 display_name = "Armando Prompts"
-
-[node name="TestProfe" type="Node" parent="Animatronics"]
-script = ExtResource("4_test_profe")
-display_name = "Profe de prueba"
-ai_level = 0
-move_interval = 3.0
-route = PackedStringArray("estacionamiento", "cafeteria", "escalera_pb", "pasillo_sur")
 
 [node name="Hud" type="CanvasLayer" parent="."]
 

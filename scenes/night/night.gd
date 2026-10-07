@@ -106,6 +106,7 @@ func _ready() -> void:
 	phone_call.call_answered.connect(_on_call_answered)
 	phone_call.call_missed.connect(_on_call_missed)
 	phone_call.urena_snubbed.connect(_on_urena_snubbed)
+	phone_call.snub_line.connect(_on_snub_line)
 	phone_call.call_ended.connect(_on_call_ended)
 	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
@@ -365,6 +366,7 @@ func _schedule_calls(night: int) -> void:
 	# Si esa noche no tiene guion, el teléfono no suena.
 	_nightly_call_left = NightCalls.CALL_DELAY if NightCalls.has_call(night) else -1.0
 	_urena_calls_at.clear()
+	phone_call.reset_urena_lines()
 	if _urena == null or not _urena.is_active:
 		return
 	if randi_range(1, 100) > URENA_CALL_CHANCE:
@@ -392,10 +394,25 @@ func _process_calls(delta: float) -> void:
 
 
 ## Tecla 2, y también la llamada de la noche cuando le toca.
+## El panel de pruebas puede pedir una insinuación concreta por su índice;
+## con -1 va al azar, como en el juego.
+func debug_urena_call(index: int = -1) -> void:
+	if phone_call.is_ringing or phone_call.is_open:
+		return
+	if index < 0:
+		trigger_urena_call()
+		return
+	var line: Dictionary = UrenaQuestions.line(index)
+	if line.is_empty():
+		return
+	phone_call.queue_urena_call([line] as Array[Dictionary], URENA_RING_TIME)
+
+
 func trigger_urena_call() -> void:
 	if phone_call.is_ringing or phone_call.is_open:
 		return
-	phone_call.queue_urena_call(UrenaQuestions.pick(), URENA_RING_TIME)
+	# Las que ya salieron esta noche no se repiten.
+	phone_call.queue_urena_call(UrenaQuestions.pick(phone_call.used_urena_lines()), URENA_RING_TIME)
 
 
 func _on_ringing_started(_seconds: float) -> void:
@@ -418,6 +435,11 @@ func _on_call_answered() -> void:
 func _on_call_missed() -> void:
 	office.set_phone_ringing(false)
 	office.set_phone_in_call(false)
+
+
+## Lo que dice por el altavoz tras colgarle, para que se lea además de oírse.
+func _on_snub_line(text: String) -> void:
+	notice_banner.show_notice("[Ureña: %s]" % text, NOTICE_TIME_DEAD)
 
 
 ## Le colgaron o no le contestaron: deja la foto y se pone más agresivo por

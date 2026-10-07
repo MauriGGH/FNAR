@@ -296,9 +296,19 @@ func _play_jumpscare(animatronic: Animatronic) -> void:
 func _build_events_section() -> void:
 	var body: VBoxContainer = _section("Eventos")
 	body.visible = false
-	_add_button(body, "Llamada de Ureña", func() -> void:
+	_add_label(body, "Llamada de Ureña, con esta insinuación:")
+	var lines: OptionButton = OptionButton.new()
+	lines.focus_mode = Control.FOCUS_NONE
+	lines.add_theme_font_size_override("font_size", BUTTON_SIZE)
+	lines.add_item("Al azar", -1)
+	for i: int in UrenaQuestions.count():
+		# El texto completo no cabe en el panel, así que va recortado.
+		lines.add_item("%d. %s" % [i + 1, UrenaQuestions.line_text(i).substr(0, 34)], i)
+	lines.select(0)
+	body.add_child(lines)
+	_add_button(body, "Llamar", func() -> void:
 		close()
-		_night.trigger_urena_call())
+		_night.debug_urena_call(lines.get_selected_id()))
 	_add_button(body, "Llamada de inicio de noche", func() -> void:
 		close()
 		_night.debug_night_call())

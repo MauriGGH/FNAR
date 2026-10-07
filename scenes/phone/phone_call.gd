@@ -13,6 +13,8 @@ signal ring_tick()
 signal call_missed()
 ## Le colgaron o no le contestaron: Ureña se ofende.
 signal urena_snubbed()
+## Lo que dice por el altavoz tras el tono de ocupado, para el aviso en pantalla.
+signal snub_line(text: String)
 signal call_answered()
 signal call_ended()
 ## Lo que contestó el jugador a una insinuación de Ureña. El valor es un
@@ -56,14 +58,20 @@ var _step: Step = Step.GREETING
 var _speech: String = ""
 var _speech_typed: float = 0.0
 var _speech_hold: float = 0.0
-## Si le siguió el juego aunque sea una vez, se despide dejando su foto.
+## Cómo le fue en la llamada: la despedida depende de las dos.
 var _played_along: bool = false
+var _was_rude: bool = false
+## Los índices de las insinuaciones que ya salieron esta noche.
+var _used_lines: Array[int] = []
+## El temporizador del altavoz, uno solo para toda la noche.
+var _snub_timer: Timer = null
 
 @onready var subtitle_label: Label = $Panel/SubtitleLabel
 @onready var caller_label: Label = $Panel/CallerLabel
 @onready var timer_label: Label = $Panel/TimerLabel
 @onready var hang_up_button: Button = $Panel/HangUpButton
 @onready var mute_button: Button = $Panel/MuteButton
+@onready var busy_tone: AudioStreamPlayer = $BusyTone
 @onready var options: VBoxContainer = $Panel/Options
 
 
@@ -120,9 +128,12 @@ func answer() -> void:
 func hang_up() -> void:
 	if not is_open:
 		return
-	# Colgarle a Ureña antes de que se despida cuenta como desaire.
+	# Colgarle a Ureña antes de que se despida cuenta como desaire: suena el
+	# tono de ocupado y, al soltarlo, habla por el altavoz.
 	if mode == Mode.URENA and _step != Step.FAREWELL:
 		urena_snubbed.emit()
+		busy_tone.play()
+		_speak_after_busy()
 	is_open = false
 	visible = false
 	mode = Mode.NONE
@@ -147,7 +158,17 @@ func queue_message(lines: PackedStringArray, seconds: float) -> void:
 	start_ringing(seconds, false)
 
 
-## La llamada de Ureña: si no contestas, te mata.
+## Los índices usados esta noche, para que el night.gd no repita ninguna.
+func used_urena_lines() -> Array[int]:
+	return _used_lines
+
+
+## Se borran al empezar una noche nueva.
+func reset_urena_lines() -> void:
+	_used_lines.clear()
+
+
+## La llamada de Ureña. Si no contesta, Ureña se ofende.
 func queue_urena_call(lines: Array[Dictionary], seconds: float) -> void:
 	mode = Mode.URENA
 	_lines_urena = lines
@@ -178,6 +199,8 @@ func _process_ringing(delta: float) -> void:
 	is_ringing = false
 	if mode == Mode.URENA:
 		urena_snubbed.emit()
+		busy_tone.play()
+		_speak_after_busy()
 	call_missed.emit()
 
 
@@ -204,6 +227,24 @@ func _process_message(delta: float) -> void:
 	subtitle_label.text = line.substr(0, int(_typed))
 	if int(_typed) >= line.length():
 		_pause_left = LINE_PAUSE
+
+
+## El tono de ocupado primero y, en cuanto termina, Ureña hablando por el
+## altavoz. No hace falta contestar: se oye en la oficina.
+## El temporizador es uno solo y se reusa: si le cuelgas dos veces en la
+## misma noche, la segunda reinicia la cuenta en vez de acumularse.
+func _speak_after_busy() -> void:
+	if _snub_timer == null:
+		_snub_timer = Timer.new()
+		_snub_timer.one_shot = true
+		add_child(_snub_timer)
+		_snub_timer.timeout.connect(_on_snub_timeout)
+	_snub_timer.start(busy_tone.tone_seconds())
+
+
+func _on_snub_timeout() -> void:
+	_speak(UrenaQuestions.FAREWELL_SNUBBED)
+	snub_line.emit(UrenaQuestions.FAREWELL_SNUBBED)
 
 
 # --- La voz de la llamada -----------------------------------------------------
@@ -240,6 +281,7 @@ func _spanish_voice() -> String:
 func _start_urena() -> void:
 	_line_urena = -1
 	_played_along = false
+	_was_rude = false
 	_say(UrenaQuestions.greeting(GameManager.player_name, GameManager.completed_task_count()),
 		UrenaQuestions.GREETING_HOLD)
 	_step = Step.GREETING
@@ -252,6 +294,7 @@ func _say(text: String, hold: float) -> void:
 	_speech_typed = 0.0
 	_speech_hold = hold
 	subtitle_label.text = ""
+	_speak(text)
 	options.visible = false
 	timer_label.visible = false
 
@@ -260,11 +303,17 @@ func _say(text: String, hold: float) -> void:
 func _next_line() -> void:
 	_line_urena += 1
 	if _line_urena >= _lines_urena.size():
-		_say(UrenaQuestions.farewell(_played_along), UrenaQuestions.FAREWELL_HOLD)
+		_say(UrenaQuestions.farewell(_played_along, _was_rude), UrenaQuestions.FAREWELL_HOLD)
 		_step = Step.FAREWELL
 		return
 	var line: Dictionary = _lines_urena[_line_urena]
 	subtitle_label.text = str(line.get("text", ""))
+	# Las insinuaciones también se oyen, no solo se leen.
+	_speak(str(line.get("text", "")))
+	if line.has("index"):
+		var index: int = int(line["index"])
+		if not index in _used_lines:
+			_used_lines.append(index)
 	_answer_left = UrenaQuestions.SECONDS_PER_LINE
 	timer_label.visible = true
 	options.visible = true
@@ -334,6 +383,8 @@ func _on_option_pressed(index: int) -> void:
 func _resolve_answer(kind: int) -> void:
 	if kind == UrenaQuestions.Answer.PLAYS_ALONG:
 		_played_along = true
+	elif kind == UrenaQuestions.Answer.RUDE:
+		_was_rude = true
 	answer_given.emit(kind)
 	_say(UrenaQuestions.reaction(kind), UrenaQuestions.REACTION_HOLD)
 	_step = Step.REACTION
