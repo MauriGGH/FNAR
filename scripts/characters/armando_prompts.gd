@@ -86,8 +86,8 @@ func retreats_walking() -> bool:
 
 
 ## Tecla 6: lo manda directo al cristal.
-func debug_key() -> Key:
-	return KEY_6
+func debug_action() -> String:
+	return DebugKeys.ARMANDO_GLASS
 
 
 # --- Lo de la PC --------------------------------------------------------------
@@ -115,6 +115,5 @@ func force_takeover() -> void:
 ## Además de la tecla que lo manda al cristal, la 7 lo aparece en la PC.
 func _unhandled_input(event: InputEvent) -> void:
 	super(event)
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_7:
+	if DebugKeys.matches(event, DebugKeys.ARMANDO_PC):
 		force_takeover()

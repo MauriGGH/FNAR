@@ -56,6 +56,10 @@ func stalks_before_leaving() -> bool:
 	return true
 
 
+func game_over_cause() -> String:
+	return GAME_OVER_CAUSE
+
+
 func ai_key() -> String:
 	return Nights.MAMADOR
 
@@ -190,6 +194,5 @@ func debug_force_to_stairs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_F6:
+	if DebugKeys.matches(event, DebugKeys.MAMADOR_HALLWAY):
 		debug_force_to_stairs()

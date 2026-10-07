@@ -3,8 +3,6 @@ extends Control
 ## Escena principal de una noche: junta la oficina, las cámaras, los profes y el
 ## HUD con los autoloads, y cambia a la pantalla de 6 AM o de game over.
 
-const GAME_OVER_SCENE: String = "res://scenes/game_over/game_over.tscn"
-const WIN_SCENE: String = "res://scenes/win_screen/win_screen.tscn"
 
 ## Lo que muestra el HUD con la energía infinita de depuración puesta.
 const INFINITE_POWER_TEXT: String = "ENERGÍA ∞ (debug)"
@@ -41,6 +39,8 @@ const FLASH_TIME: float = 0.28
 @onready var cortaso_overlay: Control = $Hud/CortasoOverlay
 @onready var breaker_panel: Control = $BreakerPanel
 @onready var phone_call: Control = $Hud/PhoneCall
+@onready var debug_help: Label = $Hud/DebugHelp
+@onready var pause_menu: Control = $Hud/PauseMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
@@ -119,32 +119,54 @@ func _ready() -> void:
 
 	_apply_debug_shown()
 
+	pause_menu.resumed.connect(_on_resumed)
+	pause_menu.menu_requested.connect(_on_menu_requested)
 	GameManager.start_night()
 
 
-## F3 prende y apaga la depuración: la etiqueta de las cámaras y las zonas
-## de clic de la oficina.
+## Escape pausa la noche, salvo que ya lo esté usando otra cosa: la PC, el
+## breaker, la sala de servidores o la foto de Ureña abierta. El reloj y los
+## profes se detienen porque se pausa el árbol entero.
+func _escape_is_taken() -> bool:
+	if pc_screen.is_open or GameManager.is_in_server_room:
+		return true
+	if breaker_panel.visible:
+		return true
+	return office.photo_viewer != null and office.photo_viewer.is_open
+
+
+func _on_resumed() -> void:
+	get_tree().paused = false
+
+
+func _on_menu_requested() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file(Screens.MAIN_MENU)
+
+
+## Las teclas de depuración salen de data/debug_keys.gd, así que con
+## DEBUG_KEYS en false ninguna responde.
 func _unhandled_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo:
+	if DebugKeys.matches(event, DebugKeys.HELP):
+		_debug_shown = not _debug_shown
+		_apply_debug_shown()
+	elif DebugKeys.matches(event, DebugKeys.INFINITE_POWER):
+		PowerManager.toggle_infinite()
+	elif DebugKeys.matches(event, DebugKeys.URENA_CALL):
+		trigger_urena_call()
+	else:
 		return
-	match key.keycode:
-		KEY_F3:
-			_debug_shown = not _debug_shown
-			_apply_debug_shown()
-		KEY_F8:
-			PowerManager.toggle_infinite()
-		KEY_2:
-			trigger_urena_call()  # Tecla 2: la llamada de Ureña a la fuerza.
-		_:
-			return
 	get_viewport().set_input_as_handled()
 
 
-## Un solo interruptor: la etiqueta de los profes y las zonas de clic.
+## Un solo interruptor: la ayuda de teclas, la etiqueta de los profes y las
+## zonas de clic de la oficina.
 func _apply_debug_shown() -> void:
 	camera_system.set_debug_visible(_debug_shown)
 	office.set_zones_visible(_debug_shown)
+	debug_help.visible = _debug_shown and DebugKeys.DEBUG_KEYS
+	if debug_help.visible:
+		debug_help.text = "\n".join(DebugKeys.help_lines())
 
 
 ## Los profes son hijos del nodo Animatronics, así se agregan sin tocar código.
@@ -167,6 +189,7 @@ func _on_night_started(night: int) -> void:
 ## Quién se ve en cada vista de la oficina. Si ya existe su recorte PNG, se
 ## dibuja el recorte; si no, se queda la etiqueta de texto de siempre.
 func _process(delta: float) -> void:
+	pause_menu.blocked = _escape_is_taken()
 	_process_calls(delta)
 	_refresh_office_presence()
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
@@ -398,14 +421,40 @@ func _on_blackout_changed(is_blackout: bool) -> void:
 		_audel.on_blackout()
 
 
-func _on_night_won(_night: int) -> void:
+## Pasó la noche: se guarda el avance, se abren las fichas de los profes que
+## estuvieron activos y se deja apuntado el recorte que toca.
+func _on_night_won(night: int) -> void:
 	_end_night()
-	get_tree().change_scene_to_file(WIN_SCENE)
+	if not GameManager.is_custom_night:
+		SaveGame.mark_night_cleared(night)
+		SaveGame.unlock_newspaper(Newspapers.index_for_cleared_night(night))
+		_unlock_night_dossiers()
+	get_tree().change_scene_to_file(Screens.WIN)
 
 
-func _on_game_over(_cause: String) -> void:
+## Abre las fichas de los profes que estuvieron activos esta noche. Se mira
+## el nivel de la noche y no is_active, porque _end_night() ya los paró.
+func _unlock_night_dossiers() -> void:
+	for animatronic: Animatronic in _animatronics:
+		var slug: String = animatronic.image_slug()
+		if slug.is_empty():
+			continue
+		var key: String = animatronic.ai_key()
+		# Los que no usan la tabla (la botarga) están activos toda la noche.
+		if key.is_empty() or GameManager.ai_level_for(key) > 0:
+			SaveGame.unlock_dossier(slug)
+
+
+## Te atraparon: se abre la ficha y el jumpscare de quien fue.
+func _on_game_over(cause: String) -> void:
 	_end_night()
-	get_tree().change_scene_to_file(GAME_OVER_SCENE)
+	for animatronic: Animatronic in _animatronics:
+		if animatronic.game_over_cause() != cause:
+			continue
+		SaveGame.unlock_dossier(animatronic.image_slug())
+		SaveGame.unlock_jumpscare(cause)
+		break
+	get_tree().change_scene_to_file(Screens.GAME_OVER)
 
 
 ## Deja de gastar energía y congela a los profes antes de cambiar de pantalla.

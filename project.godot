@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="FNAR"
-run/main_scene="res://scenes/night/night.tscn"
+run/main_scene="res://scenes/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -23,6 +23,7 @@ general/text_to_speech=true
 
 PowerManager="*res://autoload/power_manager.gd"
 GameManager="*res://autoload/game_manager.gd"
+SaveGame="*res://autoload/save_game.gd"
 
 [display]
 

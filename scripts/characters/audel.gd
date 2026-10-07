@@ -155,14 +155,10 @@ func debug_force_to_ladder() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo:
-		return
-	match key.keycode:
-		KEY_F10:
-			debug_force_to_ladder()
-		KEY_F9:
-			cause_discharge()  # F9: descarga a la fuerza.
+	if DebugKeys.matches(event, DebugKeys.AUDEL_LADDER):
+		debug_force_to_ladder()
+	elif DebugKeys.matches(event, DebugKeys.AUDEL_DISCHARGE):
+		cause_discharge()
 
 
 func _do_cortaso() -> void:

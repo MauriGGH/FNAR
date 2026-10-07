@@ -38,5 +38,5 @@ func game_over_cause() -> String:
 
 
 ## Tecla 5: lo manda directo al cristal.
-func debug_key() -> Key:
-	return KEY_5
+func debug_action() -> String:
+	return DebugKeys.JUAN_GLASS

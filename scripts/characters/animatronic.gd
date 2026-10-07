@@ -117,6 +117,12 @@ func others_in_room() -> int:
 	return count
 
 
+## Gancho: con qué causa termina la noche si este profe te atrapa. Cadena
+## vacía si no mata. Lo usa el guardado para abrir su ficha y su jumpscare.
+func game_over_cause() -> String:
+	return ""
+
+
 ## Gancho: la clave de este profe en la tabla de niveles de data/nights.gd.
 ## Cadena vacía = su nivel lo decide él mismo.
 func ai_key() -> String:
@@ -128,7 +134,7 @@ func night_ai_level() -> int:
 	var key: String = ai_key()
 	if key.is_empty():
 		return ai_level
-	return Nights.ai_level(GameManager.current_night, key)
+	return GameManager.ai_level_for(key)
 
 
 ## Gancho de depuración: lo pone a moverse aunque la noche le haya dado

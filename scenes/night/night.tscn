@@ -23,6 +23,7 @@
 [ext_resource type="Script" path="res://scripts/characters/rochis.gd" id="22_rochis"]
 [ext_resource type="Script" path="res://scripts/characters/juan_exe.gd" id="23_juan"]
 [ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
+[ext_resource type="Script" path="res://scenes/night/pause_menu.gd" id="50_pause"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
 shader = ExtResource("16_static")
@@ -231,6 +232,20 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 0)
 
+[node name="DebugHelp" type="Label" parent="Hud"]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 18.0
+offset_top = 110.0
+offset_right = 470.0
+offset_bottom = 500.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.95, 0.78, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 15
+
 [node name="FadeOverlay" type="ColorRect" parent="Hud"]
 visible = false
 anchors_preset = 15
@@ -243,3 +258,13 @@ color = Color(0, 0, 0, 0)
 script = ExtResource("18_fade")
 
 [node name="PhoneCall" parent="Hud" instance=ExtResource("20_phone")]
+
+[node name="PauseMenu" type="Control" parent="Hud"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("50_pause")

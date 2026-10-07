@@ -64,6 +64,10 @@ func image_slug() -> String:
 	return "rochis"
 
 
+func game_over_cause() -> String:
+	return GAME_OVER_CAUSE
+
+
 func ai_key() -> String:
 	return Nights.ROCHIS
 
@@ -197,8 +201,7 @@ func debug_stand_up() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_3:
+	if DebugKeys.matches(event, DebugKeys.ROCHIS_STAND):
 		debug_stand_up()
 
 

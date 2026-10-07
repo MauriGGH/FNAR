@@ -19,6 +19,15 @@ const START_HOUR: int = 0  # 12 AM
 const END_HOUR: int = 6    # 6 AM, la noche termina
 
 
+# --- Partida -----------------------------------------------------------------
+## La última noche de la historia. Al pasarla se termina el juego.
+const LAST_NIGHT: int = 6
+## Custom Night y Extras se abren al pasar esta noche.
+const EXTRAS_FROM_NIGHT: int = 5
+## Lo más largo que puede ser el nombre del guardia.
+const MAX_NAME_LENGTH: int = 16
+
+
 # --- Energía -----------------------------------------------------------------
 # Los consumos se escriben por hora, pero se gastan contra la hora NORMAL de
 # 75 s, nunca contra la del modo prueba: el modo prueba acorta la noche, no

@@ -54,6 +54,18 @@ static func armando_pc_enabled(night: int, armando_level: int) -> bool:
 	return night >= ARMANDO_PC_FROM_NIGHT and armando_level > 0
 
 
+## Para Custom Night: reparte un nivel de 1 a 20 entre las cuatro velocidades
+## del Come Trabas, que no usa el dado de la IA.
+static func speed_for_level(level: int) -> int:
+	if level <= 5:
+		return 0   # lenta
+	if level <= 10:
+		return 1   # media
+	if level <= 15:
+		return 2   # rápida
+	return 3       # muy rápida
+
+
 static func _for_night(night: int) -> Dictionary:
 	if LEVELS.has(night):
 		return LEVELS[night]

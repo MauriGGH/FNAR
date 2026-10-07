@@ -64,6 +64,10 @@ func image_slug() -> String:
 	return "barcosa"
 
 
+func game_over_cause() -> String:
+	return GAME_OVER_CAUSE
+
+
 func ai_key() -> String:
 	return Nights.BARCOSA
 
@@ -156,8 +160,7 @@ func debug_force_run() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_F4:
+	if DebugKeys.matches(event, DebugKeys.BARCOSA_RUN):
 		debug_force_run()
 
 

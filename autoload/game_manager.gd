@@ -37,12 +37,40 @@ var patch_panel: PatchPanelModel = PatchPanelModel.new()
 ## Mientras el guardia está en la sala de servidores no vigila la oficina.
 var is_in_server_room: bool = false
 
+## Custom Night: cuando está activa, los niveles de IA salen de aquí en vez
+## de la tabla de data/nights.gd. La clave es la del profe (Nights.BARCOSA...).
+var is_custom_night: bool = false
+var custom_levels: Dictionary = {}
+
 
 func _ready() -> void:
 	PowerManager.power_depleted.connect(_on_power_depleted)
 
 
 ## Arranca la noche desde las 12 AM con la energía llena.
+## Deja lista la noche que se va a jugar, sin arrancarla: la pantalla de
+## "12:00 AM / Noche N" va antes, y es night.tscn la que llama a start_night().
+func prepare_night(night: int) -> void:
+	current_night = clampi(night, 1, NightConfig.LAST_NIGHT)
+	is_custom_night = false
+	custom_levels.clear()
+
+
+## Deja lista una Custom Night con los niveles que eligió el jugador.
+func prepare_custom_night(levels: Dictionary) -> void:
+	current_night = NightConfig.LAST_NIGHT
+	is_custom_night = true
+	custom_levels = levels.duplicate()
+
+
+## El nivel que le toca a un profe esta noche: el de la tabla, o el que eligió
+## el jugador si es Custom Night.
+func ai_level_for(key: String) -> int:
+	if is_custom_night:
+		return clampi(int(custom_levels.get(key, 0)), 0, Nights.MAX_AI_LEVEL)
+	return Nights.ai_level(current_night, key)
+
+
 func start_night(night: int = current_night) -> void:
 	current_night = night
 	current_hour = NightConfig.START_HOUR

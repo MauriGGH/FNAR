@@ -142,10 +142,7 @@ func debug_force_to_glass() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if debug_key() == KEY_NONE:
-		return
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == debug_key():
+	if DebugKeys.matches(event, debug_action()):
 		debug_force_to_glass()
 
 
@@ -192,9 +189,9 @@ func repel_notice() -> String:
 	return "[%s se aleja]" % display_name
 
 
-## La tecla que lo manda al cristal. KEY_NONE = sin tecla.
-func debug_key() -> Key:
-	return KEY_NONE
+## La acción del registro de depuración que lo manda al cristal.
+func debug_action() -> String:
+	return ""
 
 
 # --- Interno ------------------------------------------------------------------

@@ -50,13 +50,23 @@ var speed: int = Speed.SLOW
 var _attack_elapsed: float = 0.0
 
 
+func game_over_cause() -> String:
+	return GAME_OVER_CAUSE
+
+
 func start() -> void:
 	route = PackedStringArray([ROOM])
 	super()
 	is_active = true  # La clase base pide nivel de IA; este no lo usa.
-	# Su reloj no es el dado sino la cuerda, así que de la tabla de noches
-	# toma la velocidad en vez de un nivel de IA.
-	speed = Nights.come_trabas_speed(GameManager.current_night)
+	# Su reloj no es el dado sino la cuerda, así que en vez de un nivel de IA
+	# usa una velocidad. En Custom Night el nivel elegido se reparte entre las
+	# cuatro velocidades, y el nivel 0 la deja quieta.
+	if GameManager.is_custom_night:
+		var level: int = GameManager.ai_level_for(Nights.COME_TRABAS)
+		is_active = level > 0
+		speed = Nights.speed_for_level(level)
+	else:
+		speed = Nights.come_trabas_speed(GameManager.current_night)
 	wind = MAX_WIND
 	is_winding = false
 	is_attacking = false
@@ -152,8 +162,7 @@ func debug_low_wind() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_F7:
+	if DebugKeys.matches(event, DebugKeys.COME_TRABAS_WIND):
 		debug_low_wind()
 
 
