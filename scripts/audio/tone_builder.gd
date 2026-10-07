@@ -11,6 +11,29 @@ extends RefCounted
 
 const SAMPLE_RATE: int = 22050
 
+
+## Arma el provisional que pide el catálogo por su nombre. Va con match y no con
+## call() porque sobre una clase, sin instancia, no se puede llamar por nombre.
+static func build(generator: String) -> AudioStreamWAV:
+	match generator:
+		"music_box":
+			return music_box()
+		"ticket_chime":
+			return ticket_chime()
+		"scream":
+			return scream()
+		"busy_tone":
+			return busy_tone()
+		"alarm":
+			return alarm()
+		"school_bell":
+			return school_bell()
+		"footsteps":
+			return footsteps()
+		"low_hit":
+			return low_hit()
+	return null
+
 # --- Cajita musical ----------------------------------------------------------
 ## La nota de referencia: un la agudo, el registro de una cajita musical.
 const BOX_BASE_HZ: float = 880.0

@@ -22,7 +22,7 @@ const COLUMN_TOP: float = 0.4
 
 var _column: VBoxContainer = null
 var _stars: StarRow = null
-var _fullscreen_button: Button = null
+var _options: OptionsPanel = null
 
 
 func _ready() -> void:
@@ -33,7 +33,8 @@ func _ready() -> void:
 	_build_hint()
 	_layout()
 	resized.connect(_layout)
-	DisplayManager.fullscreen_changed.connect(_on_fullscreen_changed)
+	# Las opciones van encima de todo, así que se montan al final.
+	_options = OptionsPanel.build(self)
 
 
 ## La columna de botones va centrada a mano, no con anclas: así se puede
@@ -105,22 +106,13 @@ func _build_buttons() -> void:
 	extras.pressed.connect(_on_extras)
 	column.add_child(extras)
 
-	_fullscreen_button = UiButton.make(_fullscreen_text())
-	_fullscreen_button.pressed.connect(DisplayManager.toggle)
-	column.add_child(_fullscreen_button)
+	var options: Button = UiButton.make("Opciones")
+	options.pressed.connect(func() -> void: _options.open())
+	column.add_child(options)
 
 	var quit_button: Button = UiButton.make("Salir")
 	quit_button.pressed.connect(_on_quit)
 	column.add_child(quit_button)
-
-
-func _fullscreen_text() -> String:
-	return "Pantalla completa: %s  (F11)" % ("sí" if DisplayManager.is_fullscreen() else "no")
-
-
-func _on_fullscreen_changed(_is_fullscreen: bool) -> void:
-	if _fullscreen_button != null:
-		_fullscreen_button.text = _fullscreen_text()
 
 
 ## La nota de abajo explica por qué hay cosas bloqueadas.

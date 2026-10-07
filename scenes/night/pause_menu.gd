@@ -24,7 +24,7 @@ var blocked: bool = false
 const COLUMN_TOP: float = 0.44
 
 var _column: VBoxContainer = null
-var _fullscreen_button: Button = null
+var _options: OptionsPanel = null
 
 
 func _ready() -> void:
@@ -63,10 +63,9 @@ func _build() -> void:
 	resume.pressed.connect(close)
 	column.add_child(resume)
 
-	_fullscreen_button = UiButton.make(_fullscreen_text())
-	_fullscreen_button.pressed.connect(DisplayManager.toggle)
-	column.add_child(_fullscreen_button)
-	DisplayManager.fullscreen_changed.connect(_on_fullscreen_changed)
+	var options: Button = UiButton.make("Opciones")
+	options.pressed.connect(func() -> void: _options.open())
+	column.add_child(options)
 
 	var menu: Button = UiButton.make("Volver al menú")
 	menu.pressed.connect(func() -> void: menu_requested.emit())
@@ -83,20 +82,17 @@ func _build() -> void:
 	hint.offset_bottom = -28.0
 	add_child(hint)
 
-
-func _fullscreen_text() -> String:
-	return "Pantalla completa: %s  (F11)" % ("sí" if DisplayManager.is_fullscreen() else "no")
-
-
-func _on_fullscreen_changed(_is_fullscreen: bool) -> void:
-	if _fullscreen_button != null:
-		_fullscreen_button.text = _fullscreen_text()
+	# Encima de todo lo demás de la pausa.
+	_options = OptionsPanel.build(self)
 
 
-## Escape abre y cierra la pausa. Si otra cosa ya usa Escape, no abre.
+## Escape abre y cierra la pausa, salvo que las opciones estén abiertas: ahí
+## Escape es para cerrarlas, y de eso se encarga el propio panel.
 func _input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key == null or not key.pressed or key.echo or key.keycode != KEY_ESCAPE:
+		return
+	if _options != null and _options.is_open:
 		return
 	if is_open:
 		close()

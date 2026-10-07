@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
@@ -23,11 +23,9 @@
 [ext_resource type="Script" path="res://scripts/characters/juan_exe.gd" id="23_juan"]
 [ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
 [ext_resource type="Script" path="res://scenes/night/pause_menu.gd" id="50_pause"]
-[ext_resource type="Script" path="res://scenes/night/ticket_chime.gd" id="60_chime"]
-[ext_resource type="Script" path="res://scenes/night/music_box.gd" id="61_musicbox"]
 [ext_resource type="Script" path="res://scenes/night/jumpscare_overlay.gd" id="70_jump"]
-[ext_resource type="Script" path="res://scenes/night/scream_sound.gd" id="71_scream"]
 [ext_resource type="Script" path="res://scenes/night/blackout_death.gd" id="72_blackout"]
+[ext_resource type="Script" path="res://scenes/night/hallucination_overlay.gd" id="73_halluc"]
 [ext_resource type="Script" path="res://scenes/night/mod_menu.gd" id="80_mod"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
@@ -247,12 +245,6 @@ theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 2
 
-[node name="TicketChime" type="AudioStreamPlayer" parent="Hud"]
-script = ExtResource("60_chime")
-
-[node name="MusicBox" type="AudioStreamPlayer" parent="Hud"]
-script = ExtResource("61_musicbox")
-
 [node name="DebugHelp" type="Label" parent="Hud"]
 visible = false
 layout_mode = 1
@@ -291,6 +283,17 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("72_blackout")
 
+[node name="HallucinationOverlay" type="Control" parent="Hud"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("73_halluc")
+
 [node name="JumpscareOverlay" type="Control" parent="Hud"]
 visible = false
 layout_mode = 1
@@ -311,9 +314,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 1)
-
-[node name="Scream" type="AudioStreamPlayer" parent="Hud/JumpscareOverlay"]
-script = ExtResource("71_scream")
 
 [node name="PauseMenu" type="Control" parent="Hud"]
 visible = false

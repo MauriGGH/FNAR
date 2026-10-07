@@ -16,6 +16,9 @@ const SECTION_PROGRESS: String = "progreso"
 const SECTION_UNLOCKS: String = "desbloqueos"
 const SECTION_OPTIONS: String = "opciones"
 
+## El volumen de arranque de cada bus, antes de que el jugador toque nada.
+const DEFAULT_BUS_VOLUME: float = 0.8
+
 ## La noche a la que puede entrar "Continuar". Empieza en la 1.
 var night_reached: int = 1
 var player_name: String = GameManager.PLAYER_NAME
@@ -25,6 +28,7 @@ var player_name: String = GameManager.PLAYER_NAME
 var newspapers: Array[int] = []
 var dossiers: Array[String] = []
 var jumpscares: Array[String] = []
+var documents: Array[String] = []
 
 ## Las noches que se pasaron de verdad. night_reached no sirve para esto: se
 ## topa en la última, así que pasar la 5 y pasar la 6 lo dejan igual, y las
@@ -35,6 +39,8 @@ var custom_mastered: bool = false
 
 ## Opciones. La pantalla completa la pone y la lee DisplayManager.
 var fullscreen: bool = true
+## El volumen de cada bus de audio, de 0 a 1. Lo pone y lo lee AudioManager.
+var bus_volumes: Dictionary = {}
 
 
 func _ready() -> void:
@@ -49,6 +55,20 @@ func has_progress() -> bool:
 ## true si ya pasó la noche que hace falta para Custom Night y Extras.
 func is_extras_unlocked() -> bool:
 	return night_reached > NightConfig.EXTRAS_FROM_NIGHT
+
+
+## El volumen de un bus, de 0 a 1. Lo que no se ha tocado nunca arranca al 80 %,
+## que deja margen para subirlo sin que sature.
+func bus_volume(bus: String) -> float:
+	return clampf(float(bus_volumes.get(bus, DEFAULT_BUS_VOLUME)), 0.0, 1.0)
+
+
+func set_bus_volume(bus: String, value: float) -> void:
+	var clamped: float = clampf(value, 0.0, 1.0)
+	if is_equal_approx(bus_volume(bus), clamped):
+		return
+	bus_volumes[bus] = clamped
+	save_game()
 
 
 func set_fullscreen(enabled: bool) -> void:
@@ -119,6 +139,17 @@ func unlock_jumpscare(cause: String) -> void:
 	save_game()
 
 
+func unlock_document(document_id: String) -> void:
+	if document_id.is_empty() or document_id in documents:
+		return
+	documents.append(document_id)
+	save_game()
+
+
+func has_document(document_id: String) -> bool:
+	return document_id in documents
+
+
 func has_newspaper(index: int) -> bool:
 	return index in newspapers
 
@@ -137,6 +168,7 @@ func reset() -> void:
 	newspapers.clear()
 	dossiers.clear()
 	jumpscares.clear()
+	documents.clear()
 	nights_cleared.clear()
 	custom_mastered = false
 	save_game()
@@ -149,9 +181,11 @@ func save_game() -> void:
 	file.set_value(SECTION_UNLOCKS, "newspapers", newspapers)
 	file.set_value(SECTION_UNLOCKS, "dossiers", dossiers)
 	file.set_value(SECTION_UNLOCKS, "jumpscares", jumpscares)
+	file.set_value(SECTION_UNLOCKS, "documents", documents)
 	file.set_value(SECTION_PROGRESS, "nights_cleared", nights_cleared)
 	file.set_value(SECTION_PROGRESS, "custom_mastered", custom_mastered)
 	file.set_value(SECTION_OPTIONS, "fullscreen", fullscreen)
+	file.set_value(SECTION_OPTIONS, "bus_volumes", bus_volumes)
 	file.save(SAVE_PATH)
 	changed.emit()
 
@@ -166,9 +200,11 @@ func load_game() -> void:
 	newspapers = _to_int_array(file.get_value(SECTION_UNLOCKS, "newspapers", []))
 	dossiers = _to_string_array(file.get_value(SECTION_UNLOCKS, "dossiers", []))
 	jumpscares = _to_string_array(file.get_value(SECTION_UNLOCKS, "jumpscares", []))
+	documents = _to_string_array(file.get_value(SECTION_UNLOCKS, "documents", []))
 	nights_cleared = _to_int_array(file.get_value(SECTION_PROGRESS, "nights_cleared", []))
 	custom_mastered = bool(file.get_value(SECTION_PROGRESS, "custom_mastered", false))
 	fullscreen = bool(file.get_value(SECTION_OPTIONS, "fullscreen", true))
+	bus_volumes = file.get_value(SECTION_OPTIONS, "bus_volumes", {}) as Dictionary
 	GameManager.player_name = player_name
 
 

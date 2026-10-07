@@ -227,7 +227,10 @@ func _say_player_name() -> void:
 	var voice: String = _spanish_voice()
 	if voice.is_empty():
 		return
-	DisplayServer.tts_speak(GameManager.PLAYER_NAME, voice, TTS_VOLUME, TTS_PITCH, TTS_RATE)
+	# El TTS no sale por los buses de audio, así que el deslizador de Voces se
+	# aplica aquí a mano.
+	var volume: int = roundi(float(TTS_VOLUME) * AudioManager.voice_volume())
+	DisplayServer.tts_speak(GameManager.PLAYER_NAME, voice, volume, TTS_PITCH, TTS_RATE)
 
 
 func _spanish_voice() -> String:

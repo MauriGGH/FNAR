@@ -26,9 +26,6 @@ const FADE_OUT: float = 0.4
 ## y salga sin que se le corten los bordes.
 const WINDOW_SIZE: Vector2 = Vector2(110.0, 190.0)
 
-@onready var alarm: AudioStreamPlayer = $Alarm
-@onready var bell: AudioStreamPlayer = $Bell
-
 var _window: Control = null
 var _old_digit: Label = null
 var _new_digit: Label = null
@@ -38,7 +35,7 @@ var _text_root: Control = null
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build()
-	alarm.play()
+	AudioManager.play_loop(Sounds.ALARM)
 	var tween: Tween = create_tween()
 	tween.tween_interval(READ_TIME)
 	# El rodillo y el color van juntos: el 6 entra ya dorándose.
@@ -128,8 +125,8 @@ func _roll() -> void:
 
 ## La campana de la escuela con aplausos, ya con el 6 puesto.
 func _ring_bell() -> void:
-	alarm.stop()
-	bell.play()
+	AudioManager.stop(Sounds.ALARM)
+	AudioManager.play(Sounds.SCHOOL_BELL)
 
 
 func _done() -> void:

@@ -5,7 +5,7 @@ extends Control
 ## Las cuatro secciones viven en esta misma pantalla, para no multiplicar
 ## escenas por algo que es una galería.
 
-enum Section { DOSSIERS, NEWSPAPERS, JUMPSCARES }
+enum Section { DOSSIERS, NEWSPAPERS, DOCUMENTS, JUMPSCARES }
 
 const TITLE_SIZE: int = 34
 const TAB_FONT: int = 22
@@ -18,6 +18,8 @@ const CARD_GAP: int = 14
 const CARD_COLUMNS: int = 4
 ## Dónde empiezan las rejillas, por debajo de las pestañas.
 const GRID_TOP: float = 150.0
+## Lo ancho de cada pestaña. Con cuatro ya no caben a 230 cada una.
+const TAB_WIDTH: float = 190.0
 const CARD_NAME_SIZE: int = 18
 const CARD_ROLE_SIZE: int = 14
 const CARD_FILL: Color = Color(0.1, 0.11, 0.13, 0.8)
@@ -75,9 +77,10 @@ func _build_header() -> void:
 	tabs.offset_bottom = 134.0
 	add_child(tabs)
 	for entry: Array in [[Section.DOSSIERS, "Expedientes"],
-			[Section.NEWSPAPERS, "Periódicos"], [Section.JUMPSCARES, "Jumpscares"]]:
+			[Section.NEWSPAPERS, "Periódicos"], [Section.DOCUMENTS, "Documentos"],
+			[Section.JUMPSCARES, "Jumpscares"]]:
 		var button: Button = UiButton.make(str(entry[1]))
-		button.custom_minimum_size = Vector2(230.0, 44.0)
+		button.custom_minimum_size = Vector2(TAB_WIDTH, 44.0)
 		button.add_theme_font_size_override("font_size", TAB_FONT)
 		button.pressed.connect(_show_section.bind(entry[0] as Section))
 		tabs.add_child(button)
@@ -113,6 +116,8 @@ func _show_section(section: Section) -> void:
 			_build_dossiers()
 		Section.NEWSPAPERS:
 			_build_newspapers()
+		Section.DOCUMENTS:
+			_build_documents()
 		Section.JUMPSCARES:
 			_build_jumpscares()
 
@@ -150,6 +155,30 @@ func _build_newspapers() -> void:
 			card.gui_input.connect(_on_newspaper_input.bind(index))
 			card.mouse_filter = Control.MOUSE_FILTER_STOP
 		grid.add_child(card)
+
+
+## Las hojas que te han entregado: los recibos de pago y la carta de despido.
+## Se desbloquean al verlas por primera vez.
+func _build_documents() -> void:
+	var grid: GridContainer = _make_grid()
+	for document_id: String in Documents.IDS:
+		var unlocked: bool = SaveGame.has_document(document_id)
+		var card: Control = _make_card(
+			Documents.texture(document_id) if unlocked else null,
+			Documents.title(document_id) if unlocked else LOCKED_TEXT,
+			"con tu nombre" if unlocked else "",
+			Documents.source(document_id))
+		if unlocked:
+			card.gui_input.connect(_on_document_input.bind(document_id))
+			card.mouse_filter = Control.MOUSE_FILTER_STOP
+		grid.add_child(card)
+
+
+func _on_document_input(event: InputEvent, document_id: String) -> void:
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click == null or not click.pressed:
+		return
+	DocumentScreen.show_documents(get_tree(), [document_id], Screens.EXTRAS_MENU)
 
 
 ## La galería de jumpscares: por ahora el nombre de cada causa ya vista.

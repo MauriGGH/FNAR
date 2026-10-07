@@ -30,7 +30,8 @@ const NAME_SPOTS: Dictionary = {
 	"carta_despido": {"at": Vector2(0.298, 0.270), "tilt": -1.5},
 }
 
-## Qué documento toca al pasar una noche. Solo las dos últimas dan recibo.
+## Qué documento toca al pasar una noche. Solo las dos últimas dan recibo; la
+## carta de despido no sale de aquí, se gana pasando una Custom Night.
 const RECEIPTS_BY_NIGHT: Dictionary = {
 	5: "recibo_noche5",
 	6: "recibo_noche6",
@@ -48,6 +49,29 @@ static func has_document(document_id: String) -> bool:
 ## El recibo de esa noche, o cadena vacía si esa noche no lleva documento.
 static func for_cleared_night(night: int) -> String:
 	return str(RECEIPTS_BY_NIGHT.get(night, ""))
+
+
+## El nombre que se enseña de cada hoja en la pestaña de Extras.
+const TITLES: Dictionary = {
+	"recibo_noche5": "Recibo de pago · noche 5",
+	"recibo_noche6": "Recibo de pago · noche 6",
+	"carta_despido": "Carta de despido",
+}
+
+## Cómo se consigue cada hoja, para la ficha de Extras.
+const SOURCES: Dictionary = {
+	"recibo_noche5": "Al pasar la noche 5",
+	"recibo_noche6": "Al pasar la noche 6",
+	"carta_despido": "Al ganar una Custom Night",
+}
+
+
+static func title(document_id: String) -> String:
+	return str(TITLES.get(document_id, document_id))
+
+
+static func source(document_id: String) -> String:
+	return str(SOURCES.get(document_id, ""))
 
 
 static func name_position(document_id: String) -> Vector2:

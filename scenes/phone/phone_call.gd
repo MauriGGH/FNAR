@@ -71,7 +71,6 @@ var _snub_timer: Timer = null
 @onready var timer_label: Label = $Panel/TimerLabel
 @onready var hang_up_button: Button = $Panel/HangUpButton
 @onready var mute_button: Button = $Panel/MuteButton
-@onready var busy_tone: AudioStreamPlayer = $BusyTone
 @onready var options: VBoxContainer = $Panel/Options
 
 
@@ -132,7 +131,7 @@ func hang_up() -> void:
 	# tono de ocupado y, al soltarlo, habla por el altavoz.
 	if mode == Mode.URENA and _step != Step.FAREWELL:
 		urena_snubbed.emit()
-		busy_tone.play()
+		AudioManager.play(Sounds.BUSY_TONE)
 		_speak_after_busy()
 	is_open = false
 	visible = false
@@ -199,7 +198,7 @@ func _process_ringing(delta: float) -> void:
 	is_ringing = false
 	if mode == Mode.URENA:
 		urena_snubbed.emit()
-		busy_tone.play()
+		AudioManager.play(Sounds.BUSY_TONE)
 		_speak_after_busy()
 	call_missed.emit()
 
@@ -239,7 +238,7 @@ func _speak_after_busy() -> void:
 		_snub_timer.one_shot = true
 		add_child(_snub_timer)
 		_snub_timer.timeout.connect(_on_snub_timeout)
-	_snub_timer.start(busy_tone.tone_seconds())
+	_snub_timer.start(AudioManager.length(Sounds.BUSY_TONE))
 
 
 func _on_snub_timeout() -> void:
@@ -259,7 +258,9 @@ func _speak(line: String) -> void:
 	var voice: String = _spanish_voice()
 	if voice.is_empty():
 		return
-	DisplayServer.tts_speak(line, voice, NightCalls.TTS_VOLUME,
+	# El TTS no sale por los buses, así que el deslizador de Voces va aquí.
+	var volume: int = roundi(float(NightCalls.TTS_VOLUME) * AudioManager.voice_volume())
+	DisplayServer.tts_speak(line, voice, volume,
 		NightCalls.TTS_PITCH, NightCalls.TTS_RATE)
 
 

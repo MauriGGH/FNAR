@@ -43,6 +43,8 @@ var _fade: float = 0.0:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_texture = Documents.texture(pending_document)
+	# Verlo una vez lo deja guardado en la pestaña de Documentos de Extras.
+	SaveGame.unlock_document(pending_document)
 	var tween: Tween = create_tween()
 	tween.tween_property(self, "_fade", 1.0, FADE_IN)
 	tween.tween_interval(MIN_READ_TIME)

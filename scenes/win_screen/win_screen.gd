@@ -47,20 +47,19 @@ func _button_text() -> String:
 
 ## La Custom Night no da recorte ni avanza la historia: vuelve a Extras.
 func _on_continue_pressed() -> void:
+	# Ganar una Custom Night, la que sea, te vale la carta de despido.
 	if GameManager.is_custom_night:
-		get_tree().change_scene_to_file(Screens.EXTRAS_MENU)
+		DocumentScreen.show_documents(get_tree(), [Documents.DISMISSAL], Screens.EXTRAS_MENU)
 		return
 	var cleared: int = GameManager.current_night
 	NewspaperScreen.pending_index = Newspapers.index_for_cleared_night(cleared)
-	# Después del recorte vienen las hojas que entregue esa noche: el recibo de
-	# pago, y en la última también la carta de despido.
+	# Después del recorte viene el recibo de pago, si esa noche lo da.
 	var documents: Array[String] = []
 	var receipt: String = Documents.for_cleared_night(cleared)
 	if not receipt.is_empty():
 		documents.append(receipt)
 	var after: String = Screens.NIGHT_INTRO
 	if cleared >= NightConfig.LAST_NIGHT:
-		documents.append(Documents.DISMISSAL)
 		after = Screens.ENDING
 	else:
 		GameManager.prepare_night(cleared + 1)

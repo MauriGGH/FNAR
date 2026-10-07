@@ -60,7 +60,6 @@ var _first: Texture2D = null
 var _main: Texture2D = null
 var _cache: Dictionary = {}
 
-@onready var scream: AudioStreamPlayer = $Scream
 @onready var static_overlay: ColorRect = $StaticOverlay
 
 
@@ -93,7 +92,7 @@ func play(jumpscare_id: String) -> void:
 	_zoom = ZOOM_FROM
 	_flash_left = FLASH_FRAMES
 	_set_phase(Phase.FIRST, FIRST_FRAME_TIME)
-	scream.play()
+	AudioManager.play(Sounds.SCREAM)
 
 
 ## La pantalla de Mamador: no salta, pero igual es el final.
@@ -124,7 +123,7 @@ func play_scare() -> void:
 	_zoom = ZOOM_FROM
 	_flash_left = 0
 	_set_phase(Phase.SCARE_BLACK, SCARE_BLACK_TIME)
-	scream.play()
+	AudioManager.play(Sounds.SCREAM)
 
 
 func _texture(name: String) -> Texture2D:

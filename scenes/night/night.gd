@@ -44,10 +44,9 @@ const FLASH_TIME: float = 0.28
 @onready var debug_help: Label = $Hud/DebugHelp
 @onready var pause_menu: Control = $Hud/PauseMenu
 @onready var ticket_label: Label = $Hud/TicketLabel
-@onready var ticket_chime: AudioStreamPlayer = $Hud/TicketChime
-@onready var music_box: AudioStreamPlayer = $Hud/MusicBox
 @onready var jumpscare: Control = $Hud/JumpscareOverlay
 @onready var blackout_death: Control = $Hud/BlackoutDeath
+@onready var hallucinations: Control = $Hud/HallucinationOverlay
 @onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
@@ -86,7 +85,7 @@ func _ready() -> void:
 			# Al quedarse sin cuerda, la silla del cubículo 3 queda vacía y la
 			# cajita musical se calla: por eso el jugador se da cuenta.
 			_come_trabas.music_stopped.connect(office.set_right_view_empty.bind(true))
-			_come_trabas.music_stopped.connect(music_box.stop_music)
+			_come_trabas.music_stopped.connect(_on_music_box_stopped)
 		elif animatronic is Urena:
 			_urena = animatronic as Urena
 		elif animatronic is ArmandoPrompts:
@@ -120,7 +119,6 @@ func _ready() -> void:
 	PowerManager.blackout_changed.connect(_on_blackout_changed)
 	PowerManager.power_depleted.connect(_on_power_depleted)
 	blackout_death.strike.connect(_on_blackout_strike)
-	blackout_death.sparks_started.connect(music_box.play_once)
 	jumpscare.finished.connect(_on_jumpscare_finished)
 
 	camera_system.set_animatronics(_animatronics)
@@ -155,7 +153,7 @@ func _ready() -> void:
 	mod_menu.bind(self)
 	# La botarga toca mientras le quede cuerda, desde el minuto uno.
 	if _come_trabas != null and _come_trabas.is_active:
-		music_box.start_loop()
+		AudioManager.play_loop(Sounds.MUSIC_BOX)
 
 
 ## Escape pausa la noche, salvo que ya lo esté usando otra cosa: la PC, el
@@ -236,7 +234,7 @@ func _on_ticket_arrived(index: int) -> void:
 	var tasks: Array = GameManager.night_tasks()
 	if index < 0 or index >= tasks.size():
 		return
-	ticket_chime.play()
+	AudioManager.play(Sounds.TICKET)
 	notice_banner.show_notice(TICKET_NOTICE % str(tasks[index].get("title", "tarea")), NOTICE_SHORT)
 	_refresh_tickets(0.0, true)
 
@@ -614,11 +612,18 @@ func _on_game_over(cause: String) -> void:
 	jumpscare.play(jumpscare_id)
 
 
+## La botarga se quedó sin cuerda: la cajita musical se calla y por eso el
+## jugador se da cuenta.
+func _on_music_box_stopped() -> void:
+	AudioManager.stop(Sounds.MUSIC_BOX)
+
+
 ## Deja de gastar energía y congela a los profes antes de cambiar de pantalla.
 func _end_night() -> void:
 	set_process(false)
 	camera_system.close()
 	pc_screen.close()
-	music_box.stop_music()
+	hallucinations.set_process(false)
+	AudioManager.stop_all()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()
