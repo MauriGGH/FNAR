@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/characters/urena.gd" id="19_urena"]
 [ext_resource type="PackedScene" path="res://scenes/phone/phone_call.tscn" id="20_phone"]
 [ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="16_static"]
+[ext_resource type="Script" path="res://scripts/characters/rochis.gd" id="22_rochis"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
 shader = ExtResource("16_static")
@@ -68,6 +69,10 @@ display_name = "Ureña"
 [node name="Audel" type="Node" parent="Animatronics"]
 script = ExtResource("13_audel")
 display_name = "Audel"
+
+[node name="Rochis" type="Node" parent="Animatronics"]
+script = ExtResource("22_rochis")
+display_name = "Rochis"
 
 [node name="ComeTrabas" type="Node" parent="Animatronics"]
 script = ExtResource("11_come_trabas")

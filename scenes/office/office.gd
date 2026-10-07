@@ -27,6 +27,7 @@ const RIGHT_EMPTY_TEXTURE: Texture2D = preload("res://assets/art/office/oficina_
 const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay.gd")
 const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
+const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 ## Si existe la foto de Ureña se usa; si no, una etiqueta.
 const URENA_PHOTO_PATH: String = "res://assets/art/office/urena_foto"
 
@@ -80,7 +81,12 @@ const RIGHT_EMPTY_SATURATION: float = 0.9
 const RIGHT_EMPTY_BRIGHTNESS: float = 0.98
 
 const FLASHLIGHT_NOTICE: String = "[sostén Ctrl o el clic sobre el cristal]"
+const DOOR_NOTICE: String = "[clang]"
 const NOTICE_TIME: float = 1.6
+
+## El golpe de la cortina al llegar abajo sacude un poco la vista.
+const SHAKE_TIME: float = 0.3
+const SHAKE_PIXELS: float = 5.0
 
 ## Zonas sobre las que se ponen etiquetas de presencia, con su color y su
 ## separación. El profe decide qué dice en cada una con zone_presence().
@@ -88,6 +94,8 @@ const PRESENCE_ZONES: Array[Dictionary] = [
 	{"zone": "entrance_door", "color": Color(0.98, 0.45, 0.4), "gap": 6.0},
 	{"zone": "front_glass", "color": Color(0.98, 0.62, 0.35), "gap": 16.0},
 	{"zone": "ladder", "color": Color(0.6, 0.85, 1.0), "gap": 6.0},
+	{"zone": "cubicles_side", "color": Color(0.82, 0.6, 0.98), "gap": 6.0},
+	{"zone": "doorway", "color": Color(0.82, 0.6, 0.98), "gap": 6.0},
 ]
 
 ## Puntos que siguen encendidos cuando se corta la corriente, por vista.
@@ -139,6 +147,8 @@ var _urena_photos: int = 0
 
 var flashlight_overlay: Control = null
 var phone_light: Control = null
+var door_shutter: Control = null
+var _shake_left: float = 0.0
 
 var _view_nodes: Array[Control] = []
 var _content_nodes: Array[Control] = []
@@ -156,6 +166,7 @@ func _ready() -> void:
 	_build_zones(CENTER_ZONES_PATH, $Views/CenterView/Content/Zones, CENTER_CLICKABLE)
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
+	_build_door_shutter()
 	_build_labels()
 	_build_blackout_overlays()
 	_build_flashlight()
@@ -308,6 +319,10 @@ func _layout_flashlight() -> void:
 		flashlight_overlay.size = content_size
 		flashlight_overlay.set_beam(zone_rect(GLASS_ZONE),
 			Vector2(content_size.x * 0.5, content_size.y))
+	if door_shutter != null:
+		door_shutter.position = Vector2.ZERO
+		door_shutter.size = content_size
+		door_shutter.set_door_rect(zone_rect("entrance_door"))
 	if phone_light != null:
 		# Cubre todo el contenido: así el foquito y la pantallita se colocan
 		# con las mismas normalizadas de las zonas y escalan con la vista.
@@ -341,6 +356,7 @@ func _layout_blackout_overlays() -> void:
 # --- Recorrido y giro ---------------------------------------------------------
 
 func _process(delta: float) -> void:
+	_update_shake(delta)
 	_update_flashlight()
 	if _state != ViewState.PANNING or not is_interactive:
 		return
@@ -591,10 +607,16 @@ func _on_zone_clicked(zone_id: String) -> void:
 func _toggle_door() -> void:
 	is_door_closed = not is_door_closed
 	_refresh_door()
+	if is_door_closed:
+		# La cortina pega contra el piso: ruido y sacudida.
+		notice_requested.emit(DOOR_NOTICE, NOTICE_TIME)
+		shake()
 	door_toggled.emit(is_door_closed)
 
 
 func _refresh_door() -> void:
+	if door_shutter != null:
+		door_shutter.set_closed(is_door_closed)
 	door_state_label.text = "CHAPA CERRADA" if is_door_closed else "CHAPA ABIERTA"
 	door_state_label.modulate = Color(1.0, 0.75, 0.2) if is_door_closed else Color(0.65, 0.7, 0.7)
 
@@ -634,6 +656,30 @@ func _content_for_zone(zone_id: String) -> Control:
 	if not _zones.has(zone_id):
 		return center_content
 	return (_zones[zone_id] as OfficeZone).get_parent().get_parent() as Control
+
+
+## Sacude la vista un momento. Lo usa el golpe de la cortina.
+func shake() -> void:
+	_shake_left = SHAKE_TIME
+
+
+func _update_shake(delta: float) -> void:
+	if _shake_left <= 0.0:
+		return
+	_shake_left = maxf(_shake_left - delta, 0.0)
+	var amount: float = _shake_left / SHAKE_TIME * SHAKE_PIXELS
+	views.position = Vector2(randf_range(-amount, amount), randf_range(-amount, amount))
+	if _shake_left <= 0.0:
+		views.position = Vector2.ZERO
+
+
+## La cortina de la puerta vive en la vista central, debajo de las etiquetas
+## de presencia: así Barcosa golpeando se sigue leyendo con la cortina abajo.
+func _build_door_shutter() -> void:
+	door_shutter = DOOR_SHUTTER.new()
+	door_shutter.name = "DoorShutter"
+	door_shutter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center_content.add_child(door_shutter)
 
 
 ## La linterna y el foquito del teléfono viven en la vista central.
@@ -685,7 +731,11 @@ func _place_above_zone(label: Label, zone_id: String, label_size: Vector2, gap: 
 		return
 	var rect: Rect2 = zone_rect(zone_id)
 	label.size = label_size
-	label.position = Vector2(rect.get_center().x - label_size.x * 0.5, rect.position.y - label_size.y - gap)
+	# Las zonas pegadas a un borde dejarían la etiqueta fuera del contenido.
+	var limit: float = maxf(size.x * VIEW_SCALE - label_size.x, 0.0)
+	label.position = Vector2(
+		clampf(rect.get_center().x - label_size.x * 0.5, 0.0, limit),
+		rect.position.y - label_size.y - gap)
 
 
 func _place_below_zone(label: Label, zone_id: String, label_size: Vector2) -> void:

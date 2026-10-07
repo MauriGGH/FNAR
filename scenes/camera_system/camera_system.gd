@@ -57,6 +57,7 @@ var _static_tween: Tween = null
 var _debug_elapsed: float = 0.0
 var _interference_active: bool = false
 var _come_trabas: ComeTrabas = null
+var _rochis: Rochis = null
 var _winding: bool = false
 var _image_cache: Dictionary = {}  # ruta -> Texture2D, o null si no existe
 var _camera_signature: String = ""
@@ -75,6 +76,9 @@ var _camera_signature: String = ""
 ## Todo el recuadro es el botón que se mantiene presionado.
 @onready var wind_control: Button = $WindControl
 @onready var wind_gauge: Control = $WindControl/WindGauge
+## El botón de "es impresionante", que solo sale en la cámara de Rochis.
+@onready var audio_control: Button = $AudioControl
+@onready var audio_gauge: Control = $AudioControl/AudioGauge
 
 
 func _ready() -> void:
@@ -85,6 +89,8 @@ func _ready() -> void:
 	feed_image.visible = false
 	no_signal_label.visible = false
 	wind_control.visible = false
+	audio_control.visible = false
+	audio_control.pressed.connect(_on_audio_pressed)
 	GameManager.patch_panel.camera_restored.connect(_on_camera_restored)
 	wind_control.keep_pressed_outside = true  # Soltar fuera del botón no se traba.
 	wind_control.button_down.connect(_on_wind_button_down)
@@ -106,6 +112,8 @@ func set_animatronics(animatronics: Array[Animatronic]) -> void:
 		if animatronic is ComeTrabas:
 			_come_trabas = animatronic as ComeTrabas
 			_come_trabas.wind_changed.connect(_on_wind_changed)
+		elif animatronic is Rochis:
+			_rochis = animatronic as Rochis
 
 
 func toggle() -> void:
@@ -131,6 +139,7 @@ func close() -> void:
 	is_open = false
 	visible = false
 	_interference_active = false
+	audio_control.visible = false
 	closed.emit()
 
 
@@ -158,6 +167,7 @@ func _refresh_view() -> void:
 	_camera_signature = _signature_of(current_camera)
 	_refresh_camera_content()
 	_refresh_wind_control()
+	_refresh_audio_control()
 	_refresh_minimap_highlight()
 
 
@@ -284,6 +294,30 @@ func _apply_winding() -> void:
 	_come_trabas.set_winding(_winding and is_open and wind_control.visible)
 
 
+# --- Audio de Rochis ----------------------------------------------------------
+
+## El botón del audio solo sale en la cámara donde Rochis sigue en su silla, y
+## se apaga mientras está en espera. El reloj de pastel se llena conforme se
+## vuelve a poder usar.
+func _refresh_audio_control() -> void:
+	var should_show: bool = false
+	if _rochis != null and _rochis.accepts_audio():
+		should_show = current_camera == Rooms.camera_of(_rochis.current_room)
+	audio_control.visible = should_show
+	if not should_show:
+		return
+	var ready: float = _rochis.audio_ready()
+	audio_control.disabled = ready < 1.0
+	audio_gauge.set_percent(ready * 100.0)
+
+
+func _on_audio_pressed() -> void:
+	if _rochis == null or not is_open:
+		return
+	_rochis.play_audio()
+	_refresh_audio_control()
+
+
 ## Etiqueta de depuración: quién hay en la habitación que se está viendo, en qué
 ## anda cada profe y si el pasillo está reservado. La reemplazarán los sprites.
 func _refresh_occupants(room: String) -> void:
@@ -305,6 +339,10 @@ func _refresh_occupants(room: String) -> void:
 ## Las etapas cambian sin que nadie se mueva, así que la etiqueta se repinta sola.
 func _process(delta: float) -> void:
 	_apply_winding()
+	if is_open:
+		# La espera del audio corre siempre, así que el reloj se repinta
+		# aunque la estática esté tapando la imagen.
+		_refresh_audio_control()
 	if not is_open or _interference_active:
 		return
 	_refresh_wind_control()

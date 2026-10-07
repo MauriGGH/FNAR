@@ -10,11 +10,11 @@ signal game_over(cause: String)
 signal task_completed(task_id: String)
 signal ai_window_changed(is_open: bool)
 
-## El nombre del guardia. Por ahora es el de por defecto; el menú de la noche
-## 6 lo dejará escribir.
-const DEFAULT_PLAYER_NAME: String = "Mauricio"
+## El nombre del guardia. Por ahora es una constante; la pantalla para
+## escribirlo llega con el menú (hito 6), y entonces player_name cambiará.
+const PLAYER_NAME: String = "Guardia"
 
-var player_name: String = DEFAULT_PLAYER_NAME
+var player_name: String = PLAYER_NAME
 var current_night: int = 1
 var current_hour: int = NightConfig.START_HOUR
 var is_night_active: bool = false

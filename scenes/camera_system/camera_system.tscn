@@ -217,6 +217,50 @@ offset_bottom = 69.0
 mouse_filter = 2
 script = ExtResource("6_gauge")
 
+[node name="AudioControl" type="Button" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 48.0
+offset_top = 400.0
+offset_right = 340.0
+offset_bottom = 480.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_wind")
+theme_override_styles/hover = SubResource("StyleBoxFlat_wind_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_wind_pressed")
+
+[node name="TitleLabel" type="Label" parent="AudioControl"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = 240.0
+offset_bottom = 44.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 22
+text = "REPRODUCIR AUDIO"
+vertical_alignment = 1
+
+[node name="HintLabel" type="Label" parent="AudioControl"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 44.0
+offset_right = 240.0
+offset_bottom = 68.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.79, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "Clic para reproducir"
+vertical_alignment = 1
+
+[node name="AudioGauge" type="Control" parent="AudioControl"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 11.0
+offset_right = 284.0
+offset_bottom = 69.0
+mouse_filter = 2
+script = ExtResource("6_gauge")
+
 [node name="Minimap" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 3
