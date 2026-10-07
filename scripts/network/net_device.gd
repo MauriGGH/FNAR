@@ -23,6 +23,19 @@ var gateway: String = ""
 ## En el router, si la interfaz está levantada. Los demás siempre andan.
 var interface_up: bool = true
 
+## La VLAN a la que pertenece este equipo. 1 es la de siempre.
+var vlan: int = 1
+## En un switch, la VLAN de cada puerto: número de puerto -> VLAN. Los puertos
+## que no estén aquí se quedan en la VLAN 1.
+var port_vlans: Dictionary = {}
+## En un router, las reservas de DHCP: nombre del pool -> {"ip", "mask"}.
+var reservations: Dictionary = {}
+
+
+## La VLAN de un puerto de switch.
+func vlan_of_port(port: int) -> int:
+	return int(port_vlans.get(port, 1))
+
 
 func is_configurable() -> bool:
 	return kind == Kind.PC or kind == Kind.SERVER

@@ -2,10 +2,11 @@ extends Control
 
 ## El teléfono de la oficina: la ventanita de la llamada, abajo del todo.
 ## Vive en la capa del HUD, así que se sigue viendo con las cámaras arriba.
-## Sirve para dos cosas: el mensaje de la noche (subtítulos que salen poco a
-## poco) y la llamada de Ureña, que es una conversación: saluda, suelta tres
-## insinuaciones con tres respuestas contrarreloj cada una, reacciona a lo que
-## conteste el jugador y se despide.
+## Sirve para dos cosas: la llamada con la que empieza la noche (subtítulos
+## que salen poco a poco, con voz, y se pueden silenciar) y la llamada de
+## Ureña, que es una conversación: saluda, suelta tres insinuaciones con tres
+## respuestas contrarreloj cada una, reacciona a lo que conteste el jugador y
+## se despide.
 
 signal ringing_started(seconds: float)
 signal ring_tick()
@@ -35,8 +36,10 @@ var _ring_left: float = 0.0
 var _ring_tick_left: float = 0.0
 var _fatal_if_missed: bool = false
 
-# Mensaje de la noche.
+# Llamada de inicio de noche.
 var _lines: PackedStringArray = PackedStringArray()
+## La última línea que se mandó a la voz, para no repetirla cada cuadro.
+var _spoken_line: int = -1
 var _line_index: int = 0
 var _typed: float = 0.0
 var _pause_left: float = 0.0
@@ -58,12 +61,15 @@ var _played_along: bool = false
 @onready var caller_label: Label = $Panel/CallerLabel
 @onready var timer_label: Label = $Panel/TimerLabel
 @onready var hang_up_button: Button = $Panel/HangUpButton
+@onready var mute_button: Button = $Panel/MuteButton
 @onready var options: VBoxContainer = $Panel/Options
 
 
 func _ready() -> void:
 	visible = false
 	hang_up_button.pressed.connect(hang_up)
+	mute_button.pressed.connect(_on_mute_pressed)
+	mute_button.visible = false
 	for i: int in 3:
 		var button: Button = Button.new()
 		button.focus_mode = Control.FOCUS_NONE
@@ -102,8 +108,10 @@ func answer() -> void:
 		_line_index = 0
 		_typed = 0.0
 		_pause_left = 0.0
+		_spoken_line = -1
 		options.visible = false
 		timer_label.visible = false
+		mute_button.visible = true
 
 
 func hang_up() -> void:
@@ -112,6 +120,8 @@ func hang_up() -> void:
 	is_open = false
 	visible = false
 	mode = Mode.NONE
+	mute_button.visible = false
+	_stop_voice()
 	_lines_urena.clear()
 	_line_urena = -1
 	options.visible = false
@@ -123,6 +133,8 @@ func hang_up() -> void:
 
 ## El mensaje de la noche: suena, y si contestas salen los subtítulos.
 func queue_message(lines: PackedStringArray, seconds: float) -> void:
+	if lines.is_empty():
+		return  # Esa noche no hay guion: el teléfono no suena.
 	mode = Mode.MESSAGE
 	_lines = lines
 	caller_label.text = "LLAMADA ENTRANTE"
@@ -176,10 +188,42 @@ func _process_message(delta: float) -> void:
 		return
 
 	var line: String = _lines[_line_index]
+	# La voz arranca con la línea, no letra por letra.
+	if _spoken_line != _line_index:
+		_spoken_line = _line_index
+		_speak(line)
 	_typed = minf(_typed + TYPE_SPEED * delta, float(line.length()))
 	subtitle_label.text = line.substr(0, int(_typed))
 	if int(_typed) >= line.length():
 		_pause_left = LINE_PAUSE
+
+
+# --- La voz de la llamada -----------------------------------------------------
+
+## "Silenciar llamada": corta la voz y cuelga, como taparle la bocina.
+func _on_mute_pressed() -> void:
+	hang_up()
+
+
+## Lee una línea con la síntesis de voz de Godot, si el sistema la tiene.
+func _speak(line: String) -> void:
+	var voice: String = _spanish_voice()
+	if voice.is_empty():
+		return
+	DisplayServer.tts_speak(line, voice, NightCalls.TTS_VOLUME,
+		NightCalls.TTS_PITCH, NightCalls.TTS_RATE)
+
+
+func _stop_voice() -> void:
+	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		DisplayServer.tts_stop()
+
+
+func _spanish_voice() -> String:
+	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		return ""
+	var voices: PackedStringArray = DisplayServer.tts_get_voices_for_language(NightCalls.TTS_LANGUAGE)
+	return voices[0] if not voices.is_empty() else ""
 
 
 # --- Llamada de Ureña ---------------------------------------------------------

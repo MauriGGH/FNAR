@@ -5,10 +5,21 @@ extends RefCounted
 ## desde cualquier script, gracias al class_name.
 
 
-# --- Modo prueba -------------------------------------------------------------
-# Con TEST_MODE activo cada hora dura TEST_HOUR_DURATION en vez de HOUR_DURATION,
-# para poder probar una noche entera en un minuto.
-const TEST_MODE: bool = true
+# --- Interruptores de desarrollo ---------------------------------------------
+# Los dos únicos que hay que mover para pasar de "probando" a "jugando".
+# Para la versión que les pases a tus amigos, los dos en false.
+#
+# TEST_MODE acorta la noche: cada hora dura TEST_HOUR_DURATION (10 s) en vez
+# de HOUR_DURATION (75 s), así una noche entera cabe en un minuto. El consumo
+# de energía NO cambia: se mide siempre contra los 75 s, así que en modo
+# prueba la energía parece durar más porque la noche pasa más rápido.
+#
+# DEBUG_KEYS enciende todas las teclas de data/debug_keys.gd: F3 (la ayuda,
+# las zonas de clic y el estado de los profes), F8 (energía infinita) y las
+# que mandan a cada profe a su posición de ataque. En false no responde
+# ninguna, ni siquiera F3, así que no hay manera de ver nada de depuración.
+const TEST_MODE: bool = false
+const DEBUG_KEYS: bool = false
 
 const HOUR_DURATION: float = 75.0
 const TEST_HOUR_DURATION: float = 10.0

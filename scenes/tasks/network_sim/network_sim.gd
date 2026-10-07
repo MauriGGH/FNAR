@@ -159,15 +159,17 @@ func open_device(device_id: String) -> void:
 
 	var is_pc: bool = device.is_configurable()
 	var is_router: bool = device.kind == NetDevice.Kind.ROUTER
+	# El switch también tiene CLI: ahí se configuran las VLAN de sus puertos.
+	var is_switch: bool = device.kind == NetDevice.Kind.SWITCH
 	tabs.set_tab_hidden(0, not is_pc)
 	tabs.set_tab_hidden(1, not is_pc)
-	tabs.set_tab_hidden(2, not is_router)
+	tabs.set_tab_hidden(2, not is_router and not is_switch)
 	tabs.set_tab_hidden(3, is_pc or is_router)
 
 	if is_pc:
 		console_tab.bind(self, device_id)
 		tabs.current_tab = 0
-	elif is_router:
+	elif is_router or is_switch:
 		cli_tab.bind(self, device_id)
 		tabs.current_tab = 2
 	else:
@@ -175,6 +177,23 @@ func open_device(device_id: String) -> void:
 
 	_refresh_device_window()
 	device_window.visible = true
+
+
+## Aplica las reservas de DHCP del router a los equipos que las esperan: el
+## que no tenga dirección y se llame como el pool, la recibe.
+func apply_reservations() -> void:
+	var router_device: NetDevice = model.router()
+	if router_device == null:
+		return
+	for pool: String in router_device.reservations:
+		var entry: Dictionary = router_device.reservations[pool]
+		for device: NetDevice in model.device_list():
+			if not device.is_configurable() or device.label.to_lower() != pool.to_lower():
+				continue
+			model.set_config(device.id, str(entry.get("ip", "")), str(entry.get("mask", "")),
+				router_device.ip)
+	model.validate()
+	model_changed.emit()
 
 
 func close_device() -> void:

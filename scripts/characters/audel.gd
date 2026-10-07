@@ -95,7 +95,6 @@ func try_move() -> bool:
 
 ## La descarga: tumba de 1 a 3 cámaras y avisa para el destello y la estática.
 func cause_discharge() -> void:
-	debug_activate()
 	var affected: PackedInt32Array = GameManager.patch_panel.cause_discharge(GameManager.current_night)
 	if affected.is_empty():
 		return
@@ -158,6 +157,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if DebugKeys.matches(event, DebugKeys.AUDEL_LADDER):
 		debug_force_to_ladder()
 	elif DebugKeys.matches(event, DebugKeys.AUDEL_DISCHARGE):
+		debug_activate()
 		cause_discharge()
 
 

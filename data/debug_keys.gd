@@ -5,11 +5,10 @@ extends RefCounted
 ## descripción que sale en la ayuda de F3. Antes estaban repartidas como
 ## literales por cada script de profe, así que no había manera de listarlas.
 ##
-## Con DEBUG_KEYS en false ninguna responde y la ayuda no se enseña: así va
-## la versión para amigos, sin tener que tocar ni un script de personaje.
-
-## El interruptor general. En la versión para jugar, false.
-const DEBUG_KEYS: bool = true
+## El interruptor vive en NightConfig, junto a TEST_MODE, para tener los dos
+## en el mismo lugar. Con NightConfig.DEBUG_KEYS en false ninguna tecla
+## responde y la ayuda no se enseña, sin tener que tocar ni un script de
+## personaje.
 
 # Las acciones, por nombre, para que nadie se equivoque escribiendo la cadena.
 const HELP: String = "help"
@@ -47,7 +46,7 @@ const KEYS: Array[Dictionary] = [
 ## true si el evento es la tecla de esa acción y la depuración está encendida.
 ## Ya filtra las repeticiones por tecla mantenida.
 static func matches(event: InputEvent, action: String) -> bool:
-	if not DEBUG_KEYS:
+	if not NightConfig.DEBUG_KEYS:
 		return false
 	var key: InputEventKey = event as InputEventKey
 	if key == null or not key.pressed or key.echo:
@@ -72,7 +71,7 @@ static func label_of(action: String) -> String:
 ## La ayuda de F3, una línea por tecla.
 static func help_lines() -> PackedStringArray:
 	var lines: PackedStringArray = PackedStringArray()
-	if not DEBUG_KEYS:
+	if not NightConfig.DEBUG_KEYS:
 		return lines
 	lines.append("[DEPURACIÓN]")
 	for entry: Dictionary in KEYS:

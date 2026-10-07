@@ -87,3 +87,13 @@ offset_bottom = 194.0
 focus_mode = 0
 theme_override_font_sizes/font_size = 18
 text = "Colgar"
+
+[node name="MuteButton" type="Button" parent="Panel"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 158.0
+offset_right = 550.0
+offset_bottom = 194.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "Silenciar llamada"

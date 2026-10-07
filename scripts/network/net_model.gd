@@ -147,6 +147,12 @@ func validate() -> void:
 		if not config_problem.is_empty():
 			link.ok = false
 			link.reason = config_problem
+			continue
+
+		var vlan_problem: String = _vlan_problem(link, a, b)
+		if not vlan_problem.is_empty():
+			link.ok = false
+			link.reason = vlan_problem
 
 
 ## El cable recto va entre equipos distintos; el cruzado entre iguales (y de
@@ -171,6 +177,21 @@ func _cable_problem(a: NetDevice, b: NetDevice, cable: String) -> String:
 				return ""
 			return "La fibra es solo para el enlace de switch a router."
 	return "Cable desconocido."
+
+
+## Un equipo enchufado a un puerto de switch que está en otra VLAN queda
+## aislado, aunque el cable y las IPs estén bien.
+func _vlan_problem(link: NetLink, a: NetDevice, b: NetDevice) -> String:
+	for pair: Array in [[a, b, link.a_port, link.b_port], [b, a, link.b_port, link.a_port]]:
+		var switch: NetDevice = pair[0]
+		var other: NetDevice = pair[1]
+		if switch.kind != NetDevice.Kind.SWITCH or other.kind == NetDevice.Kind.SWITCH:
+			continue
+		var port_vlan: int = switch.vlan_of_port(int(pair[2]))
+		if port_vlan != other.vlan:
+			return "El puerto %d del switch esta en la VLAN %d y %s en la %d" % [
+				int(pair[2]) + 1, port_vlan, other.label, other.vlan]
+	return ""
 
 
 ## Problemas de IP que hacen que el enlace no sirva, con el motivo a la vista.

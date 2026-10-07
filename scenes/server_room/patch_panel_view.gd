@@ -634,7 +634,7 @@ func _draw_sheet_table(sheet: Rect2) -> void:
 		var camera: int = i + 1
 		var y: float = first_y + i * step
 		var values: PackedStringArray = PackedStringArray(["%02d" % camera,
-			"%02d" % _model.pp_of(camera), "%02d" % _model.gi_of(camera)])
+			"%02d" % _model.pp_of(camera), "%02d" % _model.sheet_gi_of(camera)])
 		for column: int in columns.size():
 			_draw_centered(font, Vector2(columns[column], y), values[column], body_size, PAPER_INK)
 

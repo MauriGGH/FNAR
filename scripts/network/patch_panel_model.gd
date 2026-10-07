@@ -26,15 +26,23 @@ const CORD_COLORS: Array[Color] = [
 	Color(0.54, 0.3, 0.28),   # rojo
 ]
 
+## Cuántas cámaras se intercambian en la hoja cuando toca reetiquetar.
+const RELABEL_COUNT: int = 2
+
 ## cámara -> {"pp": int, "gi": int, "color": Color}
 var wiring: Dictionary = {}
 var disconnected: Array[int] = []
+## Las cámaras cuyos renglones de la hoja salen intercambiados. El cableado de
+## verdad no cambia: lo que miente es la hoja, así que seguirla da chispa y hay
+## que deducir el puerto correcto.
+var swapped_sheet: Array[int] = []
 
 
 ## Baraja los puertos de la noche y deja todo conectado.
 func reset_for_night() -> void:
 	wiring.clear()
 	disconnected.clear()
+	swapped_sheet.clear()
 
 	var pp_ports: Array[int] = []
 	var gi_ports: Array[int] = []
@@ -59,6 +67,47 @@ func pp_of(camera: int) -> int:
 
 func gi_of(camera: int) -> int:
 	return int(wiring.get(camera, {}).get("gi", 0))
+
+
+## El puerto que DICE la hoja del rack. Normalmente es el de verdad, pero si
+## esa cámara entró en el reetiquetado sale el de su pareja.
+func sheet_gi_of(camera: int) -> int:
+	if swapped_sheet.size() < 2 or not camera in swapped_sheet:
+		return gi_of(camera)
+	var other: int = swapped_sheet[1] if camera == swapped_sheet[0] else swapped_sheet[0]
+	return gi_of(other)
+
+
+## La tarea de reetiquetar: desconecta dos cámaras y además intercambia sus
+## renglones en la hoja. Devuelve las cámaras que entraron.
+func cause_relabel() -> PackedInt32Array:
+	var available: Array[int] = []
+	for camera: int in wiring:
+		if not is_camera_down(camera):
+			available.append(camera)
+	if available.size() < RELABEL_COUNT:
+		return PackedInt32Array()
+	available.shuffle()
+	swapped_sheet.clear()
+	var affected: PackedInt32Array = PackedInt32Array()
+	for i: int in RELABEL_COUNT:
+		var camera: int = available[i]
+		disconnected.append(camera)
+		swapped_sheet.append(camera)
+		affected.append(camera)
+	affected.sort()
+	discharge_happened.emit(affected)
+	return affected
+
+
+## true si ya no queda ninguna de las reetiquetadas sin conectar.
+func is_relabel_done() -> bool:
+	if swapped_sheet.is_empty():
+		return false
+	for camera: int in swapped_sheet:
+		if is_camera_down(camera):
+			return false
+	return true
 
 
 func color_of(camera: int) -> Color:

@@ -51,10 +51,11 @@ const SERVICES: Dictionary = {
 ## Servicios que arrancan la noche caídos, con su código de error.
 const BROKEN_SERVICES: Dictionary = {
 	"correo": 1067,
+	"respaldos": 1053,
 }
 
 ## Servicios que arrancan la noche andando.
-const RUNNING_SERVICES: Array[String] = ["dhcp", "impresion", "respaldos"]
+const RUNNING_SERVICES: Array[String] = ["dhcp", "impresion"]
 
 # Estados de servicio, con el número que enseña sc query.
 const STATE_STOPPED: String = "STOPPED"

@@ -18,6 +18,21 @@ const SCENARIO_UNCABLED: String = "lab_sin_cablear"
 const SCENARIO_NO_IPS: String = "lab_sin_ips"
 const SCENARIO_WITH_SERVER: String = "lab_con_servidor"
 const SCENARIO_ROUTER_DOWN: String = "lab_router_apagado"
+const SCENARIO_VLAN_MISMATCH: String = "salon_vlan_equivocada"
+const SCENARIO_PRINTER_DHCP: String = "impresora_sin_reserva"
+
+## La VLAN en la que tiene que quedar el salón, y la equivocada en la que
+## arranca su puerto del switch.
+const CLASSROOM_VLAN: int = 10
+const WRONG_VLAN: int = 20
+## El puerto del switch donde está enchufado el salón.
+const CLASSROOM_PORT: int = 5
+const CLASSROOM_LABEL: String = "SALON-E"
+
+## La impresora y la IP que hay que reservarle en el router.
+const PRINTER_LABEL: String = "IMPRESORA"
+const PRINTER_IP: String = "192.168.30.60"
+const PRINTER_POOL: String = "impresora"
 
 
 ## Arma el escenario dentro de un modelo ya vacío.
@@ -31,6 +46,12 @@ static func build(scenario: String, model: NetModel) -> void:
 			_build_lab(model, true, true, true, true)
 		SCENARIO_ROUTER_DOWN:
 			_build_lab(model, true, true, false, false)
+		SCENARIO_VLAN_MISMATCH:
+			_build_lab(model, true, true, true, true)
+			_make_classroom(model)
+		SCENARIO_PRINTER_DHCP:
+			_build_lab(model, true, true, true, true)
+			_make_printer(model)
 		_:
 			_build_lab(model, false, false, false, true)
 	model.validate()
@@ -99,6 +120,42 @@ static func _build_lab(model: NetModel, cabled: bool, configured: bool,
 		model.connect_ports("srv", 0, "sw", 1, NetModel.CABLE_STRAIGHT)
 	for i: int in 4:
 		model.connect_ports("pc%d" % (i + 1), 0, "sw", i + 2, NetModel.CABLE_STRAIGHT)
+
+
+## El salón E: la cuarta PC del laboratorio pasa a ser la del salón, y su
+## puerto del switch arranca en la VLAN equivocada, así que queda aislada.
+static func _make_classroom(model: NetModel) -> void:
+	var classroom: NetDevice = model.device("pc4")
+	if classroom == null:
+		return
+	classroom.label = CLASSROOM_LABEL
+	classroom.vlan = CLASSROOM_VLAN
+	var switch: NetDevice = model.device("sw")
+	if switch != null:
+		switch.port_vlans[CLASSROOM_PORT] = WRONG_VLAN
+		# Los demás puertos quedan en la VLAN del salón, para que el problema
+		# sea claramente ese puerto y no media red.
+		for port: int in switch.port_count:
+			if port != CLASSROOM_PORT:
+				switch.port_vlans[port] = CLASSROOM_VLAN
+	for device: NetDevice in model.device_list():
+		if device.id != "pc4":
+			device.vlan = CLASSROOM_VLAN
+
+
+## La impresora: la cuarta PC pasa a ser la impresora, sin dirección, y el
+## router arranca sin ninguna reserva de DHCP.
+static func _make_printer(model: NetModel) -> void:
+	var printer: NetDevice = model.device("pc4")
+	if printer == null:
+		return
+	printer.label = PRINTER_LABEL
+	printer.ip = ""
+	printer.mask = ""
+	printer.gateway = ""
+	var router_device: NetDevice = model.router()
+	if router_device != null:
+		router_device.reservations.clear()
 
 
 ## Los enlaces que la tarea de cableado espera ver: equipo, puerto, equipo, puerto.

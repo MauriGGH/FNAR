@@ -164,7 +164,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _apply_debug_shown() -> void:
 	camera_system.set_debug_visible(_debug_shown)
 	office.set_zones_visible(_debug_shown)
-	debug_help.visible = _debug_shown and DebugKeys.DEBUG_KEYS
+	debug_help.visible = _debug_shown and NightConfig.DEBUG_KEYS
 	if debug_help.visible:
 		debug_help.text = "\n".join(DebugKeys.help_lines())
 
@@ -285,7 +285,8 @@ func _on_flashlight_failed() -> void:
 ## La llamada de la noche suena a los pocos segundos. La de Ureña, si toca,
 ## en un momento al azar entre las 2 y las 4 AM.
 func _schedule_calls(night: int) -> void:
-	_nightly_call_left = Calls.NIGHTLY_CALL_DELAY
+	# Si esa noche no tiene guion, el teléfono no suena.
+	_nightly_call_left = NightCalls.CALL_DELAY if NightCalls.has_call(night) else -1.0
 	_urena_call_at = -1.0
 	_urena_call_ringing = false
 	if _urena == null or not _urena.is_active:
@@ -299,7 +300,7 @@ func _process_calls(delta: float) -> void:
 	if _nightly_call_left > 0.0:
 		_nightly_call_left -= delta
 		if _nightly_call_left <= 0.0:
-			phone_call.queue_message(Calls.for_night(GameManager.current_night), Calls.NIGHTLY_RING_TIME)
+			phone_call.queue_message(NightCalls.for_night(GameManager.current_night), NightCalls.RING_TIME)
 		return
 	if _urena_call_at >= 0.0 and GameManager.night_progress() >= _urena_call_at:
 		_urena_call_at = -1.0
