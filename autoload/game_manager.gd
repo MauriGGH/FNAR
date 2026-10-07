@@ -56,6 +56,11 @@ var force_short_hours: bool = false
 
 var is_custom_night: bool = false
 var custom_levels: Dictionary = {}
+## El reto de Custom Night que se está jugando, si es que hay uno. Vacío cuando
+## el jugador puso los niveles a mano.
+var custom_challenge: String = ""
+## Con cuánta energía arranca la noche. Solo el reto del apagón la cambia.
+var start_power: float = NightConfig.MAX_POWER
 
 
 func _ready() -> void:
@@ -69,13 +74,18 @@ func prepare_night(night: int) -> void:
 	current_night = clampi(night, 1, NightConfig.LAST_NIGHT)
 	is_custom_night = false
 	custom_levels.clear()
+	custom_challenge = ""
+	start_power = NightConfig.MAX_POWER
 
 
 ## Deja lista una Custom Night con los niveles que eligió el jugador.
-func prepare_custom_night(levels: Dictionary) -> void:
+func prepare_custom_night(levels: Dictionary, challenge_id: String = "") -> void:
 	current_night = NightConfig.LAST_NIGHT
 	is_custom_night = true
 	custom_levels = levels.duplicate()
+	custom_challenge = challenge_id
+	start_power = CustomChallenges.start_power(challenge_id) if not challenge_id.is_empty() \
+		else NightConfig.MAX_POWER
 
 
 ## true si esta Custom Night lleva los ocho profes en 20. Es lo que vale la
@@ -112,7 +122,7 @@ func start_night(night: int = current_night) -> void:
 	is_in_server_room = false
 	is_ai_window_open = false
 	is_night_active = true
-	PowerManager.reset()
+	PowerManager.reset(start_power)
 	PowerManager.set_draining(true)
 	night_started.emit(current_night)
 	hour_changed.emit(current_hour)

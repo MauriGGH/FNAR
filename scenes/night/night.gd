@@ -567,6 +567,7 @@ func _on_night_won(night: int) -> void:
 		# los ocho en 20 vale una estrella en el menú.
 		if GameManager.is_custom_night_maxed():
 			SaveGame.mark_custom_mastered()
+		SaveGame.mark_challenge_won(GameManager.custom_challenge)
 	else:
 		SaveGame.mark_night_cleared(night)
 		SaveGame.unlock_newspaper(Newspapers.index_for_cleared_night(night))

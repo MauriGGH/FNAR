@@ -36,6 +36,8 @@ var documents: Array[String] = []
 var nights_cleared: Array[int] = []
 ## Ganar una Custom Night con los ocho profes en 20, que vale la tercera estrella.
 var custom_mastered: bool = false
+## Los retos de Custom Night que ya se ganaron, por su id.
+var challenges_won: Array[String] = []
 
 ## Opciones. La pantalla completa la pone y la lee DisplayManager.
 var fullscreen: bool = true
@@ -105,6 +107,18 @@ func mark_custom_mastered() -> void:
 	save_game()
 
 
+## Deja apuntado que se ganó un reto de Custom Night.
+func mark_challenge_won(challenge_id: String) -> void:
+	if challenge_id.is_empty() or challenge_id in challenges_won:
+		return
+	challenges_won.append(challenge_id)
+	save_game()
+
+
+func has_won_challenge(challenge_id: String) -> bool:
+	return challenge_id in challenges_won
+
+
 ## Las estrellas del menú: la noche 5, la noche 6 y la Custom Night al máximo.
 func star_count() -> int:
 	var stars: int = 0
@@ -171,6 +185,7 @@ func reset() -> void:
 	documents.clear()
 	nights_cleared.clear()
 	custom_mastered = false
+	challenges_won.clear()
 	save_game()
 
 
@@ -184,6 +199,7 @@ func save_game() -> void:
 	file.set_value(SECTION_UNLOCKS, "documents", documents)
 	file.set_value(SECTION_PROGRESS, "nights_cleared", nights_cleared)
 	file.set_value(SECTION_PROGRESS, "custom_mastered", custom_mastered)
+	file.set_value(SECTION_PROGRESS, "challenges_won", challenges_won)
 	file.set_value(SECTION_OPTIONS, "fullscreen", fullscreen)
 	file.set_value(SECTION_OPTIONS, "bus_volumes", bus_volumes)
 	file.save(SAVE_PATH)
@@ -203,6 +219,7 @@ func load_game() -> void:
 	documents = _to_string_array(file.get_value(SECTION_UNLOCKS, "documents", []))
 	nights_cleared = _to_int_array(file.get_value(SECTION_PROGRESS, "nights_cleared", []))
 	custom_mastered = bool(file.get_value(SECTION_PROGRESS, "custom_mastered", false))
+	challenges_won = _to_string_array(file.get_value(SECTION_PROGRESS, "challenges_won", []))
 	fullscreen = bool(file.get_value(SECTION_OPTIONS, "fullscreen", true))
 	bus_volumes = file.get_value(SECTION_OPTIONS, "bus_volumes", {}) as Dictionary
 	GameManager.player_name = player_name

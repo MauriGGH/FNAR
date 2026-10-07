@@ -28,7 +28,19 @@ const ENTRIES: Array[Dictionary] = [
 	{"id": "come_trabas", "key": Nights.COME_TRABAS, "name": "Come Trabas"},
 ]
 
+## El tamaño de los botones de reto y de su nota de abajo.
+const CHALLENGE_SIZE: Vector2 = Vector2(214.0, 40.0)
+const CHALLENGE_FONT: int = 15
+const CHALLENGE_LINE_SIZE: int = 15
+const CHALLENGE_LINE_COLOR: Color = Color(0.7, 0.72, 0.74)
+## Dónde empieza la rejilla de profes: por debajo de la fila de retos y su nota.
+const GRID_TOP: float = 146.0
+
 var _levels: Dictionary = {}
+## El reto elegido, o cadena vacía si los niveles se pusieron a mano.
+var _challenge: String = ""
+var _level_labels: Dictionary = {}   # clave del profe -> Label de su nivel
+var _challenge_line: Label = null
 
 
 func _ready() -> void:
@@ -36,6 +48,7 @@ func _ready() -> void:
 	for entry: Dictionary in ENTRIES:
 		_levels[str(entry["key"])] = 0
 	_build_title()
+	_build_challenges()
 	_build_grid()
 	_build_footer()
 
@@ -59,7 +72,7 @@ func _build_grid() -> void:
 	grid.add_theme_constant_override("h_separation", ROW_GAP)
 	grid.add_theme_constant_override("v_separation", ROW_GAP)
 	grid.position = Vector2(
-		(size.x - (ROW_SIZE.x + ROW_GAP) * ROW_COLUMNS + ROW_GAP) * 0.5, 92.0)
+		(size.x - (ROW_SIZE.x + ROW_GAP) * ROW_COLUMNS + ROW_GAP) * 0.5, GRID_TOP)
 	add_child(grid)
 	for entry: Dictionary in ENTRIES:
 		grid.add_child(_make_row(entry))
@@ -112,6 +125,7 @@ func _make_row(entry: Dictionary) -> Control:
 	level_label.size = Vector2(72.0, 38.0)
 	row.add_child(level_label)
 
+	_level_labels[key] = level_label
 	row.add_child(_make_step(key, level_label, -1, Vector2(14.0, 118.0)))
 	row.add_child(_make_step(key, level_label, 1, Vector2(ROW_SIZE.x - 54.0, 118.0)))
 	return row
@@ -131,6 +145,62 @@ func _on_step(key: String, level_label: Label, step: int) -> void:
 	var level: int = clampi(int(_levels.get(key, 0)) + step, 0, Nights.MAX_AI_LEVEL)
 	_levels[key] = level
 	level_label.text = str(level)
+	# Cambiar un nivel a mano ya no es el reto: pasa a ser una noche cualquiera.
+	_set_challenge("")
+
+
+## La fila de retos: cada botón deja los niveles como pide, y lleva una palomita
+## si ya se ganó.
+func _build_challenges() -> void:
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.offset_top = 74.0
+	row.offset_bottom = 74.0 + CHALLENGE_SIZE.y
+	add_child(row)
+	for entry: Dictionary in CustomChallenges.LIST:
+		var challenge_id: String = str(entry["id"])
+		var button: Button = UiButton.make(_challenge_text(challenge_id))
+		button.name = "Challenge_" + challenge_id
+		button.custom_minimum_size = CHALLENGE_SIZE
+		button.add_theme_font_size_override("font_size", CHALLENGE_FONT)
+		button.pressed.connect(_on_challenge.bind(challenge_id))
+		row.add_child(button)
+
+	_challenge_line = Label.new()
+	_challenge_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_challenge_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_line.add_theme_font_size_override("font_size", CHALLENGE_LINE_SIZE)
+	_challenge_line.add_theme_color_override("font_color", CHALLENGE_LINE_COLOR)
+	_challenge_line.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_challenge_line.offset_top = 74.0 + CHALLENGE_SIZE.y + 2.0
+	_challenge_line.offset_bottom = _challenge_line.offset_top + 24.0
+	add_child(_challenge_line)
+
+
+## El nombre del reto, con palomita si ya se ganó.
+func _challenge_text(challenge_id: String) -> String:
+	var name: String = CustomChallenges.display_name(challenge_id)
+	if SaveGame.has_won_challenge(challenge_id):
+		return "%s  %s" % [CustomChallenges.DONE_MARK, name]
+	return name
+
+
+func _on_challenge(challenge_id: String) -> void:
+	for key: String in Nights.ALL_KEYS:
+		var level: int = int(CustomChallenges.levels_of(challenge_id).get(key, 0))
+		_levels[key] = level
+		var label: Label = _level_labels.get(key, null) as Label
+		if label != null:
+			label.text = str(level)
+	_set_challenge(challenge_id)
+
+
+func _set_challenge(challenge_id: String) -> void:
+	_challenge = challenge_id
+	if _challenge_line != null:
+		_challenge_line.text = CustomChallenges.line(challenge_id)
 
 
 func _build_footer() -> void:
@@ -154,7 +224,7 @@ func _build_footer() -> void:
 
 
 func _on_play() -> void:
-	GameManager.prepare_custom_night(_levels)
+	GameManager.prepare_custom_night(_levels, _challenge)
 	LoadingScreen.go_to(get_tree(), Screens.NIGHT_INTRO)
 
 

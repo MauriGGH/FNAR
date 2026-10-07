@@ -27,9 +27,10 @@ var _cooldown_left: float = 0.0
 var _flashlight_left: float = 0.0
 
 
-## Deja la energía al 100 % para empezar una noche.
-func reset() -> void:
-	power = NightConfig.MAX_POWER
+## Deja la energía lista para empezar una noche. Casi siempre al 100 %, pero el
+## reto del apagón arranca a la mitad.
+func reset(start_power: float = NightConfig.MAX_POWER) -> void:
+	power = clampf(start_power, 0.0, NightConfig.MAX_POWER)
 	is_door_closed = false
 	are_cameras_open = false
 	is_pc_open = false

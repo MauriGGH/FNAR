@@ -134,6 +134,8 @@ func _build() -> void:
 	_build_animatronic_sections()
 	_build_events_section()
 	_build_screens_section()
+	_build_challenges_section()
+	_build_audio_section()
 	_build_view_section()
 
 
@@ -361,9 +363,33 @@ func _build_events_section() -> void:
 		if audel != null:
 			audel.debug_activate()
 			audel.cause_discharge())
-	_add_button(body, "Apagón (energía a 0)", func() -> void:
+	_add_label(body, "Apagón:")
+	_add_button(body, "Energía a 0 (empieza a oscuras)", func() -> void:
 		close()
 		PowerManager.debug_set_power(0.0))
+	_add_button(body, "Saltar a las chispas y la melodía", func() -> void:
+		close()
+		_night.blackout_death.debug_skip_to_sparks())
+	_add_button(body, "Salvarte: que den las 6 AM", func() -> void:
+		close()
+		GameManager.debug_win_night())
+
+	_add_label(body, "Alucinaciones:")
+	var kinds: Array = []
+	for kind: String in Hallucinations.ALL:
+		kinds.append([kind.substr(0, 11), func() -> void:
+			close()
+			_night.hallucinations.debug_clear_gap()
+			_night.hallucinations.show_one(kind)])
+		if kinds.size() == 2:
+			_add_row(body, kinds)
+			kinds = []
+	if not kinds.is_empty():
+		_add_row(body, kinds)
+	_add_button(body, "Una al azar", func() -> void:
+		close()
+		_night.hallucinations.debug_clear_gap()
+		_night.hallucinations.show_one())
 
 	_add_label(body, "Sucesos raros de las cámaras:")
 	for camera: int in AmbientEvents.CAMERAS:
@@ -418,7 +444,7 @@ func _build_screens_section() -> void:
 		_show_document(Documents.RECEIPT_NIGHT_5))
 	_add_button(body, "Recibo de la noche 6", func() -> void:
 		_show_document(Documents.RECEIPT_NIGHT_6))
-	_add_button(body, "Carta de despido", func() -> void:
+	_add_button(body, "Carta de despido (premio de Custom Night)", func() -> void:
 		_show_document(Documents.DISMISSAL))
 	_add_button(body, "Las tres seguidas", func() -> void:
 		close()
@@ -486,6 +512,56 @@ func _unlock_everything() -> void:
 	for cause: String in CAUSES:
 		SaveGame.unlock_jumpscare(cause)
 	_go_to(Screens.EXTRAS_MENU)
+
+
+# --- Audio --------------------------------------------------------------------
+
+func _build_audio_section() -> void:
+	var body: VBoxContainer = _section("Audio")
+	body.visible = false
+	_add_label(body, "Probar un sonido del catálogo:")
+	for id: Variant in Sounds.ids():
+		var sound_id: String = str(id)
+		_add_button(body, sound_id, func() -> void: AudioManager.play(sound_id))
+	_add_button(body, "Callar todo", func() -> void: AudioManager.stop_all())
+
+	_add_label(body, "Volumen de los buses:")
+	for bus: String in Sounds.MIXER_BUSES:
+		var value: Label = _add_label(body, "%s: %d %%" % [bus, roundi(AudioManager.bus_volume(bus) * 100.0)])
+		_add_row(body, [
+			["−", func() -> void:
+				AudioManager.set_bus_volume(bus, AudioManager.bus_volume(bus) - 0.1)
+				value.text = "%s: %d %%" % [bus, roundi(AudioManager.bus_volume(bus) * 100.0)]],
+			["+", func() -> void:
+				AudioManager.set_bus_volume(bus, AudioManager.bus_volume(bus) + 0.1)
+				value.text = "%s: %d %%" % [bus, roundi(AudioManager.bus_volume(bus) * 100.0)]],
+		])
+
+
+# --- Retos de Custom Night ----------------------------------------------------
+
+func _build_challenges_section() -> void:
+	var body: VBoxContainer = _section("Retos de Custom Night")
+	body.visible = false
+	for entry: Dictionary in CustomChallenges.LIST:
+		var challenge_id: String = str(entry["id"])
+		_add_button(body, "Jugar: " + CustomChallenges.display_name(challenge_id),
+			func() -> void: _play_challenge(challenge_id))
+	_add_button(body, "Marcar todos como ganados", func() -> void:
+		for entry: Dictionary in CustomChallenges.LIST:
+			SaveGame.mark_challenge_won(str(entry["id"]))
+		_go_to(Screens.CUSTOM_NIGHT))
+	_add_button(body, "Olvidar los ganados", func() -> void:
+		SaveGame.challenges_won.clear()
+		SaveGame.save_game()
+		_go_to(Screens.CUSTOM_NIGHT))
+	_add_button(body, "Abrir Custom Night", func() -> void: _go_to(Screens.CUSTOM_NIGHT))
+
+
+func _play_challenge(challenge_id: String) -> void:
+	close()
+	GameManager.prepare_custom_night(CustomChallenges.levels_of(challenge_id), challenge_id)
+	get_tree().change_scene_to_file(Screens.NIGHT)
 
 
 # --- Vista --------------------------------------------------------------------
