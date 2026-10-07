@@ -70,6 +70,13 @@ func _ready() -> void:
 	static_overlay.visible = false
 
 
+## Corta lo que esté puesto, sin avisar a nadie. Lo usa el panel de pruebas
+## para poder ver un salto tras otro sin esperar.
+func stop_now() -> void:
+	if is_playing:
+		_stop(false)
+
+
 ## La muerte de un profe, por el id de su imagen (barcosa, urena, audel...).
 func play(jumpscare_id: String) -> void:
 	if is_playing:

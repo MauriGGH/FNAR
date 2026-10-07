@@ -283,6 +283,8 @@ func _build_animatronic_section(animatronic: Animatronic) -> void:
 
 func _play_jumpscare(animatronic: Animatronic) -> void:
 	close()
+	# Si había otro puesto, se corta: así se pueden ver uno tras otro.
+	_night.jumpscare.stop_now()
 	if animatronic.game_over_cause() == Mamador.GAME_OVER_CAUSE:
 		_night.jumpscare.play_mamador()
 		return

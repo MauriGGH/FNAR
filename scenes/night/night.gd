@@ -142,10 +142,12 @@ func _ready() -> void:
 
 	_apply_debug_shown()
 
-	mod_menu.bind(self)
 	pause_menu.resumed.connect(_on_resumed)
 	pause_menu.menu_requested.connect(_on_menu_requested)
 	GameManager.start_night()
+	# El panel se arma después de arrancar la noche: hasta aquí los profes no
+	# tienen ruta, y el panel la necesita para su lista de cuartos.
+	mod_menu.bind(self)
 
 
 ## Escape pausa la noche, salvo que ya lo esté usando otra cosa: la PC, el
