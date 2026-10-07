@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dsgycif1jwbl1"
-path="res://.godot/imported/armando_standby.png-60d3bbf6ace281c6b19ea1201e173769.ctex"
+path="res://.godot/imported/armando_standby.png-b6bf8e0bdd19dd6d3d2a794df77f7ddc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/pc/armando_standby.png"
-dest_files=["res://.godot/imported/armando_standby.png-60d3bbf6ace281c6b19ea1201e173769.ctex"]
+source_file="res://assets/art/office/pc/armando_standby.png"
+dest_files=["res://.godot/imported/armando_standby.png-b6bf8e0bdd19dd6d3d2a794df77f7ddc.ctex"]
 
 [params]
 
