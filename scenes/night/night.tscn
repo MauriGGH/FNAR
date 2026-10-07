@@ -24,6 +24,7 @@
 [ext_resource type="Script" path="res://scripts/characters/juan_exe.gd" id="23_juan"]
 [ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
 [ext_resource type="Script" path="res://scenes/night/pause_menu.gd" id="50_pause"]
+[ext_resource type="Script" path="res://scenes/night/ticket_chime.gd" id="60_chime"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
 shader = ExtResource("16_static")
@@ -231,6 +232,26 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 0)
+
+[node name="TicketLabel" type="Label" parent="Hud"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 92.0
+offset_right = -28.0
+offset_bottom = 124.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.9, 0.95, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 2
+
+[node name="TicketChime" type="AudioStreamPlayer" parent="Hud"]
+script = ExtResource("60_chime")
 
 [node name="DebugHelp" type="Label" parent="Hud"]
 visible = false

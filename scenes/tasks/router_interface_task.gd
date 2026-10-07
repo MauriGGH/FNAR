@@ -7,10 +7,15 @@ extends Control
 
 signal completed()
 
+## El paso que tarda de esta tarea y lo que dice al acabar.
+const WAIT_TEXT: String = "Levantando la interfaz"
+const DONE_TEXT: String = "LISTO: g0/0 arriba y con direccion."
+
 const HINT: String = "En la CLI del router: enable, configure terminal, interface g0/0, ip address 192.168.30.1 255.255.255.0 y no shutdown."
 
 var task_id: String = ""
 var is_completed: bool = false
+var _wait: TaskWaitBar = null
 
 var _sim: Node = null
 
@@ -62,6 +67,33 @@ func _check() -> void:
 	if not router.interface_up:
 		status_label.text = "Ya tiene IP; ahora levantala con no shutdown."
 		return
+	_begin_wait()
+	return
+
+# --- El paso que tarda --------------------------------------------------------
+
+## La barra se crea la primera vez que hace falta y se pone arriba del estado.
+func _wait_bar() -> TaskWaitBar:
+	if _wait == null:
+		_wait = TaskWaitBar.new()
+		_wait.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_wait.offset_top = -112.0
+		_wait.offset_bottom = -68.0
+		_wait.finished.connect(_on_wait_finished)
+		add_child(_wait)
+	return _wait
+
+
+## Lo de "hacer" ya está: ahora hay que esperar, y la barra solo corre con la
+## PC arriba.
+func _begin_wait() -> void:
+	if is_completed or _wait_bar().is_running or _wait_bar().is_done:
+		return
+	status_label.text = "%s..." % WAIT_TEXT
+	_wait_bar().start(WAIT_TEXT)
+
+
+func _on_wait_finished() -> void:
 	is_completed = true
-	status_label.text = "LISTO: g0/0 arriba y con direccion."
+	status_label.text = DONE_TEXT
 	completed.emit()

@@ -118,6 +118,8 @@ func camera_state() -> String:
 ## pasillo norte (CAM 1) basta su nombre; solo en la CAM 2, donde se ve la
 ## puerta, lleva además lo que está haciendo: corriendo o golpeando.
 func camera_token(camera: int) -> String:
+	if not is_active:
+		return ""
 	if camera == Rooms.camera_of(ROUTE[STEP_SALON_B]):
 		return camera_state()
 	if camera != Rooms.camera_of(current_room):

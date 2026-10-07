@@ -86,6 +86,8 @@ func _ready() -> void:
 	armando_takeover.failed.connect(_on_armando_failed)
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.task_completed.connect(_on_any_task_completed)
+	GameManager.ticket_arrived.connect(func(_index: int) -> void: _refresh_task_list())
+	GameManager.ticket_expired.connect(func(_index: int) -> void: _refresh_task_list())
 	_solve_mode = SolveMode.NONE
 
 	_build_icons()
@@ -223,14 +225,33 @@ func _refresh_task_list() -> void:
 	for i: int in mini(buttons.size(), tasks.size()):
 		var task: Dictionary = tasks[i]
 		var done: bool = GameManager.is_task_completed(str(task.get("id", "")))
-		(buttons[i] as Button).text = "%s %s\n    %s - %s\n    %s" % [
-			"[X]" if done else "[ ]",
-			task.get("title", "Tarea"),
-			task.get("app", "?"),
-			"terminada" if done else "pendiente",
-			task.get("description", ""),
+		var arrived: bool = GameManager.is_ticket_arrived(i)
+		var expired: bool = GameManager.is_ticket_expired(i)
+		var state: String = "pendiente"
+		if done:
+			state = "terminada"
+		elif expired:
+			state = "VENCIDA"
+		elif not arrived:
+			state = "sin llegar"
+		var mark: String = "[ ]"
+		if done:
+			mark = "[X]"
+		elif expired:
+			mark = "[!]"
+		elif not arrived:
+			mark = "[ · ]"
+		var button: Button = buttons[i] as Button
+		button.disabled = not arrived
+		button.text = "%s %s\n    %s - %s\n    %s" % [
+			mark,
+			task.get("title", "Tarea") if arrived else "Ticket sin llegar",
+			task.get("app", "?") if arrived else "-",
+			state,
+			task.get("description", "") if arrived else "Llega mas tarde en la noche.",
 		]
-	task_progress_label.text = "%d de %d terminadas" % [GameManager.completed_task_count(), tasks.size()]
+	task_progress_label.text = "%d de %d pagadas · %d tickets llegados" % [
+		GameManager.paid_task_count(), tasks.size(), GameManager.arrived_ticket_count()]
 
 
 ## queue_free() es diferido, así que los hijos viejos seguirían en el árbol
@@ -247,6 +268,10 @@ func _open_task(index: int) -> void:
 	if index < 0 or index >= tasks.size():
 		return
 	if index == _open_task_index:
+		return
+	# Las tareas llegan como tickets: lo que no ha llegado no se abre.
+	if not GameManager.is_ticket_arrived(index):
+		_log(Claudio.sorry("Ese ticket todavia no ha llegado."))
 		return
 
 	_close_task()

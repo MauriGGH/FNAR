@@ -217,7 +217,7 @@ func _occupants_of(camera: int) -> PackedStringArray:
 	var rooms: PackedStringArray = _rooms_seen_by(camera)
 	var names: PackedStringArray = PackedStringArray()
 	for animatronic: Animatronic in _animatronics:
-		if animatronic.current_room in rooms:
+		if animatronic.is_active and animatronic.current_room in rooms:
 			names.append(animatronic.display_name)
 	return names
 
@@ -426,7 +426,7 @@ func _refresh_occupants(_room: String) -> void:
 	for animatronic: Animatronic in _animatronics:
 		var info: String = animatronic.debug_text()
 		if not info.is_empty():
-			lines.append("%s: %s" % [animatronic.display_name, info])
+			lines.append("%s: %s%s" % [animatronic.display_name, info, animatronic.boost_text()])
 	lines.append("pasillo: " + ("libre" if GameManager.is_hallway_free() else "ocupado"))
 	debug_label.text = "\n".join(lines)
 

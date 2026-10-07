@@ -31,6 +31,71 @@ const LEVELS: Dictionary = {
 	6: {BARCOSA: 15, MAMADOR: 16, URENA: 15, ROCHIS: 15, AUDEL: 14, COME_TRABAS: 3, JUAN_EXE: 14, ARMANDO: 13},
 }
 
+## --- Tickets ---------------------------------------------------------------
+## Las tareas no están desde las 12: llegan como tickets repartidos en la
+## noche. Cuántos llegan lo dice Tasks.TASKS_PER_NIGHT; aquí va el reparto y
+## el plazo de cada uno.
+##
+## El plazo está en HORAS DE JUEGO, no en segundos, así que se acorta solo en
+## modo prueba y se puede leer contra el reloj: en la noche 1 tienes dos horas
+## y media para cada ticket, en la noche 6 poco más de una.
+const TICKET_DEADLINE_HOURS: Dictionary = {
+	1: 2.5, 2: 2.2, 3: 2.0, 4: 1.7, 5: 1.4, 6: 1.1,
+}
+
+## El primer ticket llega casi al empezar; los demás se reparten hasta poco
+## antes de las 5 AM, con algo de azar para que no caigan siempre en la misma
+## hora. El último entra a las 4.2 y no a las 5 para que su plazo quepa dentro
+## de la noche y se pueda terminar.
+const FIRST_TICKET_AT: float = 0.15
+const LAST_TICKET_AT: float = 4.2
+const TICKET_JITTER: float = 0.35
+
+## Lo que cuesta dejar vencer un ticket, y lo que sube Mamador por una hora.
+const TICKET_POWER_COST: float = 5.0
+const TICKET_MAMADOR_BOOST: int = 3
+const TICKET_BOOST_HOURS: float = 1.0
+
+## --- Esperas de las tareas --------------------------------------------------
+## Casi toda tarea tiene un paso que tarda, con barra. En la noche 1 entre 10
+## y 20 s; cada noche se alarga un 12 %.
+const WAIT_MIN_SECONDS: float = 10.0
+const WAIT_MAX_SECONDS: float = 20.0
+const WAIT_GROWTH_PER_NIGHT: float = 0.12
+
+## Lo que se ofende Ureña si le cuelgan: sube esto por una hora de juego.
+const URENA_SNUB_BOOST: int = 5
+const URENA_SNUB_HOURS: float = 1.0
+
+
+## El plazo de un ticket esa noche, en horas de juego.
+static func ticket_deadline_hours(night: int) -> float:
+	return float(TICKET_DEADLINE_HOURS.get(clampi(night, FIRST_NIGHT, LAST_NIGHT), 2.0))
+
+
+## A qué hora de la noche llega cada ticket, de 0 (12 AM) a 6 (6 AM).
+static func ticket_times(night: int, count: int) -> PackedFloat32Array:
+	var times: PackedFloat32Array = PackedFloat32Array()
+	if count <= 0:
+		return times
+	times.append(FIRST_TICKET_AT)
+	if count == 1:
+		return times
+	# Los demás, repartidos parejo hasta las 5 AM y movidos un poco al azar.
+	var step: float = (LAST_TICKET_AT - FIRST_TICKET_AT) / float(count - 1)
+	for i: int in range(1, count):
+		var at: float = FIRST_TICKET_AT + step * float(i)
+		at += randf_range(-TICKET_JITTER, TICKET_JITTER)
+		times.append(clampf(at, FIRST_TICKET_AT, LAST_TICKET_AT))
+	return times
+
+
+## Lo que tarda un paso con espera esa noche, en segundos reales.
+static func wait_seconds(night: int) -> float:
+	var growth: float = 1.0 + float(maxi(night - 1, 0)) * WAIT_GROWTH_PER_NIGHT
+	return randf_range(WAIT_MIN_SECONDS, WAIT_MAX_SECONDS) * growth
+
+
 ## La cara de Armando en la pantalla de Claudio no sale antes de esta noche.
 const ARMANDO_PC_FROM_NIGHT: int = 4
 

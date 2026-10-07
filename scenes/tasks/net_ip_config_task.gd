@@ -8,10 +8,15 @@ extends Control
 
 signal completed()
 
+## El paso que tarda de esta tarea y lo que dice al acabar.
+const WAIT_TEXT: String = "Propagando la configuracion"
+const DONE_TEXT: String = "LISTO: las cuatro quedaron bien."
+
 const HINT: String = "Abre cada PC, pestaña Configuración, y escribe la IP de la tabla con la mascara y la puerta. No repitas IPs."
 
 var task_id: String = ""
 var is_completed: bool = false
+var _wait: TaskWaitBar = null
 
 var _sim: Node = null
 
@@ -84,9 +89,8 @@ func _refresh() -> void:
 	if done < NetworkScenarios.LAB_PC_IPS.size():
 		status_label.text = "Configuradas: %d de %d" % [done, NetworkScenarios.LAB_PC_IPS.size()]
 		return
-	is_completed = true
-	status_label.text = "LISTO: las cuatro quedaron bien."
-	completed.emit()
+	_begin_wait()
+	return
 
 
 func _is_right(device: NetDevice, wanted_ip: String) -> bool:
@@ -101,3 +105,31 @@ func _first_problem() -> String:
 		if not link.ok:
 			return link.reason
 	return ""
+
+# --- El paso que tarda --------------------------------------------------------
+
+## La barra se crea la primera vez que hace falta y se pone arriba del estado.
+func _wait_bar() -> TaskWaitBar:
+	if _wait == null:
+		_wait = TaskWaitBar.new()
+		_wait.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_wait.offset_top = -112.0
+		_wait.offset_bottom = -68.0
+		_wait.finished.connect(_on_wait_finished)
+		add_child(_wait)
+	return _wait
+
+
+## Lo de "hacer" ya está: ahora hay que esperar, y la barra solo corre con la
+## PC arriba.
+func _begin_wait() -> void:
+	if is_completed or _wait_bar().is_running or _wait_bar().is_done:
+		return
+	status_label.text = "%s..." % WAIT_TEXT
+	_wait_bar().start(WAIT_TEXT)
+
+
+func _on_wait_finished() -> void:
+	is_completed = true
+	status_label.text = DONE_TEXT
+	completed.emit()

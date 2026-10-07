@@ -12,8 +12,10 @@ extends RefCounted
 ## Qué clase de respuesta eligió el jugador.
 enum Answer { DODGE, PLAYS_ALONG, RUDE }
 
-## Cuántas insinuaciones por llamada y cuánto da para contestar cada una.
-const LINES_PER_CALL: int = 3
+## Cuántas insinuaciones por llamada (se sortea entre estas dos) y cuánto da
+## para contestar cada una.
+const MIN_LINES_PER_CALL: int = 1
+const MAX_LINES_PER_CALL: int = 2
 const SECONDS_PER_LINE: float = 6.0
 ## Lo que cuesta seguirle el juego o contestarle grosero.
 const WRONG_ANSWER_POWER_COST: float = 5.0
@@ -123,7 +125,8 @@ static func pick() -> Array[Dictionary]:
 	var pool: Array = BANK.duplicate()
 	pool.shuffle()
 	var picked: Array[Dictionary] = []
-	for i: int in mini(LINES_PER_CALL, pool.size()):
+	var count: int = randi_range(MIN_LINES_PER_CALL, MAX_LINES_PER_CALL)
+	for i: int in mini(count, pool.size()):
 		picked.append(_shuffled_answers(pool[i]))
 	return picked
 

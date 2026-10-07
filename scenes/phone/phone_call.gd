@@ -11,6 +11,8 @@ extends Control
 signal ringing_started(seconds: float)
 signal ring_tick()
 signal call_missed()
+## Le colgaron o no le contestaron: Ureña se ofende.
+signal urena_snubbed()
 signal call_answered()
 signal call_ended()
 ## Lo que contestó el jugador a una insinuación de Ureña. El valor es un
@@ -83,7 +85,8 @@ func _ready() -> void:
 
 # --- Timbre -------------------------------------------------------------------
 
-## Empieza a sonar. fatal_if_missed mata al guardia si no contesta a tiempo.
+## Empieza a sonar. Ya no hay castigo mortal por no contestar: si era Ureña,
+## se ofende y se cobra en el night.gd.
 func start_ringing(seconds: float, fatal_if_missed: bool) -> void:
 	if is_ringing or is_open:
 		return
@@ -117,6 +120,9 @@ func answer() -> void:
 func hang_up() -> void:
 	if not is_open:
 		return
+	# Colgarle a Ureña antes de que se despida cuenta como desaire.
+	if mode == Mode.URENA and _step != Step.FAREWELL:
+		urena_snubbed.emit()
 	is_open = false
 	visible = false
 	mode = Mode.NONE
@@ -170,6 +176,8 @@ func _process_ringing(delta: float) -> void:
 	if _ring_left > 0.0:
 		return
 	is_ringing = false
+	if mode == Mode.URENA:
+		urena_snubbed.emit()
 	call_missed.emit()
 
 
@@ -265,7 +273,7 @@ func _next_line() -> void:
 		var button: Button = options.get_child(i)
 		button.visible = i < answers.size()
 		if button.visible:
-			button.text = "%d) %s" % [i + 1, answers[i].get("text", "")]
+			button.text = "[%d] %s" % [i + 1, answers[i].get("text", "")]
 	_step = Step.LINE
 
 
@@ -294,6 +302,21 @@ func _process_answer_time(delta: float) -> void:
 		return
 	# Quedarse callado cuenta como seguirle el juego.
 	_resolve_answer(UrenaQuestions.Answer.PLAYS_ALONG)
+
+
+## Las respuestas se pueden elegir con las teclas 1, 2 y 3, además del clic,
+## para no tener que soltar el mouse de las cámaras.
+func _input(event: InputEvent) -> void:
+	if not is_open or mode != Mode.URENA or _step != Step.LINE:
+		return
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	var index: int = [KEY_1, KEY_2, KEY_3].find(key.keycode)
+	if index < 0:
+		return
+	_on_option_pressed(index)
+	get_viewport().set_input_as_handled()
 
 
 func _on_option_pressed(index: int) -> void:

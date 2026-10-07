@@ -19,6 +19,8 @@ const NOTICE_SHORT: float = 0.9
 const URENA_RING_TIME: float = 8.0
 ## De cada 100 noches con Ureña activo, en cuántas llama.
 const URENA_CALL_CHANCE: int = 60
+## Desde esta noche puede llamar hasta dos veces.
+const URENA_TWO_CALLS_FROM_NIGHT: int = 5
 
 const STEPS_NOTICE: String = "[pasos]"
 const STEPS_NOTICE_TIME: float = 1.2
@@ -41,11 +43,18 @@ const FLASH_TIME: float = 0.28
 @onready var phone_call: Control = $Hud/PhoneCall
 @onready var debug_help: Label = $Hud/DebugHelp
 @onready var pause_menu: Control = $Hud/PauseMenu
+@onready var ticket_label: Label = $Hud/TicketLabel
+@onready var ticket_chime: AudioStreamPlayer = $Hud/TicketChime
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
 
 const ARMANDO_NOTICE: String = "[Armando borró tu progreso]"
+const URENA_SNUB_NOTICE: String = "[Ureña se quedo esperando...]"
+const TICKET_NOTICE: String = "[ticket nuevo: %s]"
+const TICKET_EXPIRED_NOTICE: String = "[se te vencio un ticket]"
+## Cada cuánto se repinta el contador de tickets.
+const TICKET_REFRESH_TIME: float = 0.25
 
 var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
@@ -55,8 +64,9 @@ var _urena: Urena = null
 
 # Teléfono: la llamada de la noche y la de Ureña.
 var _nightly_call_left: float = 0.0
-var _urena_call_at: float = -1.0
-var _urena_call_ringing: bool = false
+## Las horas a las que va a llamar esta noche, de la más temprana a la última.
+var _urena_calls_at: PackedFloat32Array = PackedFloat32Array()
+var _ticket_elapsed: float = 0.0
 
 
 func _ready() -> void:
@@ -88,6 +98,7 @@ func _ready() -> void:
 	phone_call.ringing_started.connect(_on_ringing_started)
 	phone_call.call_answered.connect(_on_call_answered)
 	phone_call.call_missed.connect(_on_call_missed)
+	phone_call.urena_snubbed.connect(_on_urena_snubbed)
 	phone_call.call_ended.connect(_on_call_ended)
 	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
@@ -111,6 +122,8 @@ func _ready() -> void:
 	pc_screen.closed.connect(office.zoom_out)
 	pc_screen.armando_won.connect(_on_armando_won)
 
+	GameManager.ticket_arrived.connect(_on_ticket_arrived)
+	GameManager.ticket_expired.connect(_on_ticket_expired)
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
 	GameManager.night_won.connect(_on_night_won)
@@ -190,10 +203,50 @@ func _on_night_started(night: int) -> void:
 ## dibuja el recorte; si no, se queda la etiqueta de texto de siempre.
 func _process(delta: float) -> void:
 	pause_menu.blocked = _escape_is_taken()
+	_refresh_tickets(delta)
 	_process_calls(delta)
 	_refresh_office_presence()
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
 	warning_icon.set_level(0 if _come_trabas == null else _come_trabas.warning_level())
+
+
+# --- Tickets ------------------------------------------------------------------
+
+## Llegó un ticket: suena el aviso y sale su nombre en el banner.
+func _on_ticket_arrived(index: int) -> void:
+	var tasks: Array = GameManager.night_tasks()
+	if index < 0 or index >= tasks.size():
+		return
+	ticket_chime.play()
+	notice_banner.show_notice(TICKET_NOTICE % str(tasks[index].get("title", "tarea")), NOTICE_SHORT)
+	_refresh_tickets(0.0, true)
+
+
+## Se venció: cuesta energía y Mamador se pone más agresivo por una hora.
+func _on_ticket_expired(_index: int) -> void:
+	PowerManager.drain(Nights.TICKET_POWER_COST)
+	GameManager.add_ai_boost(Nights.MAMADOR, Nights.TICKET_MAMADOR_BOOST, Nights.TICKET_BOOST_HOURS)
+	notice_banner.show_notice(TICKET_EXPIRED_NOTICE, NOTICE_SHORT)
+	_refresh_tickets(0.0, true)
+
+
+## El contador de la esquina: cuántos tickets llevas y cuánto le queda al más
+## urgente. Mientras no llegue ninguno no se enseña nada.
+func _refresh_tickets(delta: float, force: bool = false) -> void:
+	_ticket_elapsed += delta
+	if not force and _ticket_elapsed < TICKET_REFRESH_TIME:
+		return
+	_ticket_elapsed = 0.0
+	var arrived: int = GameManager.arrived_ticket_count()
+	if arrived <= 0:
+		ticket_label.text = ""
+		return
+	var done: int = GameManager.paid_task_count()
+	var text: String = "TICKETS %d/%d" % [done, arrived]
+	var left: float = GameManager.next_ticket_seconds_left()
+	if left >= 0.0:
+		text += " · %d:%02d restante" % [int(left) / 60, int(left) % 60]
+	ticket_label.text = text
 
 
 ## Por cada zona de presencia busca al primer profe que se vea ahí. Con
@@ -287,13 +340,16 @@ func _on_flashlight_failed() -> void:
 func _schedule_calls(night: int) -> void:
 	# Si esa noche no tiene guion, el teléfono no suena.
 	_nightly_call_left = NightCalls.CALL_DELAY if NightCalls.has_call(night) else -1.0
-	_urena_call_at = -1.0
-	_urena_call_ringing = false
+	_urena_calls_at.clear()
 	if _urena == null or not _urena.is_active:
 		return
 	if randi_range(1, 100) > URENA_CALL_CHANCE:
 		return
-	_urena_call_at = randf_range(2.0, 4.0)
+	# En las noches altas puede llamar dos veces, siempre entre 2 y 4 AM.
+	var calls: int = 2 if night >= URENA_TWO_CALLS_FROM_NIGHT else 1
+	for i: int in calls:
+		_urena_calls_at.append(randf_range(2.0, 4.0))
+	_urena_calls_at.sort()
 
 
 func _process_calls(delta: float) -> void:
@@ -302,16 +358,19 @@ func _process_calls(delta: float) -> void:
 		if _nightly_call_left <= 0.0:
 			phone_call.queue_message(NightCalls.for_night(GameManager.current_night), NightCalls.RING_TIME)
 		return
-	if _urena_call_at >= 0.0 and GameManager.night_progress() >= _urena_call_at:
-		_urena_call_at = -1.0
-		trigger_urena_call()
+	if _urena_calls_at.is_empty() or GameManager.night_progress() < _urena_calls_at[0]:
+		return
+	# Si justo está sonando otra cosa, esta llamada se espera al siguiente paso.
+	if phone_call.is_ringing or phone_call.is_open:
+		return
+	_urena_calls_at.remove_at(0)
+	trigger_urena_call()
 
 
 ## Tecla 2, y también la llamada de la noche cuando le toca.
 func trigger_urena_call() -> void:
 	if phone_call.is_ringing or phone_call.is_open:
 		return
-	_urena_call_ringing = true
 	phone_call.queue_urena_call(UrenaQuestions.pick(), URENA_RING_TIME)
 
 
@@ -330,17 +389,22 @@ func _on_call_answered() -> void:
 
 
 ## Si no contestas la de Ureña, te mata. La de la noche es opcional.
+## No contestar ya no mata a nadie. Si era Ureña, se ofende, y eso lo cobra
+## _on_urena_snubbed.
 func _on_call_missed() -> void:
 	office.set_phone_ringing(false)
 	office.set_phone_in_call(false)
-	if not _urena_call_ringing:
-		return
-	_urena_call_ringing = false
-	GameManager.trigger_game_over(Urena.GAME_OVER_CAUSE)
+
+
+## Le colgaron o no le contestaron: deja la foto y se pone más agresivo por
+## una hora de juego.
+func _on_urena_snubbed() -> void:
+	office.add_urena_photo()
+	GameManager.add_ai_boost(Nights.URENA, Nights.URENA_SNUB_BOOST, Nights.URENA_SNUB_HOURS)
+	notice_banner.show_notice(URENA_SNUB_NOTICE, NOTICE_SHORT)
 
 
 func _on_call_ended() -> void:
-	_urena_call_ringing = false
 	office.set_phone_ringing(false)
 	office.set_phone_in_call(false)
 

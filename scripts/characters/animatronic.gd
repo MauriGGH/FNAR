@@ -80,7 +80,7 @@ func _process(delta: float) -> void:
 func try_move() -> bool:
 	if not can_move():
 		return false
-	if randi_range(1, 20) > ai_level:
+	if randi_range(1, 20) > effective_ai_level():
 		return false
 	# Acecho: la primera oportunidad en su lugar inicial no lo mueve, solo lo
 	# pone a mirar fijo a la cámara; la siguiente ya lo saca.
@@ -129,6 +129,15 @@ func ai_key() -> String:
 	return ""
 
 
+## El nivel con el que tira el dado ahora mismo: el de la noche más lo que le
+## haya subido un ticket vencido o un desaire. Nunca pasa del máximo.
+func effective_ai_level() -> int:
+	var key: String = ai_key()
+	if key.is_empty():
+		return ai_level
+	return mini(ai_level + GameManager.ai_boost(key), Nights.MAX_AI_LEVEL)
+
+
 ## El nivel de IA que le toca esta noche según la tabla. Lo llama su start().
 func night_ai_level() -> int:
 	var key: String = ai_key()
@@ -163,6 +172,15 @@ func debug_text() -> String:
 	return ""
 
 
+## Lo que la etiqueta de F3 añade cuando tiene una subida temporal.
+func boost_text() -> String:
+	var key: String = ai_key()
+	if key.is_empty():
+		return ""
+	var boost: int = GameManager.ai_boost(key)
+	return "" if boost <= 0 else " [+%d]" % boost
+
+
 ## Texto provisional para la oficina mientras este profe se ve en una zona
 ## (la puerta, el cristal, la escalera). Cadena vacía = no se ve ahí.
 ## Lo reemplazarán los sprites.
@@ -191,6 +209,11 @@ func image_slug() -> String:
 ## cadena vacía si no se ve ahí. Cuando hay varios en la misma cámara, el
 ## sistema los une en el orden fijo: cam02_mamador_urena.
 func camera_token(camera: int) -> String:
+	# Un profe que esta noche no se mueve (nivel 0) no se ve en ninguna
+	# cámara: ni su nombre en el estado ni su etiqueta de respaldo. Así la
+	# imagen de acecho del que sí sale queda sola, sin los inactivos.
+	if not is_active:
+		return ""
 	if camera == Rooms.NO_CAMERA or camera != Rooms.camera_of(current_room):
 		return ""
 	return _slug_token()

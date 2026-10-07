@@ -8,6 +8,10 @@ extends Control
 
 signal completed()
 
+## El paso que tarda de esta tarea y lo que dice al acabar.
+const WAIT_TEXT: String = "Subiendo el reporte al sistema"
+const DONE_TEXT: String = "LISTO: equipo reportado."
+
 const HINT: String = "Hazle ping a cada IP del laboratorio y reporta la que no responde con reportar <ip>."
 
 const UNTESTED: String = "sin probar"
@@ -16,6 +20,7 @@ const NO_ANSWER: String = "NO RESPONDE"
 
 var task_id: String = ""
 var is_completed: bool = false
+var _wait: TaskWaitBar = null
 
 var _hosts: PackedStringArray = PackedStringArray()
 var _results: Dictionary = {}  # ip -> texto de estado
@@ -97,8 +102,34 @@ func _on_host_reported(ip: String) -> void:
 			"Mesa de ayuda: %s responde bien, revisa de nuevo." % ip, ""]))
 		return
 
-	is_completed = true
-	status_label.text = "LISTO: equipo reportado."
+	_begin_wait()
 	_terminal.print_lines(PackedStringArray([
 		"Mesa de ayuda: confirmado, %s esta caido. Gracias." % ip, ""]))
+
+# --- El paso que tarda --------------------------------------------------------
+
+## La barra se crea la primera vez que hace falta y se pone arriba del estado.
+func _wait_bar() -> TaskWaitBar:
+	if _wait == null:
+		_wait = TaskWaitBar.new()
+		_wait.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_wait.offset_top = -112.0
+		_wait.offset_bottom = -68.0
+		_wait.finished.connect(_on_wait_finished)
+		add_child(_wait)
+	return _wait
+
+
+## Lo de "hacer" ya está: ahora hay que esperar, y la barra solo corre con la
+## PC arriba.
+func _begin_wait() -> void:
+	if is_completed or _wait_bar().is_running or _wait_bar().is_done:
+		return
+	status_label.text = "%s..." % WAIT_TEXT
+	_wait_bar().start(WAIT_TEXT)
+
+
+func _on_wait_finished() -> void:
+	is_completed = true
+	status_label.text = DONE_TEXT
 	completed.emit()

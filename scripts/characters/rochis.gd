@@ -167,7 +167,7 @@ func camera_state() -> String:
 ## Su cámara lleva sus etapas, no su nombre. Una vez que salió sigue
 ## diciendo que la silla quedó vacía, aunque él ya esté en otra habitación.
 func camera_token(camera: int) -> String:
-	if camera != Rooms.camera_of(ROOM):
+	if not is_active or camera != Rooms.camera_of(ROOM):
 		return ""
 	return camera_state() if _state == State.CUBICLE else STATE_EMPTY
 

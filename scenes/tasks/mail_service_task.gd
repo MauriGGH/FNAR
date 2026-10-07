@@ -8,10 +8,15 @@ extends Control
 
 signal completed()
 
+## El paso que tarda de esta tarea y lo que dice al acabar.
+const WAIT_TEXT: String = "Reiniciando el servicio"
+const DONE_TEXT: String = "LISTO: el servicio quedo arriba."
+
 const HINT: String = "Usa: net stop correo, luego net start correo, y comprueba con sc query correo."
 
 var task_id: String = ""
 var is_completed: bool = false
+var _wait: TaskWaitBar = null
 
 var _service: String = "correo"
 var _terminal: PcTerminal = null
@@ -59,9 +64,8 @@ func _on_service_queried(service: String, state: String) -> void:
 	_refresh()
 	if is_completed or state != CampusNetwork.STATE_RUNNING:
 		return
-	is_completed = true
-	status_label.text = "LISTO: el servicio quedo arriba."
-	completed.emit()
+	_begin_wait()
+	return
 
 
 func _refresh() -> void:
@@ -72,5 +76,34 @@ func _refresh() -> void:
 	var error_code: int = int(_terminal.service_errors.get(_service, 0))
 	var suffix: String = "" if error_code == 0 else "  (error %d)" % error_code
 	state_label.text = "Servicio %s: %s%s" % [_service, state, suffix]
-	if not is_completed:
+	# Con la espera ya corriendo, el estado lo lleva la barra.
+	if not is_completed and _wait == null:
 		status_label.text = "Falta verlo en RUNNING con sc query."
+
+# --- El paso que tarda --------------------------------------------------------
+
+## La barra se crea la primera vez que hace falta y se pone arriba del estado.
+func _wait_bar() -> TaskWaitBar:
+	if _wait == null:
+		_wait = TaskWaitBar.new()
+		_wait.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_wait.offset_top = -112.0
+		_wait.offset_bottom = -68.0
+		_wait.finished.connect(_on_wait_finished)
+		add_child(_wait)
+	return _wait
+
+
+## Lo de "hacer" ya está: ahora hay que esperar, y la barra solo corre con la
+## PC arriba.
+func _begin_wait() -> void:
+	if is_completed or _wait_bar().is_running or _wait_bar().is_done:
+		return
+	status_label.text = "%s..." % WAIT_TEXT
+	_wait_bar().start(WAIT_TEXT)
+
+
+func _on_wait_finished() -> void:
+	is_completed = true
+	status_label.text = DONE_TEXT
+	completed.emit()
