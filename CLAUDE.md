@@ -44,6 +44,11 @@ res://
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
 - **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+  La vista central está **a oscuras**, como el pasillo de FNAF 2: de fondo va
+  `oficina_centro_oscura.jpeg` y la foto iluminada (`oficina_centro.jpeg`) solo se ve **dentro del
+  cono de la linterna**, que sigue al mouse. El cono es un círculo de borde suave
+  (`scenes/office/flashlight_reveal.gdshader`); se mantiene con Ctrl o con el clic izquierdo
+  sostenido sobre el cristal.
 
 ## Audio
 
@@ -130,7 +135,21 @@ Hay dos escaleras. En el extremo sur del pasillo, junto a la coordinación, la e
 
 **Imágenes con varios profes:** el estado de una cámara con profes es `camXX_` más los nombres de los presentes en este orden fijo: barcosa, mamador, urena, juan, armando (por ejemplo `cam02_mamador_urena`). Barcosa en la CAM 2 lleva su estado: `barcosa-corriendo` o `barcosa-golpeando`. Si en una cámara hay 3 o más profes, se muestra "SEÑAL SATURADA" con estática fuerte (sin imagen), salvo en la CAM 13, que tiene `cam13_mamador_juan_armando`. La CAM 7 solo muestra a quien esté en escalera_pb (no a quien esté en pasillo_sur). Si Barcosa corre (CAM 1 o CAM 2) y coincide con otro, se muestra solo a Barcosa. En la CAM 8 pueden coincidir Mamador (retirado junto al coche) y Armando (cruzando hacia la cafetería): `cam08_mamador_armando`.
 
-**Oficina por capas:** los profes en las vistas de la oficina son recortes con fondo transparente en `assets/art/office/layers/` (por ejemplo `centro_mamador.png`, `centro_urena.png`, `derecha_rochis.png`), del mismo tamaño que la vista. El código los encima según quién esté presente; los que solo se ven con linterna (Ureña, Juan.exe y Armando en el cristal) se revelan solo dentro del cono de luz.
+**Oficina por capas:** los profes en las vistas de la oficina son recortes con fondo transparente
+en `assets/art/office/layers/` (por ejemplo `centro_mamador.png`, `centro_urena.png`,
+`derecha_rochis.png`), del mismo tamaño que la vista. Cada recorte es un nodo propio con su
+material, porque en la vista central cada uno se comporta distinto frente al cono:
+
+- **Solo con linterna:** Ureña, Juan.exe y Armando en el cristal. Fuera del cono no se dibujan.
+- **Siempre visibles, aunque a oscuras:** Mamador inspeccionando, Barcosa golpeando y el Mago en
+  la escalera. Fuera del cono se pintan al 35 % de brillo, dentro al 100 %.
+- **El ojo de Armando:** si está en el cristal y el cono no le da, lo único que se ve de él es un
+  punto naranja tenue que parpadea de vez en cuando donde tiene el ojo.
+
+Dónde cae cada profe dentro de su recorte, y dónde tiene Armando el ojo, está en
+`data/office_layers.gd`. No se adivina: lo mide `tools/measure_office_layers.py` sobre los propios
+PNG (el recuadro de los píxeles opacos, y el píxel naranja más brillante de `centro_armando`). Si
+cambia el arte, se vuelve a correr.
 
 **Cortina de la puerta:** la caja de la cortina metálica sobre la puerta siempre se ve, aunque la puerta esté abierta. En la CAM 2 viene pintada en las imágenes; en la oficina la dibuja `door_shutter.gd` recortándola de la foto con la puerta cerrada (`DRAW_ROLLER_BOX` en true), porque `oficina_centro` con la puerta abierta no la trae. Lo que está delante de la puerta en la oficina (el mueble de la recepción, los perfiles del cristal) tapa la lámina mientras baja y cuando está cerrada. Al cerrar la puerta, la cortina baja desde esa caja. En la CAM 2, si la puerta está cerrada, el código encima sobre la imagen del estado actual el recorte de `cam02_cortina` en el rectángulo normalizado x 0.729, y 0.223, w 0.1245, h 0.752 (definido en `data/camera_overlays.gd`, que se mide sobre la imagen y no se adivina). Las imágenes `cam02_barcosa-golpeando` ya traen la cortina abajo y no llevan el recorte encima. En la CAM 2, Mamador se pinta a la izquierda de la puerta, frente al cristal del sillón, para no quedar tapado por la cortina.
 
@@ -144,11 +163,11 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 
 - **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B. Si revisas CAM 10 seguido, se queda; si lo descuidas, se asoma, sale y corre por CAM 1 hasta la puerta. Solo se detiene cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
 - **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
-- **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna.
+- **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna (ver **Destellos en el cristal**).
   - **Llamada de Ureña (comedia):** cada noche que Ureña está activo, puede llamar entre las 2 y las 4 AM (60 %; en noches 5 y 6 hasta dos llamadas). La llamada no bloquea el juego: Ureña habla en altavoz y sus textos salen en un recuadro pequeño en una esquina, mientras el jugador sigue usando cámaras, puerta y linterna. Saluda con el nombre del jugador, lo felicita por sus tareas y le hace 1 o 2 insinuaciones (banco en `data/urena_questions.gd`). Cada una tiene 3 respuestas barajadas, elegibles con las teclas 1, 2 y 3 o con clic, y 6 s para elegir: la correcta esquiva con educación (no pasa nada); `sigue_el_juego` quita 5 % de energía y deja la foto en el escritorio; `grosera` quita 5 % sin foto; sin respuesta cuenta como `sigue_el_juego`. Se puede colgar en cualquier momento (o no contestar), pero Ureña se ofende: deja la foto y su nivel sube +5 durante una hora de juego. Ya no hay game over por no contestar. Se despide según cómo le fue. Los demás profes siguen moviéndose.
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Mago Eléctrico (rol Balloon Boy; antes Audel Electrix):** en pantalla y diálogos se llama "Mago Eléctrico"; en código, ids, estados y archivos se sigue usando `audel` (por ejemplo `cam06_audel-acecho`, `centro_audel.png`) para no romper nada. vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
-  - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible como ya funciona el cortaso.
+  - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible. Con la linterna muerta **el pasillo se queda a oscuras**: no hay cono, no se ve quién está en el cristal y no se le pueden contar destellos a nadie. Eso es parte del castigo.
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
     secuencia de cuatro tiempos, en `blackout_death.gd`: 3 a 12 s al azar de oscuridad total;
     aparecen dos chispas azules a lo lejos que **parpadean al ritmo de la cajita musical**, una
@@ -160,7 +179,16 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     secuencia, el jugador se salva** y todo se calla.
   - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
-- **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña en el pasillo; si no, game over "Juan.exe". No usa la reserva del pasillo.
+- **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
+
+**Destellos en el cristal** (Ureña, Juan.exe y Armando, en `glass_stalker.gd`): hay que **apuntarles
+el cono**, no solo tener la linterna encendida. Un destello cuenta cuando el cono le da **a ese
+profe** 0.2 s seguidos; para que cuente el siguiente hay que quitárselo de encima y volver a
+ponerlo, así que dejar la linterna fija cuenta uno y no cuatro. No hay tope por arriba: alumbrar
+para ver quién es también cuenta. Cada profe lleva su cuenta aparte, así que alumbrar a uno no
+ahuyenta al de al lado. Al cuarto se va, con su aviso y el sonido `se_aleja`. Mientras el cono le
+está dando a alguien sale un contador discreto debajo del haz con su nombre y los destellos que
+van (2/4). Si no se completan en 10 s, entra y es game over.
 - **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
 - **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
 
@@ -250,7 +278,15 @@ plantilla dibujada, que solo se usa si falta una imagen.
 | 5 | Al pasar la noche 5 | Se filtra la lista de asistentes a la junta de esa noche: los nombres aparecen tachados. |
 | 6 | Al pasar la noche 6 | La universidad clausura la coordinación. "El responsable sigue sin ser identificado." (Gancho para la secuela.) |
 
-**Extras** (botón del menú principal, se desbloquea al pasar la noche 5, como en los juegos originales):
+**Menú principal:** el fondo (`menu_fondo_0..3.png`) tiene toda la mitad izquierda en negro, y ahí
+van el título y las opciones, **alineados a la izquierda y en VT323 blanco grande**. La opción
+elegida lleva `>>` al lado; se mueve con las flechas (o W/S) y con el mouse, y las bloqueadas salen
+apagadas y el cursor se las salta. Debajo del título, las tres estrellas. Abajo a la izquierda, la
+versión (`application/config/version` de project.godot). Abajo al centro, "Mantén Supr para borrar
+el progreso": mantener Supr 1.5 s llena una barrita y entonces pregunta si de verdad, y solo al
+confirmar se borra `save.cfg`.
+
+**Extras** (opción del menú principal, se desbloquea al pasar la noche 5, como en los juegos originales):
 - **Expedientes:** `assets/art/extras/expediente_<id>.png` (1920x1080). Cada imagen ya es la escena
   completa, la carpeta y el plano, así que no se recorta nada: se ve a pantalla completa y se pasa a
   la siguiente con las flechas de los lados, con clic (derecha avanza, izquierda retrocede) o con las

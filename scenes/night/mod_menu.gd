@@ -570,6 +570,20 @@ func _build_view_section() -> void:
 	var body: VBoxContainer = _section("Vista")
 	_add_check(body, "Ver zonas de clic", false,
 		func(on: bool) -> void: _night.office.set_zones_visible(on))
+
+	_add_label(body, "Linterna del pasillo:")
+	_add_check(body, "Siempre encendida", false,
+		func(on: bool) -> void: _night.office.debug_force_flashlight = on)
+	_add_label(body, "Clavar el cono en:")
+	var aims: Array = [["seguir el mouse", func() -> void: _night.office.debug_aim_slug = ""]]
+	for slug: Variant in OfficeLayers.BOXES:
+		var target: String = str(slug)
+		aims.append([target.substr(0, 8), func() -> void: _night.office.debug_aim_slug = target])
+		if aims.size() == 2:
+			_add_row(body, aims)
+			aims = []
+	if not aims.is_empty():
+		_add_row(body, aims)
 	_add_check(body, "Ver etiquetas de estado", false,
 		func(on: bool) -> void: _night.camera_system.set_debug_visible(on))
 	var show_states: CheckBox = _add_check(body, "Ver el estado de cada cámara", false,

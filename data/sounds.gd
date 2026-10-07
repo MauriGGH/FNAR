@@ -34,6 +34,8 @@ const ALARM: String = "despertador"
 const SCHOOL_BELL: String = "campana_escuela"
 const FOOTSTEPS: String = "pasos_acercandose"
 const LOW_HIT: String = "golpe_grave"
+## Cuando uno de los del cristal se va con el cuarto destello.
+const GLASS_REPEL: String = "se_aleja"
 
 ## El catálogo. Por sonido: "file" (nombre dentro de assets/audio/, sin ruta),
 ## "bus", "volume_db" y "generator" (el nombre de la función de ToneBuilder que
@@ -70,6 +72,10 @@ const CATALOG: Dictionary = {
 	"pasos_acercandose": {
 		"file": "pasos_acercandose.ogg", "bus": "Efectos",
 		"volume_db": -2.0, "generator": "footsteps",
+	},
+	"se_aleja": {
+		"file": "se_aleja.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "glass_repel",
 	},
 	"golpe_grave": {
 		"file": "golpe_grave.ogg", "bus": "Efectos",

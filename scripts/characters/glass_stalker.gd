@@ -7,18 +7,18 @@ extends Animatronic
 ## game over. Ninguno usa la reserva del pasillo, así que pueden coincidir
 ## entre ellos y con Barcosa o Mamador.
 ##
-## Cada uno lleva su propia cuenta de destellos, pero el night.gd le avisa de
-## la linterna a todos a la vez: un mismo destello cuenta para todos los que
-## estén en el cristal en ese momento.
-##
-## Lo único que cambia cada profe es su ruta, su intervalo, su clave en la
-## tabla de noches y su tecla de depuración.
+## Un destello cuenta cuando el cono de la linterna le da **a ese profe** al
+## menos FLASH_MIN_TIME seguidos. Hay que quitarle el cono de encima para que
+## cuente el siguiente, así que tener la linterna fija no sirve: hay que
+## alumbrarlo cuatro veces. Cada profe lleva su propia cuenta, y alumbrar a uno
+## no le cuenta a los demás aunque estén al lado.
 
 enum State { WALKING, AT_GLASS }
 
-# Destellos: solo cuentan los encendidos cortos, ni un toque ni un reflector.
+## Lo que hay que tenerle el cono encima para que un destello cuente. No hay
+## tope por arriba: dejar la linterna puesta cuenta uno, no cero, porque
+## alumbrar para ver quién es también es alumbrar.
 const FLASH_MIN_TIME: float = 0.2
-const FLASH_MAX_TIME: float = 1.0
 const FLASHES_TO_REPEL: int = 4
 ## Lo que aguanta en el cristal antes de entrar.
 const GLASS_TIME: float = 10.0
@@ -31,9 +31,10 @@ var flashes: int = 0
 
 var _state: State = State.WALKING
 var _glass_elapsed: float = 0.0
-## Lo que lleva encendida la linterna, acumulado con el delta del juego. Con
-## el reloj de pared no serviría: el tiempo del juego es el que cuenta.
-var _flash_elapsed: float = -1.0
+## Lo que lleva el cono encima de este profe, y si ese rato ya se contó. Hace
+## falta quitarle el cono para que el contador se arme otra vez.
+var _lit_time: float = 0.0
+var _lit_counted: bool = false
 ## +1 avanzando por la ruta, -1 de regreso. Solo lo usa el que se retira
 ## caminando (Armando), que sale del edificio y después da la vuelta.
 var _direction: int = 1
@@ -46,7 +47,7 @@ func start() -> void:
 	super()
 	_state = State.WALKING
 	_glass_elapsed = 0.0
-	_flash_elapsed = -1.0
+	_reset_beam()
 	_direction = 1
 	flashes = 0
 
@@ -54,8 +55,6 @@ func start() -> void:
 func _process(delta: float) -> void:
 	if not is_active:
 		return
-	if _flash_elapsed >= 0.0:
-		_flash_elapsed += delta
 	match _state:
 		State.WALKING:
 			super(delta)  # El dado de la IA de la clase base
@@ -79,22 +78,34 @@ func advance() -> void:
 		_arrive_at_glass()
 
 
-## Cada encendido corto de la linterna cuenta un destello.
+## Al apagar la linterna se le quita el cono de encima a todos, así que el
+## siguiente destello vuelve a contar.
 func set_flashlight_on(is_on: bool) -> void:
-	if is_on:
-		_flash_elapsed = 0.0
+	if not is_on:
+		_reset_beam()
+
+
+## El night.gd le dice, en cada cuadro, si el cono le está dando a este profe.
+## Aguantar el cono encima cuenta un destello y nada más: para el siguiente hay
+## que quitárselo y volvérselo a poner.
+func update_beam(is_lit: bool, delta: float) -> void:
+	if not is_lit:
+		_reset_beam()
 		return
-	if _flash_elapsed < 0.0:
-		return
-	var duration: float = _flash_elapsed
-	_flash_elapsed = -1.0
 	if _state != State.AT_GLASS:
 		return
-	if duration < FLASH_MIN_TIME or duration > FLASH_MAX_TIME:
-		return  # Ni un toque ni dejarla prendida: tiene que ser un destello.
+	_lit_time += delta
+	if _lit_counted or _lit_time < FLASH_MIN_TIME:
+		return
+	_lit_counted = true
 	flashes += 1
 	if flashes >= FLASHES_TO_REPEL:
 		_repel()
+
+
+func _reset_beam() -> void:
+	_lit_time = 0.0
+	_lit_counted = false
 
 
 ## Solo se ve pegado al cristal si la linterna está encendida.
@@ -190,14 +201,18 @@ func _arrive_at_glass() -> void:
 	_state = State.AT_GLASS
 	_glass_elapsed = 0.0
 	flashes = 0
+	# Llega limpio: un destello que ya estaba en marcha no le cuenta.
+	_reset_beam()
 	made_noise.emit(ARRIVE_NOTICE, NOTICE_TIME)
 
 
 func _repel() -> void:
 	made_noise.emit(repel_notice(), NOTICE_TIME)
+	AudioManager.play(Sounds.GLASS_REPEL)
 	_state = State.WALKING
 	_glass_elapsed = 0.0
 	flashes = 0
+	_reset_beam()
 	if not retreats_walking():
 		_direction = 1
 		move_to_step(retreat_step())

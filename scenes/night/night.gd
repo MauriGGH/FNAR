@@ -223,6 +223,7 @@ func _process(delta: float) -> void:
 	_refresh_tickets(delta)
 	_process_calls(delta)
 	_refresh_office_presence()
+	_update_glass_beams(delta)
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
 	warning_icon.set_level(0 if _come_trabas == null else _come_trabas.warning_level())
 
@@ -295,6 +296,27 @@ func _refresh_office_presence() -> void:
 		office.set_zone_presence(zone_id, label)
 	for view: int in office.view_count():
 		office.set_view_present(view, by_view[view])
+
+
+## Cada cuadro: a quién le está dando el cono, para contar sus destellos y
+## para mover el contador discreto debajo del haz.
+func _update_glass_beams(delta: float) -> void:
+	var lit_label: String = ""
+	var lit_flashes: int = 0
+	var armando_at_glass: bool = false
+	for animatronic: Animatronic in _animatronics:
+		var stalker: GlassStalker = animatronic as GlassStalker
+		if stalker == null or not stalker.is_active:
+			continue
+		if stalker is ArmandoPrompts and stalker.is_at_glass():
+			armando_at_glass = true
+		var is_lit: bool = stalker.is_at_glass() and office.is_slug_lit(stalker.image_slug())
+		stalker.update_beam(is_lit, delta)
+		if is_lit and lit_label.is_empty():
+			lit_label = stalker.display_name
+			lit_flashes = stalker.flashes
+	office.set_flash_progress(lit_label, lit_flashes, GlassStalker.FLASHES_TO_REPEL)
+	office.set_armando_at_glass(armando_at_glass)
 
 
 func _on_hour_changed(_hour: int) -> void:

@@ -32,6 +32,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return footsteps()
 		"low_hit":
 			return low_hit()
+		"glass_repel":
+			return glass_repel()
 	return null
 
 # --- Cajita musical ----------------------------------------------------------
@@ -238,6 +240,30 @@ const HIT_AMPLITUDE: float = 0.75
 static func low_hit() -> AudioStreamWAV:
 	var buffer: PackedFloat32Array = _buffer(HIT_LENGTH)
 	_add_thud(buffer, 0.0, HIT_HZ, HIT_LENGTH, HIT_AMPLITUDE, HIT_DECAY, HIT_NOISE)
+	return _to_wav(buffer)
+
+
+# --- El del cristal se aleja -------------------------------------------------
+const REPEL_LENGTH: float = 0.7
+## Un roce que se va alejando: ruido que sube de tono y se apaga, como unos
+## pasos arrastrados yéndose por el pasillo.
+const REPEL_FROM_HZ: float = 520.0
+const REPEL_TO_HZ: float = 190.0
+const REPEL_NOISE: float = 0.72
+const REPEL_AMPLITUDE: float = 0.4
+
+
+static func glass_repel() -> AudioStreamWAV:
+	var samples: int = int(REPEL_LENGTH * SAMPLE_RATE)
+	var buffer: PackedFloat32Array = _buffer(REPEL_LENGTH)
+	var phase: float = 0.0
+	for i: int in samples:
+		var t: float = float(i) / float(samples)
+		phase += TAU * lerpf(REPEL_FROM_HZ, REPEL_TO_HZ, t) / float(SAMPLE_RATE)
+		# Entra enseguida y se va apagando, como algo que se aleja.
+		var envelope: float = minf(t * 10.0, 1.0) * (1.0 - t) * (1.0 - t)
+		buffer[i] = (sin(phase) * (1.0 - REPEL_NOISE)
+			+ randf_range(-1.0, 1.0) * REPEL_NOISE) * envelope * REPEL_AMPLITUDE
 	return _to_wav(buffer)
 
 

@@ -30,6 +30,8 @@ const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
 const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
+const ARMANDO_EYE: GDScript = preload("res://scenes/office/armando_eye.gd")
+const FLASH_METER: GDScript = preload("res://scenes/office/flash_meter.gd")
 
 ## Máscara de oclusión de la puerta: los pedazos de la foto que están más
 ## cerca de la cámara que la puerta (el mueble de la recepción, su base y los
@@ -47,8 +49,16 @@ const URENA_PHOTO_LAYER: String = "urena_foto"
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
 
-## La zona del cristal, que es lo que alumbra la linterna.
+## La zona del cristal, que es por donde se asoman los del pasillo.
 const GLASS_ZONE: String = "front_glass"
+
+## El cono de la linterna, en coordenadas normalizadas de la vista central: el
+## radio del círculo iluminado y lo ancho del degradado del borde. El cono
+## sigue al mouse, así que hay que apuntarle a cada profe.
+const BEAM_RADIUS: float = 0.17
+const BEAM_SOFTNESS: float = 0.1
+## Lo rápido que entra y sale la luz al prender y apagar.
+const BEAM_FADE_SPEED: float = 16.0
 ## Cuántas fotos puede llegar a dejar en una noche.
 const MAX_URENA_PHOTOS: int = 4
 ## La zona de clic de la foto, que solo se enciende cuando ya la dejó.
@@ -146,6 +156,8 @@ var _sweep_direction: int = 1
 @onready var right_content: Control = $Views/RightView/Content
 @onready var left_image: TextureRect = $Views/LeftView/Content/Background
 @onready var center_image: TextureRect = $Views/CenterView/Content/Background
+## La foto del pasillo iluminada, que solo se ve dentro del cono.
+@onready var center_lit: TextureRect = $Views/CenterView/Content/LitImage
 @onready var right_image: TextureRect = $Views/RightView/Content/Background
 
 var door_state_label: Label = null
@@ -155,6 +167,14 @@ var _blackout_overlays: Array[Control] = []
 var _zoom_view: int = View.CENTER
 var _zoom_request: String = ""
 var _flashlight_on: bool = false
+## Dónde apunta el cono, normalizado sobre la vista central, y cuánta luz hay
+## ahora mismo (sube y baja suave al prender y apagar).
+var _beam_center: Vector2 = Vector2(0.5, 0.5)
+var _beam_strength: float = 0.0
+## Depuración: la linterna fija encendida, y el cono clavado en un profe en vez
+## de seguir al mouse. Los dos salen del menú de pruebas.
+var debug_force_flashlight: bool = false
+var debug_aim_slug: String = ""
 var _urena_photos: int = 0
 
 var flashlight_overlay: Control = null
@@ -162,6 +182,10 @@ var phone_light: Control = null
 var door_shutter: Control = null
 var door_occluder: TextureRect = null
 var photo_viewer: Control = null
+## El puntito del ojo de Armando y el contador de destellos, los dos solo en
+## la vista central.
+var armando_eye: Control = null
+var flash_meter: Control = null
 var _layers: Array[Control] = []
 var _shake_left: float = 0.0
 
@@ -194,6 +218,7 @@ func _ready() -> void:
 	_build_photo_viewer()
 	_build_blackout_overlays()
 	_build_flashlight()
+	_build_beam_widgets()
 	_layout()
 	resized.connect(_layout)
 
@@ -208,27 +233,90 @@ func _ready() -> void:
 
 
 ## La linterna se mantiene con Ctrl o con el clic izquierdo sostenido sobre el
-## cristal, y solo sirve mirando al frente.
-func _update_flashlight() -> void:
+## cristal, y solo sirve mirando al frente. El cono sigue al mouse: el pasillo
+## está a oscuras y solo se ve lo que queda dentro del haz.
+func _update_flashlight(delta: float) -> void:
 	var allowed: bool = is_interactive and _state == ViewState.PANNING and _current_view == View.CENTER
 	var wants_on: bool = false
 	if allowed:
-		wants_on = Input.is_key_pressed(KEY_CTRL)
+		wants_on = debug_force_flashlight or Input.is_key_pressed(KEY_CTRL)
 		if not wants_on and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			wants_on = zone_rect(GLASS_ZONE).has_point(center_content.get_local_mouse_position())
 
-	if wants_on == _flashlight_on:
-		return
-	# Si el cortaso de Audel la dejó muerta, ni se prende.
-	if wants_on and PowerManager.is_flashlight_disabled:
-		flashlight_failed.emit()
-		return
-	_flashlight_on = wants_on
-	# Los que solo se ven alumbrados aparecen y desaparecen con el haz.
+	if wants_on != _flashlight_on:
+		# Si el cortaso del Mago la dejó muerta, ni se prende: el pasillo se
+		# queda a oscuras, que es parte del castigo.
+		if wants_on and PowerManager.is_flashlight_disabled:
+			flashlight_failed.emit()
+		else:
+			_flashlight_on = wants_on
+			flashlight_overlay.set_on(_flashlight_on)
+			flashlight_changed.emit(_flashlight_on)
+
+	_update_beam(delta)
+
+
+## Mueve el cono al mouse y le pasa el haz a la foto iluminada y a las capas.
+func _update_beam(delta: float) -> void:
+	if not debug_aim_slug.is_empty() and OfficeLayers.has_box(debug_aim_slug):
+		# El menú de pruebas clavó el cono en un profe: ahí se queda.
+		_beam_center = OfficeLayers.box_of(debug_aim_slug).get_center()
+	else:
+		var content_size: Vector2 = center_content.size
+		if content_size.x > 0.0 and content_size.y > 0.0:
+			var mouse: Vector2 = center_content.get_local_mouse_position()
+			_beam_center = Vector2(
+				clampf(mouse.x / content_size.x, 0.0, 1.0),
+				clampf(mouse.y / content_size.y, 0.0, 1.0))
+	var target: float = 1.0 if _flashlight_on else 0.0
+	if not is_equal_approx(_beam_strength, target):
+		_beam_strength = lerpf(_beam_strength, target, 1.0 - exp(-delta * BEAM_FADE_SPEED))
+		if absf(_beam_strength - target) < 0.004:
+			_beam_strength = target
+	_apply_beam()
+
+
+func _apply_beam() -> void:
+	var aspect: float = 1.78
+	if center_content.size.y > 0.0:
+		aspect = center_content.size.x / center_content.size.y
+	var material: ShaderMaterial = center_lit.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter("beam_center", _beam_center)
+		material.set_shader_parameter("beam_radius", BEAM_RADIUS)
+		material.set_shader_parameter("beam_softness", BEAM_SOFTNESS)
+		material.set_shader_parameter("beam_strength", _beam_strength)
+		material.set_shader_parameter("aspect", aspect)
 	for layer: Control in _layers:
-		layer.set_lit(_flashlight_on, zone_rect(GLASS_ZONE))
-	flashlight_overlay.set_on(_flashlight_on)
-	flashlight_changed.emit(_flashlight_on)
+		layer.set_beam(_beam_center, BEAM_RADIUS, _beam_strength)
+	if armando_eye != null:
+		armando_eye.set_lit(is_slug_lit("armando"))
+	if flashlight_overlay != null:
+		flashlight_overlay.set_beam_center(_beam_center, BEAM_RADIUS)
+
+
+## true si el cono le está dando de verdad a ese profe. Mide contra el recuadro
+## que ocupa su recorte, que está medido en data/office_layers.gd.
+func is_slug_lit(slug: String) -> bool:
+	if _beam_strength < 0.5 or not OfficeLayers.has_box(slug):
+		return false
+	var box: Rect2 = OfficeLayers.box_of(slug)
+	# El punto del recuadro más cercano al centro del haz; si cae dentro del
+	# radio, le está dando. Se corrige por la proporción, como en el shader.
+	var closest: Vector2 = Vector2(
+		clampf(_beam_center.x, box.position.x, box.end.x),
+		clampf(_beam_center.y, box.position.y, box.end.y))
+	var aspect: float = 1.78
+	if center_content.size.y > 0.0:
+		aspect = center_content.size.x / center_content.size.y
+	var offset: Vector2 = Vector2((closest.x - _beam_center.x) * aspect,
+		closest.y - _beam_center.y)
+	return offset.length() <= BEAM_RADIUS
+
+
+## Dónde apunta el cono ahora mismo, normalizado. Lo usa el panel de pruebas.
+func beam_center() -> Vector2:
+	return _beam_center
 
 
 ## Quién se ve en una zona, y el foquito del teléfono.
@@ -344,12 +432,19 @@ func _layout_flashlight() -> void:
 	if flashlight_overlay != null:
 		flashlight_overlay.position = Vector2.ZERO
 		flashlight_overlay.size = content_size
-		flashlight_overlay.set_beam(zone_rect(GLASS_ZONE),
-			Vector2(content_size.x * 0.5, content_size.y))
+		flashlight_overlay.set_origin(Vector2(content_size.x * 0.5, content_size.y))
+	# La foto iluminada va anclada al contenido en la escena, así que se estira
+	# sola: ponerle el tamaño a mano solo saca el aviso de Godot.
 	for layer: Control in _layers:
 		layer.position = Vector2.ZERO
 		layer.size = content_size
-		layer.set_lit(_flashlight_on, zone_rect(GLASS_ZONE))
+	if armando_eye != null:
+		armando_eye.position = Vector2.ZERO
+		armando_eye.size = content_size
+	if flash_meter != null:
+		flash_meter.position = Vector2.ZERO
+		flash_meter.size = content_size
+	_apply_beam()
 	if door_occluder != null:
 		door_occluder.position = Vector2.ZERO
 		door_occluder.size = content_size
@@ -393,7 +488,7 @@ func _process(delta: float) -> void:
 	_update_shake(delta)
 	if photo_viewer != null and photo_viewer.is_open:
 		return  # Mirando la foto: la cabeza no gira ni la linterna se prende.
-	_update_flashlight()
+	_update_flashlight(delta)
 	if _state != ViewState.PANNING or not is_interactive:
 		return
 
@@ -704,9 +799,34 @@ func _build_layers() -> void:
 		var layer: Control = OFFICE_LAYERS.new()
 		layer.name = "Layers"
 		layer.view_name = VIEW_LAYER_NAMES[i]
+		# Solo la central tiene linterna: ahí cada recorte lleva su máscara.
+		layer.uses_flashlight = i == View.CENTER
 		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_content_nodes[i].add_child(layer)
 		_layers.append(layer)
+
+
+## El ojo de Armando y el contador de destellos, los dos de la vista central.
+func _build_beam_widgets() -> void:
+	armando_eye = ARMANDO_EYE.new()
+	armando_eye.name = "ArmandoEye"
+	center_content.add_child(armando_eye)
+	flash_meter = FLASH_METER.new()
+	flash_meter.name = "FlashMeter"
+	center_content.add_child(flash_meter)
+
+
+## El night.gd le dice si Armando está pegado al cristal, para el puntito.
+func set_armando_at_glass(present: bool) -> void:
+	if armando_eye != null:
+		armando_eye.set_present(present)
+
+
+## El night.gd le pasa a quién se está alumbrando y cuántos destellos lleva.
+## Con el nombre vacío, el contador se esconde.
+func set_flash_progress(label: String, flashes: int, total: int) -> void:
+	if flash_meter != null:
+		flash_meter.show_progress(label, flashes, total, _beam_center)
 
 
 ## Quiénes se ven en cada vista. El night.gd lo arma con los profes presentes;

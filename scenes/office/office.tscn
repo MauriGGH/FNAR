@@ -1,7 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/office/office.gd" id="1_office"]
 [ext_resource type="Texture2D" path="res://assets/art/office/oficina_centro.jpeg" id="2_center"]
+[ext_resource type="Texture2D" path="res://assets/art/office/oficina_centro_oscura.jpeg" id="2_center_dark"]
+[ext_resource type="Shader" path="res://scenes/office/flashlight_reveal.gdshader" id="6_reveal"]
 [ext_resource type="Texture2D" path="res://assets/art/office/oficina_derecha.png" id="3_right"]
 [ext_resource type="Shader" path="res://scenes/office/office_view.gdshader" id="4_view"]
 [ext_resource type="Texture2D" path="res://assets/art/office/oficina_izquierda.png" id="5_left"]
@@ -12,6 +14,16 @@ shader_parameter/channel_gain = Vector3(1, 1, 1)
 shader_parameter/brightness = 1.0
 shader_parameter/saturation = 1.0
 shader_parameter/blur_amount = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lit"]
+shader = ExtResource("6_reveal")
+shader_parameter/beam_center = Vector2(0.5, 0.5)
+shader_parameter/beam_radius = 0.0
+shader_parameter/beam_softness = 0.12
+shader_parameter/beam_strength = 0.0
+shader_parameter/aspect = 1.78
+shader_parameter/base_alpha = 0.0
+shader_parameter/base_brightness = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_left"]
 shader = ExtResource("4_view")
@@ -93,6 +105,18 @@ mouse_filter = 1
 
 [node name="Background" type="TextureRect" parent="Views/CenterView/Content"]
 material = SubResource("ShaderMaterial_center")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_center_dark")
+expand_mode = 1
+
+[node name="LitImage" type="TextureRect" parent="Views/CenterView/Content"]
+material = SubResource("ShaderMaterial_lit")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
