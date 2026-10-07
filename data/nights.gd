@@ -18,6 +18,11 @@ const ARMANDO: String = "armando"
 ## mismo orden: lenta, media, rápida y muy rápida.
 const COME_TRABAS: String = "come_trabas"
 
+## Las ocho claves juntas, para recorrerlas sin repetir la lista.
+const ALL_KEYS: Array[String] = [
+	"barcosa", "mamador", "urena", "rochis", "audel", "juan_exe", "armando", "come_trabas",
+]
+
 const FIRST_NIGHT: int = 1
 const LAST_NIGHT: int = 6
 

@@ -227,7 +227,7 @@ func _draw_background() -> void:
 
 ## La frase dentro del círculo central, en el tamaño más grande que quepa.
 func _draw_phrase() -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var center: Vector2 = Vector2(CIRCLE_CENTER.x * size.x, CIRCLE_CENTER.y * size.y)
 	var radius: float = CIRCLE_RADIUS * size.y
 	# El cuadrado inscrito en el círculo: lo que de verdad se puede usar.
@@ -259,7 +259,7 @@ func _draw_phrase() -> void:
 ## acomoda desde el borde inferior hacia arriba, así cabe en la franja oscura
 ## de la carta de ajuste sea cual sea el tamaño de la pantalla.
 func _draw_input() -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var bar: Rect2 = Rect2(Vector2(size.x * 0.28, size.y - BAR_BOTTOM - BAR_THICK),
 		Vector2(size.x * 0.44, BAR_THICK))
 	var timer_y: float = bar.position.y - TIMER_GAP
@@ -313,7 +313,7 @@ func _draw_outlined(font: Font, center: Vector2, text: String, font_size: int, c
 
 
 func _draw_centered_lines(center: Vector2, text: String, font_size: int) -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var lines: PackedStringArray = text.split("\n")
 	var line_height: float = float(font_size) * 1.1
 	var top: float = center.y - line_height * (float(lines.size()) - 1.0) * 0.5

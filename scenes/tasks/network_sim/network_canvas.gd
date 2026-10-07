@@ -257,7 +257,7 @@ func _draw_device(device: NetDevice) -> void:
 		draw_rect(Rect2(center - Vector2.ONE * PORT_SIZE * 0.5, Vector2.ONE * PORT_SIZE), color)
 
 	# Nombre debajo del ícono.
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var font_size: int = 15
 	var text: String = device.label
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x

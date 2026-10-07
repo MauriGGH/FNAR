@@ -13,21 +13,27 @@ const TITLE_COLOR: Color = Color(0.93, 0.9, 0.84)
 const TITLE_HEIGHT: float = 220.0
 
 const BUTTON_GAP: float = 10.0
+## Dónde van las estrellas, justo debajo del título.
+const STARS_TOP: float = 282.0
 const HINT_SIZE: int = 17
 const HINT_COLOR: Color = Color(0.68, 0.7, 0.72, 0.85)
 ## Dónde empieza la columna de botones, en fracción del alto.
 const COLUMN_TOP: float = 0.4
 
 var _column: VBoxContainer = null
+var _stars: StarRow = null
+var _fullscreen_button: Button = null
 
 
 func _ready() -> void:
 	MenuBackdrop.build(self)
 	_build_title()
+	_build_stars()
 	_build_buttons()
 	_build_hint()
 	_layout()
 	resized.connect(_layout)
+	DisplayManager.fullscreen_changed.connect(_on_fullscreen_changed)
 
 
 ## La columna de botones va centrada a mano, no con anclas: así se puede
@@ -35,6 +41,8 @@ func _ready() -> void:
 func _layout() -> void:
 	if _column != null:
 		_column.position = Vector2((size.x - UiButton.SIZE.x) * 0.5, size.y * COLUMN_TOP)
+	if _stars != null:
+		_stars.position = Vector2((size.x - _stars.size.x) * 0.5, STARS_TOP)
 
 
 func _build_title() -> void:
@@ -65,6 +73,13 @@ func _build_title() -> void:
 	add_child(label)
 
 
+## Las tres estrellas del progreso. Se colocan en _layout(), como la columna.
+func _build_stars() -> void:
+	_stars = StarRow.new()
+	add_child(_stars)
+	_stars.earned = SaveGame.star_count()
+
+
 func _build_buttons() -> void:
 	var column: VBoxContainer = VBoxContainer.new()
 	column.name = "Buttons"
@@ -90,9 +105,22 @@ func _build_buttons() -> void:
 	extras.pressed.connect(_on_extras)
 	column.add_child(extras)
 
+	_fullscreen_button = UiButton.make(_fullscreen_text())
+	_fullscreen_button.pressed.connect(DisplayManager.toggle)
+	column.add_child(_fullscreen_button)
+
 	var quit_button: Button = UiButton.make("Salir")
 	quit_button.pressed.connect(_on_quit)
 	column.add_child(quit_button)
+
+
+func _fullscreen_text() -> String:
+	return "Pantalla completa: %s  (F11)" % ("sí" if DisplayManager.is_fullscreen() else "no")
+
+
+func _on_fullscreen_changed(_is_fullscreen: bool) -> void:
+	if _fullscreen_button != null:
+		_fullscreen_button.text = _fullscreen_text()
 
 
 ## La nota de abajo explica por qué hay cosas bloqueadas.
@@ -118,7 +146,7 @@ func _on_new_game() -> void:
 
 func _on_continue() -> void:
 	GameManager.prepare_night(SaveGame.night_reached)
-	get_tree().change_scene_to_file(Screens.NIGHT_INTRO)
+	LoadingScreen.go_to(get_tree(), Screens.NIGHT_INTRO)
 
 
 func _on_custom_night() -> void:

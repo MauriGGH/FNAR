@@ -233,7 +233,7 @@ func _draw_police_lights() -> void:
 
 
 func _draw_centered(text: String, font_size: int, center: Vector2) -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	var at: Vector2 = Vector2(center.x - width * 0.5, center.y + float(font_size) * 0.35)
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size,

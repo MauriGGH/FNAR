@@ -7,6 +7,7 @@ El documento de diseño completo lo tiene el equipo; este archivo resume lo nece
 ## Entorno
 
 - Godot 4.7.2, renderizador Compatibilidad, proyecto 2D.
+- Arranca en pantalla completa (stretch `canvas_items`, aspecto `keep`). F11 la alterna desde cualquier pantalla y la opción se guarda en `save.cfg`; también está como botón en el menú principal y en la pausa. Lo lleva el autoload `DisplayManager`.
 - Desarrollo en Linux; la exportación principal es Windows (.exe), Linux opcional.
 - El usuario es principiante en desarrollo de videojuegos: explica brevemente lo que haces y por qué, y dile cómo probarlo en Godot.
 
@@ -28,7 +29,10 @@ res://
   scenes/tasks/    una escena por tarea (minijuego)
   scripts/characters/  animatronic.gd (clase base) y un script por profe
   data/            rooms.gd (grafo de habitaciones), nights.gd (niveles por noche)
+  scenes/ui/           pantalla de carga y shaders compartidos (estática, scanlines, blanco y negro, bloqueado)
+  scripts/ui/          ayudantes: fonts.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd
   assets/art/backgrounds, assets/art/characters, assets/audio
+  assets/fonts/        VT323, Special Elite, Oswald y game_theme.tres
 ```
 
 ## Sistemas principales
@@ -39,6 +43,44 @@ res://
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
 - **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+
+## Tipografías
+
+Tres familias en `assets/fonts/`, pedidas siempre por `Fonts` (`scripts/ui/fonts.gd`), que las
+cachea. El Theme global `assets/fonts/game_theme.tres` pone Oswald en todo; las otras dos van
+como override donde toca.
+
+| Fuente | Para qué | Licencia |
+| --- | --- | --- |
+| VT323 | lo que sale de una pantalla o un aparato: cámaras, PC, relojes, breaker, patch panel | OFL |
+| Special Elite | lo escrito a máquina: documentos, periódicos, causa del game over, intro de noche, 6 AM | Apache 2.0 |
+| Oswald (variable) | menús, botones y etiquetas | OFL |
+
+## Transiciones y pantallas
+
+- **Intro de noche:** negro con "12:00 AM" y "Noche N" a máquina, con un golpe de estática al
+  aparecer y otro al irse. Unos 2.5 s y entra sola a la noche.
+- **6 AM:** antes de la pantalla de pago, negro con "5 AM" grande; el 5 sube como un rodillo y
+  entra el 6 en 1.5 s, el texto pasa de blanco a dorado, suena el despertador y luego la campana
+  de la escuela con aplausos (provisionales por código, en `alarm_sound.gd` y `bell_sound.gd`).
+  3 s quieto y recién entonces se ve cuánto te pagan.
+- **Game over:** un segundo de estática fuerte y, al aclararse, la cámara vacía del lugar de donde
+  salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
+  Clic en cualquier lado vuelve al menú, el botón repite la noche. El mapa de profe a cámara está
+  en `Extras.ORIGIN_CAMERAS` (la CAM 10 no tiene `vacia`: usa `cam10_salio`).
+- **Pantallas de carga:** entre el menú, las noches y los periódicos. Negro con estática leve y una
+  frase del lore al azar de `data/loading_lines.gd`. Se entra con `LoadingScreen.go_to(árbol, ruta)`.
+- **Fin de noche:** 6 AM → recorte de periódico → las hojas que entregue esa noche → lo siguiente.
+  La noche 5 entrega el recibo; la 6, el recibo y la carta de despido, y de ahí al final.
+
+## Documentos
+
+`assets/art/extras/documentos/recibo_noche5.png`, `recibo_noche6.png` y `carta_despido.png`
+(1920x1080, la hoja completa). Lo único que dibuja el código encima es el nombre del jugador, con
+Special Elite en el color #231e1e y unos 26 px a 1080p (se escala con el alto). Las posiciones y la
+inclinación están medidas sobre las imágenes y viven en `data/documents.gd`: en los recibos la
+esquina superior izquierda del texto va en x 0.387, y 0.230 con 2° de inclinación; en la carta, en
+x 0.298, y 0.270 con −1.5°.
 
 ## Cámaras
 
@@ -137,7 +179,9 @@ Custom Night: cada nivel de 0 a 20.
 
 ## Lore, periódicos y Extras
 
-La historia de fondo no se explica en el juego: se va descubriendo en recortes de periódico. Al terminar cada noche, la pantalla de las 6 AM da paso a un recorte nuevo (como el periódico de FNAF), que se desbloquea y queda guardado en `user://save.cfg`. Los textos están en `data/newspapers.gd` (título, fecha, cuerpo e imagen opcional `assets/art/extras/periodico_N.png`); si falta la imagen, se dibuja con una plantilla de periódico y el texto.
+La historia de fondo no se explica en el juego: se va descubriendo en recortes de periódico. Al terminar cada noche, la pantalla de las 6 AM da paso a un recorte nuevo (como el periódico de FNAF), que se desbloquea y queda guardado en `user://save.cfg`. Las imágenes están en `assets/art/extras/periodico_0..6.png` (1920x1080, la página completa) y son
+lo que se muestra; los textos de `data/newspapers.gd` (título, fecha, cuerpo) se conservan para la
+plantilla dibujada, que solo se usa si falta una imagen.
 
 | Recorte | Se desbloquea | Contenido |
 | --- | --- | --- |
@@ -150,11 +194,25 @@ La historia de fondo no se explica en el juego: se va descubriendo en recortes d
 | 6 | Al pasar la noche 6 | La universidad clausura la coordinación. "El responsable sigue sin ser identificado." (Gancho para la secuela.) |
 
 **Extras** (botón del menú principal, se desbloquea al pasar la noche 5, como en los juegos originales):
-- **Expedientes:** una ficha por personaje con su hoja de referencia (`assets/art/extras/expediente_<id>.png`), su nombre en pantalla, su rol y una línea de descripción. Se desbloquea la ficha de un profe la primera vez que te mata o al pasar la noche donde se activa.
+- **Expedientes:** `assets/art/extras/expediente_<id>.png` (1920x1080). Cada imagen ya es la escena
+  completa, la carpeta y el plano, así que no se recorta nada: se ve a pantalla completa y se pasa a
+  la siguiente con las flechas de los lados, con clic (derecha avanza, izquierda retrocede) o con las
+  teclas de dirección. Debajo, el nombre en pantalla, el rol y una línea. Se desbloquea la ficha de
+  un profe la primera vez que te mata o al pasar la noche donde se activa.
 - **Periódicos:** los recortes desbloqueados, para releerlos.
 - **Jumpscares:** galería para reproducir los jumpscares ya vistos.
 - **Custom Night** (si no está ya en el menú principal).
-Lo bloqueado se muestra como silueta con "???".
+Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
+`scenes/ui/locked_art.gdshader`) y un "???" encima.
+
+**Fondo de los menús:** `assets/art/menu/menu_fondo_0..3.png`. Normalmente se ve el 0; cada 4 a 9 s
+al azar aparece el 1, el 2 o el 3 durante 0.1 a 0.25 s con un golpe de estática, como el Freddy del
+menú de los juegos originales. Encima, líneas de escaneo suaves y un parpadeo leve.
+
+**Estrellas del menú principal:** debajo del título, tres. Una al pasar la noche 5, otra al pasar la
+6 y otra al ganar una Custom Night con los ocho profes en 20. Se dibujan por código (`StarRow`) y el
+avance se guarda en `save.cfg` (`nights_cleared` y `custom_mastered`, porque `night_reached` se topa
+en la última noche y no distingue entre pasar la 5 y pasar la 6).
 
 ## Hitos del prototipo
 

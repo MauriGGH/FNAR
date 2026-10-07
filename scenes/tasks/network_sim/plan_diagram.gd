@@ -27,7 +27,7 @@ func _box(center: Vector2, label: String) -> void:
 	var rect: Rect2 = Rect2(center - BOX * 0.5, BOX)
 	draw_rect(rect, BOX_COLOR)
 	draw_rect(rect, BOX_EDGE, false, 1.0)
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var width: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE).x
 	draw_string(font, Vector2(center.x - width * 0.5, center.y + 4.0),
 		label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE, TEXT_COLOR)

@@ -22,6 +22,9 @@ var current_night: int = 1
 var current_hour: int = NightConfig.START_HOUR
 var is_night_active: bool = false
 var last_game_over_cause: String = ""
+## El id del profe que te atrapó (image_slug()). Lo usa la pantalla de game over
+## para enseñar la cámara de donde salió. Vacío si no fue nadie en concreto.
+var last_game_over_slug: String = ""
 ## La ventana del Asistente IA sigue abierta aunque el jugador baje la PC:
 ## es justo lo que delata al guardia ante Mamador.
 var is_ai_window_open: bool = false
@@ -75,6 +78,17 @@ func prepare_custom_night(levels: Dictionary) -> void:
 	custom_levels = levels.duplicate()
 
 
+## true si esta Custom Night lleva los ocho profes en 20. Es lo que vale la
+## tercera estrella del menú.
+func is_custom_night_maxed() -> bool:
+	if not is_custom_night:
+		return false
+	for key: String in Nights.ALL_KEYS:
+		if int(custom_levels.get(key, 0)) < Nights.MAX_AI_LEVEL:
+			return false
+	return true
+
+
 ## El nivel que le toca a un profe esta noche: el de la tabla, o el que eligió
 ## el jugador si es Custom Night.
 func ai_level_for(key: String) -> int:
@@ -88,6 +102,7 @@ func start_night(night: int = current_night) -> void:
 	current_hour = NightConfig.START_HOUR
 	_hour_elapsed = 0.0
 	last_game_over_cause = ""
+	last_game_over_slug = ""
 	_hallway_holder = null
 	_completed_tasks.clear()
 	_night_tasks = Tasks.pick_for_night(current_night)

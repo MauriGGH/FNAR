@@ -14,6 +14,7 @@ const SAVE_PATH: String = "user://save.cfg"
 
 const SECTION_PROGRESS: String = "progreso"
 const SECTION_UNLOCKS: String = "desbloqueos"
+const SECTION_OPTIONS: String = "opciones"
 
 ## La noche a la que puede entrar "Continuar". Empieza en la 1.
 var night_reached: int = 1
@@ -24,6 +25,16 @@ var player_name: String = GameManager.PLAYER_NAME
 var newspapers: Array[int] = []
 var dossiers: Array[String] = []
 var jumpscares: Array[String] = []
+
+## Las noches que se pasaron de verdad. night_reached no sirve para esto: se
+## topa en la última, así que pasar la 5 y pasar la 6 lo dejan igual, y las
+## estrellas del menú sí tienen que distinguirlas.
+var nights_cleared: Array[int] = []
+## Ganar una Custom Night con los ocho profes en 20, que vale la tercera estrella.
+var custom_mastered: bool = false
+
+## Opciones. La pantalla completa la pone y la lee DisplayManager.
+var fullscreen: bool = true
 
 
 func _ready() -> void:
@@ -40,6 +51,13 @@ func is_extras_unlocked() -> bool:
 	return night_reached > NightConfig.EXTRAS_FROM_NIGHT
 
 
+func set_fullscreen(enabled: bool) -> void:
+	if fullscreen == enabled:
+		return
+	fullscreen = enabled
+	save_game()
+
+
 func set_player_name(new_name: String) -> void:
 	player_name = _clean_name(new_name)
 	GameManager.player_name = player_name
@@ -49,7 +67,34 @@ func set_player_name(new_name: String) -> void:
 ## Deja apuntado que pasó esa noche: la siguiente queda disponible.
 func mark_night_cleared(night: int) -> void:
 	night_reached = maxi(night_reached, mini(night + 1, NightConfig.LAST_NIGHT))
+	if not night in nights_cleared:
+		nights_cleared.append(night)
+		nights_cleared.sort()
 	save_game()
+
+
+func has_cleared_night(night: int) -> bool:
+	return night in nights_cleared
+
+
+## Ganó una Custom Night con todo en 20.
+func mark_custom_mastered() -> void:
+	if custom_mastered:
+		return
+	custom_mastered = true
+	save_game()
+
+
+## Las estrellas del menú: la noche 5, la noche 6 y la Custom Night al máximo.
+func star_count() -> int:
+	var stars: int = 0
+	if has_cleared_night(NightConfig.EXTRAS_FROM_NIGHT):
+		stars += 1
+	if has_cleared_night(NightConfig.LAST_NIGHT):
+		stars += 1
+	if custom_mastered:
+		stars += 1
+	return stars
 
 
 func unlock_newspaper(index: int) -> void:
@@ -86,12 +131,14 @@ func has_jumpscare(cause: String) -> bool:
 	return cause in jumpscares
 
 
-## Borra la partida. La usa "Nueva partida".
+## Borra la partida. Las opciones no son progreso: la pantalla completa se queda.
 func reset() -> void:
 	night_reached = 1
 	newspapers.clear()
 	dossiers.clear()
 	jumpscares.clear()
+	nights_cleared.clear()
+	custom_mastered = false
 	save_game()
 
 
@@ -102,6 +149,9 @@ func save_game() -> void:
 	file.set_value(SECTION_UNLOCKS, "newspapers", newspapers)
 	file.set_value(SECTION_UNLOCKS, "dossiers", dossiers)
 	file.set_value(SECTION_UNLOCKS, "jumpscares", jumpscares)
+	file.set_value(SECTION_PROGRESS, "nights_cleared", nights_cleared)
+	file.set_value(SECTION_PROGRESS, "custom_mastered", custom_mastered)
+	file.set_value(SECTION_OPTIONS, "fullscreen", fullscreen)
 	file.save(SAVE_PATH)
 	changed.emit()
 
@@ -116,6 +166,9 @@ func load_game() -> void:
 	newspapers = _to_int_array(file.get_value(SECTION_UNLOCKS, "newspapers", []))
 	dossiers = _to_string_array(file.get_value(SECTION_UNLOCKS, "dossiers", []))
 	jumpscares = _to_string_array(file.get_value(SECTION_UNLOCKS, "jumpscares", []))
+	nights_cleared = _to_int_array(file.get_value(SECTION_PROGRESS, "nights_cleared", []))
+	custom_mastered = bool(file.get_value(SECTION_PROGRESS, "custom_mastered", false))
+	fullscreen = bool(file.get_value(SECTION_OPTIONS, "fullscreen", true))
 	GameManager.player_name = player_name
 
 

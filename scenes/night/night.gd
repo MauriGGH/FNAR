@@ -564,7 +564,12 @@ func _on_blackout_changed(is_blackout: bool) -> void:
 func _on_night_won(night: int) -> void:
 	_end_night()
 	blackout_death.cancel()
-	if not GameManager.is_custom_night:
+	if GameManager.is_custom_night:
+		# La Custom Night no da recorte ni avanza la historia, pero ganarla con
+		# los ocho en 20 vale una estrella en el menú.
+		if GameManager.is_custom_night_maxed():
+			SaveGame.mark_custom_mastered()
+	else:
 		SaveGame.mark_night_cleared(night)
 		SaveGame.unlock_newspaper(Newspapers.index_for_cleared_night(night))
 		_unlock_night_dossiers()
@@ -589,10 +594,13 @@ func _on_game_over(cause: String) -> void:
 	_end_night()
 	blackout_death.cancel()
 	var jumpscare_id: String = BLACKOUT_JUMPSCARE if cause == BLACKOUT_CAUSE else ""
+	# El apagón es cosa del Mago, aunque no se le haya visto venir.
+	GameManager.last_game_over_slug = BLACKOUT_JUMPSCARE if cause == BLACKOUT_CAUSE else ""
 	for animatronic: Animatronic in _animatronics:
 		if animatronic.game_over_cause() != cause:
 			continue
 		SaveGame.unlock_dossier(animatronic.image_slug())
+		GameManager.last_game_over_slug = animatronic.image_slug()
 		jumpscare_id = animatronic.jumpscare_id()
 		break
 	SaveGame.unlock_jumpscare(cause)

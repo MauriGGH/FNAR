@@ -103,7 +103,7 @@ func _draw() -> void:
 	draw_rect(rect.grow(FRAME_WIDTH), FRAME_COLOR)
 	draw_texture_rect(_texture, rect, false)
 
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var hint_width: float = font.get_string_size(HINT_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, HINT_SIZE).x
 	draw_string(font, Vector2((size.x - hint_width) * 0.5, rect.end.y + FRAME_WIDTH + 30.0),
 		HINT_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1.0, HINT_SIZE, HINT_COLOR)

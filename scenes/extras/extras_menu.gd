@@ -16,6 +16,8 @@ const LOCKED_TEXT: String = "???"
 const CARD_SIZE: Vector2 = Vector2(188.0, 236.0)
 const CARD_GAP: int = 14
 const CARD_COLUMNS: int = 4
+## Dónde empiezan las rejillas, por debajo de las pestañas.
+const GRID_TOP: float = 150.0
 const CARD_NAME_SIZE: int = 18
 const CARD_ROLE_SIZE: int = 14
 const CARD_FILL: Color = Color(0.1, 0.11, 0.13, 0.8)
@@ -42,13 +44,13 @@ var _content: Control = null
 
 func _ready() -> void:
 	MenuBackdrop.build(self)
-	_build_header()
+	# El contenido va primero para que las pestañas y el pie queden encima: los
+	# expedientes se ven a pantalla completa y pasan por debajo de ellos.
 	_content = Control.new()
 	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_content.offset_top = 150.0
-	_content.offset_bottom = -90.0
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_content)
+	_build_header()
 	_build_footer()
 	_show_section(Section.DOSSIERS)
 
@@ -115,17 +117,22 @@ func _show_section(section: Section) -> void:
 			_build_jumpscares()
 
 
-## Una ficha por personaje. Las que no se han desbloqueado van en silueta.
+## Los expedientes, uno por pantalla. Las imágenes ya son la escena completa
+## (la carpeta y el plano), así que no hay nada que recortar: se enseñan tal
+## cual y se pasa de una a otra con las flechas o con clic. Los que todavía no
+## se desbloquean salen desenfocados y oscuros, con "???" encima.
 func _build_dossiers() -> void:
-	var grid: GridContainer = _make_grid()
+	var pages: Array[Dictionary] = []
 	for character_id: String in Extras.DOSSIER_IDS:
 		var sheet: Array = SHEETS.get(character_id, [character_id, "", ""])
-		var unlocked: bool = SaveGame.has_dossier(character_id)
-		grid.add_child(_make_card(
-			Extras.dossier_texture(character_id) if unlocked else null,
-			str(sheet[0]) if unlocked else LOCKED_TEXT,
-			str(sheet[1]) if unlocked else "",
-			str(sheet[2]) if unlocked else ""))
+		pages.append({
+			"texture": Extras.dossier_texture(character_id),
+			"unlocked": SaveGame.has_dossier(character_id),
+			"caption": "%s · %s — %s" % [str(sheet[0]), str(sheet[1]), str(sheet[2])],
+		})
+	var gallery: ArtGallery = ArtGallery.new()
+	_content.add_child(gallery)
+	gallery.setup(pages)
 
 
 ## Los recortes desbloqueados, para releerlos.
@@ -175,7 +182,7 @@ func _make_grid() -> GridContainer:
 	grid.add_theme_constant_override("h_separation", CARD_GAP)
 	grid.add_theme_constant_override("v_separation", CARD_GAP)
 	grid.position = Vector2(
-		(size.x - (CARD_SIZE.x + CARD_GAP) * CARD_COLUMNS + CARD_GAP) * 0.5, 0.0)
+		(size.x - (CARD_SIZE.x + CARD_GAP) * CARD_COLUMNS + CARD_GAP) * 0.5, GRID_TOP)
 	_content.add_child(grid)
 	return grid
 

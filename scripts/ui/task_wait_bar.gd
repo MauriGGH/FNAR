@@ -73,7 +73,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var paused: bool = is_running and not PowerManager.is_pc_open
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var label: String = _text
 	if is_done:
 		label = "%s  listo" % _text

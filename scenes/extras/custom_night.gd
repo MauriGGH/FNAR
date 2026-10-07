@@ -155,7 +155,7 @@ func _build_footer() -> void:
 
 func _on_play() -> void:
 	GameManager.prepare_custom_night(_levels)
-	get_tree().change_scene_to_file(Screens.NIGHT_INTRO)
+	LoadingScreen.go_to(get_tree(), Screens.NIGHT_INTRO)
 
 
 func _on_back() -> void:

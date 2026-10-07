@@ -413,9 +413,57 @@ func _build_screens_section() -> void:
 	if not papers.is_empty():
 		_add_row(body, papers)
 
+	_add_label(body, "Documentos (con tu nombre encima):")
+	_add_button(body, "Recibo de la noche 5", func() -> void:
+		_show_document(Documents.RECEIPT_NIGHT_5))
+	_add_button(body, "Recibo de la noche 6", func() -> void:
+		_show_document(Documents.RECEIPT_NIGHT_6))
+	_add_button(body, "Carta de despido", func() -> void:
+		_show_document(Documents.DISMISSAL))
+	_add_button(body, "Las tres seguidas", func() -> void:
+		close()
+		DocumentScreen.show_documents(get_tree(), Documents.IDS.duplicate(), Screens.MAIN_MENU))
+
 	_add_button(body, "Intro de noche", func() -> void: _go_to(Screens.NIGHT_INTRO))
+	_add_button(body, "Pantalla de carga", func() -> void:
+		close()
+		LoadingScreen.go_to(get_tree(), Screens.MAIN_MENU))
 	_add_button(body, "Pantalla final", func() -> void: _go_to(Screens.ENDING))
+
+	_add_label(body, "Menú principal con estas estrellas:")
+	var stars: Array = []
+	for count: int in 4:
+		stars.append([str(count), func() -> void: _show_menu_with_stars(count)])
+	_add_row(body, stars)
+
 	_add_button(body, "Extras con todo desbloqueado", _unlock_everything)
+	_add_button(body, "Extras con todo bloqueado", _lock_everything)
+
+
+func _show_document(document_id: String) -> void:
+	close()
+	DocumentScreen.show_documents(get_tree(), [document_id], Screens.MAIN_MENU)
+
+
+## El menú con 0 a 3 estrellas, para ver cómo quedan sin tener que jugarlas.
+func _show_menu_with_stars(count: int) -> void:
+	SaveGame.nights_cleared = []
+	SaveGame.custom_mastered = false
+	if count >= 1:
+		SaveGame.nights_cleared.append(NightConfig.EXTRAS_FROM_NIGHT)
+	if count >= 2:
+		SaveGame.nights_cleared.append(NightConfig.LAST_NIGHT)
+	SaveGame.custom_mastered = count >= 3
+	SaveGame.save_game()
+	_go_to(Screens.MAIN_MENU)
+
+
+## Vuelve a dejarlo todo bloqueado, para ver las siluetas con "???".
+func _lock_everything() -> void:
+	SaveGame.reset()
+	SaveGame.night_reached = NightConfig.LAST_NIGHT
+	SaveGame.save_game()
+	_go_to(Screens.EXTRAS_MENU)
 
 
 func _show_newspaper(index: int) -> void:
@@ -428,6 +476,9 @@ func _show_newspaper(index: int) -> void:
 ## Abre todo lo que se desbloquea jugando, para poder revisar Extras.
 func _unlock_everything() -> void:
 	SaveGame.night_reached = NightConfig.LAST_NIGHT
+	SaveGame.mark_night_cleared(NightConfig.EXTRAS_FROM_NIGHT)
+	SaveGame.mark_night_cleared(NightConfig.LAST_NIGHT)
+	SaveGame.mark_custom_mastered()
 	for i: int in Newspapers.count():
 		SaveGame.unlock_newspaper(i)
 	for character_id: String in Extras.DOSSIER_IDS:

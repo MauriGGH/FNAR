@@ -18,22 +18,25 @@ config/icon="res://icon.svg"
 [audio]
 
 general/text_to_speech=true
+buses/default_bus_layout="res://assets/audio/buses.tres"
 
 [autoload]
 
 PowerManager="*res://autoload/power_manager.gd"
 GameManager="*res://autoload/game_manager.gd"
 SaveGame="*res://autoload/save_game.gd"
+DisplayManager="*res://autoload/display_manager.gd"
+AudioManager="*res://autoload/audio_manager.gd"
 
 [display]
 
 window/size/mode=4
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/aspect="keep"
 
 [gui]
 
-theme/custom_font="res://assets/fonts/VT323-Regular.ttf"
+theme/custom="res://assets/fonts/game_theme.tres"
 
 [input]
 

@@ -378,7 +378,7 @@ func _draw_switch_body() -> void:
 ## Los 24 puertos: sobre la foto solo el realce del que está bajo el mouse
 ## y el brillo de los libres mientras arrastras.
 func _draw_ports() -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	for port: int in PORT_COUNT:
 		var number: int = port + 1
 		var pp: Rect2 = _pp_rect(number)
@@ -528,7 +528,7 @@ func _draw_cord_label(center: Vector2, camera: int) -> void:
 	DrawKit.rect_shadow(self, rect, Vector2(2.0, 3.0))
 	DrawKit.gradient_rect(self, rect, PAPER, PAPER_SHADE)
 	DrawKit.soft_outline(self, rect, PAPER_SHADE.darkened(0.3))
-	_draw_centered(get_theme_default_font(), rect.get_center() + Vector2(0.0, 5.0),
+	_draw_centered(Fonts.terminal(), rect.get_center() + Vector2(0.0, 5.0),
 		"CAM %02d" % camera, 13, PAPER_INK)
 
 
@@ -607,7 +607,7 @@ func _draw_sheet() -> void:
 
 ## El contenido impreso, repartido dentro de la hoja para que siempre quepa.
 func _draw_sheet_table(sheet: Rect2) -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var body_size: int = int(clampf(sheet.size.x * 0.185, 12.0, 20.0))
 	var head_size: int = maxi(body_size - 3, 10)
 	var rule: Color = Color(PAPER_INK.r, PAPER_INK.g, PAPER_INK.b, 0.5)

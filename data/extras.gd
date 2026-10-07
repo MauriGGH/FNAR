@@ -19,6 +19,22 @@ const JUMPSCARE_IDS: Dictionary = {
 	"come_trabas": "cometrabas",
 }
 
+## La imagen de la cámara vacía del lugar de donde sale cada profe. La usa la
+## pantalla de game over: después de la estática se ve el sitio del que vino,
+## sin él. Son nombres de archivo reales, no se construyen a medias: la CAM 10
+## no tiene "vacia", su versión sin Barcosa es la de cuando ya salió.
+const ORIGIN_CAMERAS: Dictionary = {
+	"barcosa": "cam10_salio",
+	"mamador": "cam13_vacia",
+	"juan": "cam13_vacia",
+	"armando": "cam13_vacia",
+	"urena": "cam12_vacia",
+	"rochis": "cam03_vacia",
+	"come_trabas": "cam04_vacia",
+	"audel": "cam06_vacia",
+}
+const CAMERA_PATH: String = "res://assets/art/cameras/%s"
+
 ## Todos los ids con expediente, en el orden en que irán en el menú.
 const DOSSIER_IDS: Array[String] = [
 	"barcosa", "mamador", "urena", "rochis", "audel", "juan", "armando", "come_trabas",
@@ -50,3 +66,12 @@ static func jumpscare_id(character_id: String) -> String:
 	if character_id == "mamador":
 		return "mamador_militares"
 	return str(JUMPSCARE_IDS.get(character_id, character_id))
+
+
+## La imagen de la cámara de donde salió un profe, o null si no se sabe quién
+## fue (por ejemplo un game over sin culpable concreto).
+static func origin_camera_texture(character_id: String) -> Texture2D:
+	var image_name: String = str(ORIGIN_CAMERAS.get(character_id, ""))
+	if image_name.is_empty():
+		return null
+	return GameAssets.load_texture(CAMERA_PATH % image_name)

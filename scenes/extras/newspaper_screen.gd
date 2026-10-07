@@ -12,6 +12,8 @@ extends Control
 ## de cambiar de escena, porque change_scene_to_file no deja pasar datos.
 static var pending_index: int = Newspapers.FIRST_INDEX
 static var next_scene: String = Screens.NIGHT_INTRO
+## Las hojas que se entregan después del recorte, si esa noche lleva alguna.
+static var pending_documents: Array[String] = []
 
 const PAPER: Color = Color(0.85, 0.83, 0.76)
 const PAPER_SHADE: Color = Color(0.76, 0.74, 0.67)
@@ -81,7 +83,12 @@ func _input(event: InputEvent) -> void:
 
 
 func _continue() -> void:
-	get_tree().change_scene_to_file(next_scene)
+	if pending_documents.is_empty():
+		get_tree().change_scene_to_file(next_scene)
+		return
+	var documents: Array[String] = pending_documents.duplicate()
+	pending_documents = []
+	DocumentScreen.show_documents(get_tree(), documents, next_scene)
 
 
 func _draw() -> void:
@@ -101,7 +108,7 @@ func _draw() -> void:
 
 ## La plantilla de periódico, para mientras no haya imagen del recorte.
 func _draw_template(sheet: Rect2) -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.typewriter()
 	DrawKit.gradient_rect(self, sheet, PAPER, PAPER_SHADE)
 	# Fibras del papel, siempre las mismas.
 	for i: int in 40:

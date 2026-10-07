@@ -107,7 +107,7 @@ func _on_start() -> void:
 	SaveGame.unlock_newspaper(Newspapers.FIRST_INDEX)
 	GameManager.prepare_night(1)
 	# El recorte 0 sale antes de la primera noche.
-	get_tree().change_scene_to_file(Screens.NEWSPAPER)
+	LoadingScreen.go_to(get_tree(), Screens.NEWSPAPER)
 
 
 func _on_back() -> void:

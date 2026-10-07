@@ -232,7 +232,7 @@ func _draw_warning_label(plate: Rect2) -> void:
 		triangle_center + Vector2(1.0, -4.0),
 	]), INK)
 
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	draw_string(font, label.position + Vector2(74.0, 34.0), "PELIGRO", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 24, INK)
 	draw_string(font, label.position + Vector2(74.0, 60.0), "ALTA TENSION", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 18, INK)
 
@@ -244,7 +244,7 @@ func _draw_track(plate: Rect2) -> void:
 	# Hundido: oscuro arriba, un poco de luz al fondo.
 	DrawKit.gradient_rect(self, track.grow(-2.0), Color(0.08, 0.085, 0.09), RECESS_COLOR.lightened(0.12))
 
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	draw_string(font, Vector2(track.position.x - 52.0, track.position.y + 22.0), "ON", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 22, ENGRAVED)
 	draw_string(font, Vector2(track.position.x - 56.0, track.end.y - 8.0), "OFF", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 22, ENGRAVED)
 	# Muescas del recorrido.
@@ -282,7 +282,7 @@ func _draw_lights(plate: Rect2) -> void:
 	_draw_lamp(plate.position + GREEN_LIGHT, LAMP_GREEN, green)
 	_draw_lamp(plate.position + RED_LIGHT, LAMP_RED, red)
 
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	_draw_centered(font, plate.position + GREEN_LIGHT + Vector2(0.0, 40.0), "ENERGIA", 18, ENGRAVED)
 	_draw_centered(font, plate.position + RED_LIGHT + Vector2(0.0, 40.0), "CORTE", 18, ENGRAVED)
 
@@ -297,7 +297,7 @@ func _draw_lamp(center: Vector2, color: Color, intensity: float) -> void:
 
 ## La línea de estado: deja ver la cuenta de los 3 s y la de los 10 s.
 func _draw_status(plate: Rect2) -> void:
-	var font: Font = get_theme_default_font()
+	var font: Font = Fonts.terminal()
 	var text: String = "LISTO"
 	var color: Color = ENGRAVED
 	if PowerManager.is_blackout:

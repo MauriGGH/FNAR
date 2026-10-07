@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/win_screen/win_screen.gd" id="1_win"]
+[ext_resource type="Script" path="res://scenes/win_screen/six_am_roll.gd" id="2_sixam"]
+[ext_resource type="Script" path="res://scenes/win_screen/alarm_sound.gd" id="3_alarm"]
+[ext_resource type="Script" path="res://scenes/win_screen/bell_sound.gd" id="4_bell"]
 
 [node name="WinScreen" type="Control"]
 layout_mode = 3
@@ -75,3 +78,18 @@ offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Jugar de nuevo"
+
+[node name="SixAmRoll" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_sixam")
+
+[node name="Alarm" type="AudioStreamPlayer" parent="SixAmRoll"]
+script = ExtResource("3_alarm")
+
+[node name="Bell" type="AudioStreamPlayer" parent="SixAmRoll"]
+script = ExtResource("4_bell")
