@@ -18,11 +18,11 @@ const IMAGE_AREA: Rect2 = Rect2(0.289, 0.293, 0.122, 0.391)
 ## De aquí hacia abajo está la lámina, y es lo único que se anima.
 const CURTAIN_TOP: float = 0.335
 
-## El cajón del rodillo es lo que queda arriba de CURTAIN_TOP. El diseño pide
-## que esté pintado en la foto de la oficina y no se dibuje nunca, pero
-## oficina_centro todavía no lo trae: ahí arriba solo hay un travesaño. Hasta
-## que se re-renderice la foto con el cajón, se dibuja de golpe (sin animar)
-## para que la lámina no cuelgue de la nada. Con la foto nueva, poner false.
+## El cajón del rodillo es lo que queda arriba de CURTAIN_TOP. La foto de la
+## oficina no lo trae (ahí arriba solo hay un travesaño) y no se va a
+## re-renderizar, así que lo dibuja este nodo recortándolo de la foto con la
+## cortina cerrada. Se ve SIEMPRE, con la puerta abierta y cerrada, y nunca se
+## anima: lo único que sube y baja es la lámina de abajo.
 const DRAW_ROLLER_BOX: bool = true
 
 # Bajar: 0.3 s de caída y 0.05 s de rebote, 0.35 s en total.
@@ -36,6 +36,8 @@ const OPEN_TIME: float = 0.5
 const SLAT_HEIGHT: float = 13.0
 ## Alto de la barra del filo de abajo, la que pesa.
 const BAR_HEIGHT: float = 9.0
+## Alto de la caja dibujada, para cuando no hay foto de la cortina.
+const DRAWN_BOX_HEIGHT: float = 22.0
 
 const METAL_TOP: Color = Color(0.3, 0.31, 0.33)
 const METAL_BOTTOM: Color = Color(0.17, 0.175, 0.19)
@@ -81,33 +83,40 @@ func set_closed(closed: bool) -> void:
 	_tween.tween_property(self, "progress", 1.0, BOUNCE_TIME)
 
 
-## true cuando la cortina ya no tapa nada, para no dibujar de más.
+## true cuando la lámina está recogida del todo. La caja se sigue viendo.
 func is_hidden_away() -> bool:
 	return progress <= 0.001
 
 
 func _draw() -> void:
-	if is_hidden_away():
-		return
 	if _texture != null:
 		_draw_from_image()
 		return
 	if _door_rect.size.y <= 0.0:
 		return
-	# Sin foto, la cortina dibujada llena justo el hueco de la puerta.
+	# Sin foto, la caja y la cortina se dibujan a mano.
+	if DRAW_ROLLER_BOX:
+		_draw_roller_box(Rect2(
+			Vector2(_door_rect.position.x, _door_rect.position.y - DRAWN_BOX_HEIGHT),
+			Vector2(_door_rect.size.x, DRAWN_BOX_HEIGHT)))
+	if is_hidden_away():
+		return
 	var shown: Rect2 = Rect2(_door_rect.position,
 		Vector2(_door_rect.size.x, _door_rect.size.y * clampf(progress, 0.0, 1.0)))
 	_draw_slats(shown)
 	_draw_bottom_bar(shown)
 
 
-## Recorta de la foto con la cortina cerrada. El cajón va completo desde el
-## primer frame; la lámina se revela de arriba hacia abajo.
+## Recorta de la foto con la cortina cerrada. La caja del rodillo se pinta
+## siempre, esté la puerta abierta o cerrada; la lámina, solo lo que haya
+## bajado, revelándose de arriba hacia abajo desde abajo de la caja.
 func _draw_from_image() -> void:
 	var area: Rect2 = Rect2(IMAGE_AREA.position * size, IMAGE_AREA.size * size)
 	var top: float = CURTAIN_TOP * size.y
 	if DRAW_ROLLER_BOX and top > area.position.y:
 		_blit(Rect2(area.position, Vector2(area.size.x, top - area.position.y)))
+	if is_hidden_away():
+		return
 	var height: float = (area.end.y - top) * clampf(progress, 0.0, 1.0)
 	if height <= 0.0:
 		return
@@ -140,6 +149,15 @@ func _draw_slats(shown: Rect2) -> void:
 		RAIL.lightened(0.18), RAIL)
 	DrawKit.gradient_rect(self, Rect2(Vector2(shown.end.x - rail, shown.position.y), Vector2(rail, shown.size.y)),
 		RAIL, RAIL.darkened(0.25))
+
+
+## La caja del rodillo dibujada: un tubo metálico con su brillo arriba.
+func _draw_roller_box(box: Rect2) -> void:
+	DrawKit.rect_shadow(self, box, Vector2(0.0, 4.0))
+	DrawKit.gradient_rect(self, box, BAR.lightened(0.1), BAR.darkened(0.45))
+	draw_line(box.position + Vector2(0.0, box.size.y * 0.28),
+		Vector2(box.end.x, box.position.y + box.size.y * 0.28), SLAT_EDGE, 2.0)
+	DrawKit.soft_outline(self, box, RAIL)
 
 
 ## La barra del filo de abajo: marca dónde va la cortina mientras se mueve.

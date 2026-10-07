@@ -38,7 +38,7 @@ res://
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
-- **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y las Trabas. Linterna hacia el pasillo, breaker, PC.
+- **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
 
 ## Cámaras
 
@@ -68,7 +68,7 @@ Hay dos escaleras. En el extremo sur del pasillo, junto a la coordinación, la e
 
 **Oficina por capas:** los profes en las vistas de la oficina son recortes con fondo transparente en `assets/art/office/layers/` (por ejemplo `centro_mamador.png`, `centro_urena.png`, `derecha_rochis.png`), del mismo tamaño que la vista. El código los encima según quién esté presente; los que solo se ven con linterna (Ureña, Juan.exe y Armando en el cristal) se revelan solo dentro del cono de luz.
 
-**Cortina de la puerta:** la caja de la cortina metálica sobre la puerta está pintada en todas las imágenes (oficina y CAM 2), así que siempre se ve aunque la puerta esté abierta. Al cerrar la puerta, la cortina baja desde esa caja. En la CAM 2, si la puerta está cerrada, el código encima sobre la imagen del estado actual el recorte de `cam02_cortina` en el rectángulo normalizado x 0.729, y 0.223, w 0.1245, h 0.752 (definido en `data/camera_overlays.gd`, que se mide sobre la imagen y no se adivina). Las imágenes `cam02_barcosa-golpeando` ya traen la cortina abajo y no llevan el recorte encima. En la CAM 2, Mamador se pinta a la izquierda de la puerta, frente al cristal del sillón, para no quedar tapado por la cortina.
+**Cortina de la puerta:** la caja de la cortina metálica sobre la puerta siempre se ve, aunque la puerta esté abierta. En la CAM 2 viene pintada en las imágenes; en la oficina la dibuja `door_shutter.gd` recortándola de la foto con la puerta cerrada (`DRAW_ROLLER_BOX` en true), porque `oficina_centro` con la puerta abierta no la trae. Lo que está delante de la puerta en la oficina (el mueble de la recepción, los perfiles del cristal) tapa la lámina mientras baja y cuando está cerrada. Al cerrar la puerta, la cortina baja desde esa caja. En la CAM 2, si la puerta está cerrada, el código encima sobre la imagen del estado actual el recorte de `cam02_cortina` en el rectángulo normalizado x 0.729, y 0.223, w 0.1245, h 0.752 (definido en `data/camera_overlays.gd`, que se mide sobre la imagen y no se adivina). Las imágenes `cam02_barcosa-golpeando` ya traen la cortina abajo y no llevan el recorte encima. En la CAM 2, Mamador se pinta a la izquierda de la puerta, frente al cristal del sillón, para no quedar tapado por la cortina.
 
 **Cámaras de ambiente (7, 8, 9):** ninguna ruta de ida pasa por ahí; solo las usan Mamador y Armando al retirarse (ver Rutas de retiro). Además, de vez en cuando muestran sucesos raros sin consecuencias (una sombra, una luz que parpadea), que sirven de atmósfera y de pistas para una secuela.
 
@@ -85,7 +85,7 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Mago Eléctrico (rol Balloon Boy; antes Audel Electrix):** en pantalla y diálogos se llama "Mago Eléctrico"; en código, ids, estados y archivos se sigue usando `audel` (por ejemplo `cam06_audel-acecho`, `centro_audel.png`) para no romper nada. vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
   - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
-- **Come Trabas (rol Puppet; antes era el profe Santi):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad, y con ella a las Trabas, que viven dentro de la botarga. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca el himno de la universidad (melodía original), sigue desplomada y las Trabas siguen adormecidas adentro. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y las Trabas salen de su boca hacia la oficina: game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía.
+- **Come Trabas (rol Puppet; antes era el profe Santi):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca el himno de la universidad (melodía original) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña en el pasillo; si no, game over "Juan.exe". No usa la reserva del pasillo.
 - **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "YA BÁJALE" en 6 s. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
 - **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
@@ -119,12 +119,34 @@ La mecánica de Claudio de Armando solo se activa desde la noche 4.
 
 Custom Night: cada nivel de 0 a 20.
 
+## Lore, periódicos y Extras
+
+La historia de fondo no se explica en el juego: se va descubriendo en recortes de periódico. Al terminar cada noche, la pantalla de las 6 AM da paso a un recorte nuevo (como el periódico de FNAF), que se desbloquea y queda guardado en `user://save.cfg`. Los textos están en `data/newspapers.gd` (título, fecha, cuerpo e imagen opcional `assets/art/extras/periodico_N.png`); si falta la imagen, se dibuja con una plantilla de periódico y el texto.
+
+| Recorte | Se desbloquea | Contenido |
+| --- | --- | --- |
+| 0 | Al empezar la noche 1 | Anuncio: la Coordinación de Sistemas busca alumno para guardia nocturna. "Excelente oportunidad de servicio social." |
+| 1 | Al pasar la noche 1 | Desaparece el profe Santi durante el evento de bienvenida; la última vez lo vieron con la botarga de la mascota puesta. |
+| 2 | Al pasar la noche 2 | Alumnos reportan que la botarga, guardada en el cubículo 3, toca el himno de la universidad sola por las noches. |
+| 3 | Al pasar la noche 3 | Hallan velas, sal y un símbolo extraño en la sala de juntas; la universidad niega cualquier ritual. Nadie sabe quién convocó esa junta. |
+| 4 | Al pasar la noche 4 | Renuncia el personal de limpieza nocturno: "dentro de la botarga se oyen voces, muchas voces". (Pista de las Trabas.) |
+| 5 | Al pasar la noche 5 | Se filtra la lista de asistentes a la junta de esa noche: los nombres aparecen tachados. |
+| 6 | Al pasar la noche 6 | La universidad clausura la coordinación. "El responsable sigue sin ser identificado." (Gancho para la secuela.) |
+
+**Extras** (botón del menú principal, se desbloquea al pasar la noche 5, como en los juegos originales):
+- **Expedientes:** una ficha por personaje con su hoja de referencia (`assets/art/extras/expediente_<id>.png`), su nombre en pantalla, su rol y una línea de descripción. Se desbloquea la ficha de un profe la primera vez que te mata o al pasar la noche donde se activa.
+- **Periódicos:** los recortes desbloqueados, para releerlos.
+- **Jumpscares:** galería para reproducir los jumpscares ya vistos.
+- **Custom Night** (si no está ya en el menú principal).
+Lo bloqueado se muestra como silueta con "???".
+
 ## Hitos del prototipo
 
 1. Reloj, energía, oficina placeholder, puerta, pantallas de 6 AM y game over.
 2. Grafo de habitaciones, clase Animatronic y sistema de 12 cámaras con etiquetas de texto.
 3. Barcosa completo.
 4. PC con ventana de IA, una tarea de ejemplo y Mamador.
-5. Come Trabas y las Trabas, Ureña con linterna, Rochis con el audio, Mago Eléctrico con el breaker.
+5. Come Trabas (la botarga), Ureña con linterna, Rochis con el audio, Mago Eléctrico con el breaker.
 6. Configuración por noche, menú, selección de noche, Custom Night y guardado.
-7. Resto de tareas y jumpscares.
+7. Periódicos entre noches y menú de Extras.
+8. Resto de tareas y jumpscares.

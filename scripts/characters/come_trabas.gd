@@ -2,10 +2,10 @@ class_name ComeTrabas
 extends Animatronic
 
 ## Come Trabas (rol Puppet; antes el profe Santi). La botarga de la mascota con
-## el alma de Santi y las Trabas encerradas dentro. Mientras tenga cuerda sigue
-## desplomada en la silla del cubículo 3 y toca el himno; la cuerda baja sola y
-## se le da manteniendo el botón de la CAM 4. En cero levanta la cabeza, deja la
-## silla vacía y las Trabas salen hacia la oficina.
+## el alma de Santi dentro. Mientras tenga cuerda sigue desplomada en la silla
+## del cubículo 3 y toca el himno; la cuerda baja sola y se le da manteniendo
+## el botón de la CAM 4. En cero levanta la cabeza, deja la silla vacía y va
+## por el jugador: el salto es la botarga misma.
 ## No usa el dado de la IA: su reloj es la cuerda.
 
 enum Speed { SLOW, MEDIUM, FAST, VERY_FAST }
@@ -27,7 +27,7 @@ const WIND_PER_SECOND: float = 25.0
 const WARNING_THRESHOLD: float = 25.0
 ## Y debajo de este, el aviso se pone rojo y parpadea más rápido.
 const CRITICAL_THRESHOLD: float = 10.0
-## Lo que tarda en matarte desde que la cuerda llegó a cero.
+## Lo que tarda la botarga en llegar desde que la cuerda llegó a cero.
 const ATTACK_TIME: float = 5.0
 
 # Estados de la CAM 4. El sistema de cámaras busca cam04_<estado>.png.
@@ -133,7 +133,7 @@ func can_move() -> bool:
 
 func debug_text() -> String:
 	if is_attacking:
-		return "silla vacía, %.1f s para las Trabas" % maxf(ATTACK_TIME - _attack_elapsed, 0.0)
+		return "levantada, %.1f s para el salto" % maxf(ATTACK_TIME - _attack_elapsed, 0.0)
 	return "cuerda %d %% (%s)" % [roundi(wind), camera_state()]
 
 

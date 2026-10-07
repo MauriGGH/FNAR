@@ -1,7 +1,10 @@
 class_name Audel
 extends Animatronic
 
-## Audel Electrix (rol Balloon Boy). Vive en el techo y baja por la escalera
+## El Mago Eléctrico (rol Balloon Boy; antes Audel Electrix). En pantalla se
+## llama "Mago Eléctrico", pero el id, la clase, los estados y los archivos
+## siguen siendo audel (cam06_audel-acecho, centro_audel.png) para no romper
+## nada. Vive en el techo y baja por la escalera
 ## hacia la recepción y la oficina. No mata: si entra, hace el "cortaso", que
 ## se lleva un pedazo de energía y deja la linterna muerta un rato.
 ## Si le bajas el breaker mientras va en la escalera, se regresa al techo.
@@ -31,7 +34,7 @@ const DISCHARGE_NOTICE: String = "[chispazo en el techo]"
 const LADDER_NOTICE: String = "[zumbido eléctrico]"
 const CORTASO_NOTICE: String = "[cortaso]"
 const NOTICE_TIME: float = 2.5
-const LADDER_PRESENCE: String = "Audel bajando la escalera"
+const LADDER_PRESENCE: String = "Mago Eléctrico bajando la escalera"
 const LADDER_ZONE: String = "ladder"
 
 ## Avisa que hay que dibujar las chispas sobre la pantalla.

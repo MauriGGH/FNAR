@@ -30,21 +30,26 @@ const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
 
+## Máscara de oclusión de la puerta: los pedazos de la foto que están más
+## cerca de la cámara que la puerta (el mueble de la recepción, su base y los
+## perfiles del cristal) y que por lo tanto tapan la lámina de la cortina.
+## La genera tools/make_door_occluder.py; si no está, no pasa nada.
+const DOOR_OCCLUDER_PATH: String = "res://assets/art/office/layers/oclusor_puerta"
+
 ## Nombre de cada vista en los archivos de recorte: layers/centro_urena.png.
 const VIEW_LAYER_NAMES: Array[String] = ["izquierda", "centro", "derecha"]
-## Si existe la foto de Ureña se usa; si no, una etiqueta.
-const URENA_PHOTO_PATH: String = "res://assets/art/office/layers/urena_foto"
+## La foto que deja Ureña es un recorte del tamaño de la vista central, ya
+## colocado sobre el escritorio, así que va como capa fija. Si alguna vez hay
+## varias, se llamarán urena_foto_2, urena_foto_3... y se van encimando.
+const URENA_PHOTO_LAYER: String = "urena_foto"
 
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
 
 ## La zona del cristal, que es lo que alumbra la linterna.
 const GLASS_ZONE: String = "front_glass"
-## Dónde se pegan las fotos de Ureña, sobre el escritorio.
-const PHOTO_SPOTS: Array[Vector2] = [
-	Vector2(0.27, 0.88), Vector2(0.35, 0.9), Vector2(0.43, 0.88), Vector2(0.51, 0.9),
-]
-const PHOTO_SIZE: Vector2 = Vector2(96.0, 74.0)
+## Cuántas fotos puede llegar a dejar en una noche.
+const MAX_URENA_PHOTOS: int = 4
 
 ## Cada vista se dibuja este factor más grande que la pantalla. Lo que sobra a
 ## lo ancho es el recorrido del mouse; a cambio se recorta un poco arriba y abajo.
@@ -152,6 +157,7 @@ var _urena_photos: int = 0
 var flashlight_overlay: Control = null
 var phone_light: Control = null
 var door_shutter: Control = null
+var door_occluder: TextureRect = null
 var _layers: Array[Control] = []
 var _shake_left: float = 0.0
 
@@ -171,11 +177,15 @@ func _ready() -> void:
 	_build_zones(CENTER_ZONES_PATH, $Views/CenterView/Content/Zones, CENTER_CLICKABLE)
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
-	# El orden importa: los recortes de los profes van debajo de la cortina
-	# (quien golpea la puerta queda detrás del metal) y las etiquetas de
-	# presencia encima de todo, para que se lean con la cortina cerrada.
-	_build_layers()
+	# El orden importa: la cortina y su caja van sobre la foto, encima de
+	# ellas la máscara de oclusión (lo que está delante de la puerta), después
+	# los recortes de los profes del cristal y al final las etiquetas de
+	# presencia, para que se lean con la cortina cerrada. La capa de oscuridad
+	# se crea después de todo eso, así que la cortina y la máscara también se
+	# apagan cuando se va la luz.
 	_build_door_shutter()
+	_build_door_occluder()
+	_build_layers()
 	_build_labels()
 	_build_blackout_overlays()
 	_build_flashlight()
@@ -235,34 +245,29 @@ func set_phone_in_call(in_call: bool) -> void:
 
 ## Pega una foto de Ureña sobre el escritorio. Las fotos se quedan.
 func add_urena_photo() -> void:
-	if _urena_photos >= PHOTO_SPOTS.size():
+	if _urena_photos >= MAX_URENA_PHOTOS:
 		return
-	var spot: Vector2 = PHOTO_SPOTS[_urena_photos]
 	_urena_photos += 1
-	var content_size: Vector2 = size * VIEW_SCALE
-	var photo: Control = null
-	var texture: Texture2D = GameAssets.load_texture(URENA_PHOTO_PATH)
-	if texture != null:
-		var rect: TextureRect = TextureRect.new()
-		rect.texture = texture
-		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		photo = rect
-	else:
-		var label: Label = Label.new()
-		label.text = "[foto de\nUreña]"
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 16)
-		label.add_theme_color_override("font_color", Color(0.9, 0.88, 0.82))
-		label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
-		label.add_theme_constant_override("outline_size", 6)
-		photo = label
-	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	photo.size = PHOTO_SIZE
-	photo.position = Vector2(spot.x * content_size.x, spot.y * content_size.y) - PHOTO_SIZE * 0.5
-	photo.pivot_offset = PHOTO_SIZE * 0.5
-	photo.rotation = randf_range(-0.12, 0.12)  # Cada una un poco chueca.
-	center_content.add_child(photo)
+	_refresh_urena_photos()
+
+
+## Cuántas fotos lleva pegadas, para la etiqueta de depuración.
+func urena_photo_count() -> int:
+	return _urena_photos
+
+
+## Enseña los recortes de las fotos que ya dejó. La primera es urena_foto; de
+## la segunda en adelante solo salen si existe su archivo.
+func _refresh_urena_photos() -> void:
+	if _layers.size() <= View.CENTER:
+		return
+	var layer: Control = _layers[View.CENTER]
+	var names: PackedStringArray = PackedStringArray()
+	for i: int in _urena_photos:
+		var file_name: String = URENA_PHOTO_LAYER if i == 0 else "%s_%d" % [URENA_PHOTO_LAYER, i + 1]
+		if layer.has_pinned(file_name):
+			names.append(file_name)
+	layer.set_pinned(names)
 
 
 ## El night.gd apaga la interacción mientras las cámaras están arriba, para que
@@ -335,6 +340,9 @@ func _layout_flashlight() -> void:
 		layer.position = Vector2.ZERO
 		layer.size = content_size
 		layer.set_lit(_flashlight_on, zone_rect(GLASS_ZONE))
+	if door_occluder != null:
+		door_occluder.position = Vector2.ZERO
+		door_occluder.size = content_size
 	if door_shutter != null:
 		door_shutter.position = Vector2.ZERO
 		door_shutter.size = content_size
@@ -712,6 +720,20 @@ func has_layer(view: int, slug: String) -> bool:
 	if view < 0 or view >= _layers.size():
 		return false
 	return _layers[view].has_layer(slug)
+
+
+## La máscara de oclusión: va justo encima de la cortina, así que la lámina
+## baja por detrás del mueble y de los perfiles del cristal.
+func _build_door_occluder() -> void:
+	var texture: Texture2D = GameAssets.load_texture(DOOR_OCCLUDER_PATH)
+	if texture == null:
+		return  # Todavía no se ha generado: la cortina se dibuja como antes.
+	door_occluder = TextureRect.new()
+	door_occluder.name = "DoorOccluder"
+	door_occluder.texture = texture
+	door_occluder.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	door_occluder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center_content.add_child(door_occluder)
 
 
 ## Sacude la vista un momento. Lo usa el golpe de la cortina.

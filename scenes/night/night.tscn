@@ -70,7 +70,7 @@ display_name = "Ureña"
 
 [node name="Audel" type="Node" parent="Animatronics"]
 script = ExtResource("13_audel")
-display_name = "Audel"
+display_name = "Mago Eléctrico"
 
 [node name="Rochis" type="Node" parent="Animatronics"]
 script = ExtResource("22_rochis")
