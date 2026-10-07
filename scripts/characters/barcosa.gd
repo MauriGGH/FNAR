@@ -13,9 +13,6 @@ enum State {
 	BANGING,   # Golpeando la puerta cerrada
 }
 
-## Nivel de IA mientras no exista la configuración por noche (hito 6).
-## Para probar: 10. Con 20 sale casi siempre; con 0 no se mueve en toda la noche.
-const DEBUG_AI_LEVEL: int = 10
 
 # Su ruta fija. Los índices son los pasos que usa move_to_step().
 const ROUTE: Array[String] = ["salon_b", "pasillo_norte", "pasillo_sur"]
@@ -59,8 +56,12 @@ var _bang_elapsed: float = 0.0
 var _knock_timer: float = 0.0
 
 
+func ai_key() -> String:
+	return Nights.BARCOSA
+
+
 func start() -> void:
-	ai_level = DEBUG_AI_LEVEL
+	ai_level = night_ai_level()
 	move_interval = STAGE_INTERVAL
 	route = PackedStringArray(ROUTE)
 	super()

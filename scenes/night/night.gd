@@ -45,6 +45,8 @@ const FLASH_TIME: float = 0.28
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
 
+const ARMANDO_NOTICE: String = "[Armando borró tu progreso]"
+
 var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
 var _come_trabas: ComeTrabas = null
@@ -67,6 +69,8 @@ func _ready() -> void:
 			_come_trabas.music_stopped.connect(office.set_right_view_empty.bind(true))
 		elif animatronic is Urena:
 			_urena = animatronic as Urena
+		elif animatronic is ArmandoPrompts:
+			pc_screen.set_armando(animatronic as ArmandoPrompts)
 		elif animatronic is Audel:
 			_audel = animatronic as Audel
 			_audel.cortaso_started.connect(cortaso_overlay.play)
@@ -97,6 +101,7 @@ func _ready() -> void:
 	camera_system.opened.connect(_on_cameras_opened)
 	camera_system.closed.connect(_on_cameras_closed)
 	camera_system.camera_changed.connect(_on_camera_changed)
+	camera_system.notice_requested.connect(notice_banner.show_notice)
 	camera_bar.hovered.connect(_on_camera_bar_hovered)
 
 	# La PC y las cámaras no pueden estar abiertas a la vez.
@@ -104,6 +109,7 @@ func _ready() -> void:
 	camera_system.opened.connect(pc_screen.close)
 	# Al bajar la PC, la vista de la oficina regresa de su acercamiento.
 	pc_screen.closed.connect(office.zoom_out)
+	pc_screen.armando_won.connect(_on_armando_won)
 
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
@@ -292,6 +298,13 @@ func _on_call_ended() -> void:
 	_urena_call_ringing = false
 	office.set_phone_ringing(false)
 	office.set_phone_in_call(false)
+
+
+## Armando se apareció en la pantalla y el jugador no lo echó a tiempo: su
+## progreso ya se borró en la PC, aquí se cobra la energía.
+func _on_armando_won() -> void:
+	PowerManager.drain(ArmandoPrompts.TAKEOVER_POWER_COST)
+	notice_banner.show_notice(ARMANDO_NOTICE, NOTICE_SHORT)
 
 
 ## Esquivar con educación no cuesta nada. Seguirle el juego o contestarle

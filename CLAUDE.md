@@ -37,41 +37,56 @@ res://
 - **PowerManager (autoload):** energía de 0 a 100 %. Gastan: puerta cerrada, linterna y cámaras abiertas. En 0 % todo se apaga. El breaker corta la corriente unos segundos; la chapa de la puerta está en un no-break y sigue funcionando.
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
-- **Sistema de cámaras:** 12 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
+- **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
 - **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, Audel y las Trabas. Linterna hacia el pasillo, breaker, PC.
 
 ## Cámaras
 
 | CAM | Lugar | Quién puede aparecer |
 | --- | --- | --- |
-| 1 | Pasillo norte (mira hacia el balcón) | Barcosa |
-| 2 | Pasillo sur (mira hacia la coordinación y los baños) | Barcosa, Mamador, Ureña |
+| 1 | Pasillo norte (mira hacia el balcón) | Barcosa, Mamador, Juan.exe, Armando |
+| 2 | Pasillo sur (mira hacia la coordinación y los baños) | Barcosa, Mamador, Ureña, Juan.exe, Armando |
 | 3 | Cubículo 2 | Rochis |
 | 4 | Cubículo 3 | Botarga del Come Trabas |
 | 5 | Escalera al techo | Audel |
 | 6 | Techo, pararrayos | Audel |
-| 7 | Escalera a planta baja (junto a la coordinación) | Mamador |
-| 8 | Estacionamiento | Mamador |
-| 9 | Cafetería sur | Mamador |
+| 7 | Escalera a planta baja (junto a la coordinación) | Ambiente; además se alcanza a ver a quien esté en pasillo_sur |
+| 8 | Estacionamiento | Ambiente; Mamador se retira aquí |
+| 9 | Cafetería sur | Ambiente; Armando se retira aquí |
 | 10 | Salón B, sala de servicio | Barcosa |
 | 11 | Salón E | Ureña |
 | 12 | Baños | Ureña |
+| 13 | Sala de juntas (frente al salón B) | Mamador, Juan.exe, Armando |
 
 Hay dos escaleras. En el extremo sur del pasillo, junto a la coordinación, la escalera interior baja a la planta baja (más salones), desde donde se sale del edificio al estacionamiento y a la cafetería; en el grafo, escalera_pb conecta con pasillo_sur. En el extremo norte, junto al salón B, dos puertas de cristal dan a un balcón con muros de concreto a media altura y una escalera exterior que baja fuera del edificio; por ahora es solo escenografía (se ve al fondo de la CAM 1).
 
-Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cubículo 1, zona de tareas; id `sala_servidores`) y cuatro salones (puntos ciegos).
+**Acecho:** antes de abandonar su lugar inicial, Ureña (CAM 12), Audel (CAM 6) y, en la CAM 13, el último profe que quede en la sala de juntas pasan por una etapa `acecho`: una oportunidad de movimiento exitosa los pone en acecho (miran fijo a la cámara) y la siguiente los hace salir. Estados: `cam12_urena-acecho`, `cam06_audel-acecho`, `cam13_mamador-acecho`, `cam13_juan-acecho`, `cam13_armando-acecho`.
+
+**Rutas de retiro y regreso por el sur:** Mamador, después de inspeccionar, baja por pasillo_sur → escalera_pb (CAM 7) → cafeteria → estacionamiento (CAM 8) y se queda ahí un rato; Armando, al alejarlo con la linterna, baja a la cafetería (CAM 9). Desde la planta baja regresan subiendo por escalera_pb al pasillo_sur y al cristal. Mamador reserva el pasillo también al subir. Juan.exe regresa a la sala de juntas y Ureña a los baños. Estados extra: `cam07_mamador-escalera`, `cam07_armando-escalera`, `cam08_mamador`, `cam09_armando`.
+
+**Imágenes con varios profes:** el estado de una cámara con profes es `camXX_` más los nombres de los presentes en este orden fijo: barcosa, mamador, urena, juan, armando (por ejemplo `cam02_mamador_urena`). Barcosa en la CAM 2 lleva su estado: `barcosa-corriendo` o `barcosa-golpeando`. Si en una cámara hay 3 o más profes, se muestra "SEÑAL SATURADA" con estática fuerte (sin imagen), salvo en la CAM 13, que tiene `cam13_mamador_juan_armando`. En la CAM 7 solo se muestra al primero del orden fijo. Si Barcosa corre y coincide con otro, se muestra solo a Barcosa.
+
+**Oficina por capas:** los profes en las vistas de la oficina son recortes con fondo transparente en `assets/art/office/layers/` (por ejemplo `centro_mamador.png`, `centro_urena.png`, `derecha_rochis.png`), del mismo tamaño que la vista. El código los encima según quién esté presente; los que solo se ven con linterna (Ureña, Juan.exe y Armando en el cristal) se revelan solo dentro del cono de luz.
+
+**Cámaras de ambiente (7, 8, 9):** ningún profe pasa por ahí; de vez en cuando muestran sucesos raros sin consecuencias (una sombra, una luz que parpadea), que sirven de atmósfera y de pistas para una secuela. La CAM 7 mira hacia arriba de la escalera y alcanza a ver el final del pasillo, así que muestra a quien esté en pasillo_sur.
+
+**Sala de juntas (`sala_juntas`, CAM 13):** el salón del lado oeste frente al salón B, con una mesa ovalada tipo consejo directivo y una pantalla de proyección en un costado. Conecta con pasillo_norte.
+
+Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cubículo 1, zona de tareas; id `sala_servidores`) y tres salones (puntos ciegos).
 
 ## Personajes
 
 - **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B. Si revisas CAM 10 seguido, se queda; si lo descuidas, se asoma, sale y corre por CAM 1 hasta la puerta. Solo se detiene cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
-- **Mamador (rol Freddy):** ruta CAM 8 → 9 → 7 → 2 → cristal (sale del estacionamiento y la cafetería, entra al edificio por la planta baja y sube por la escalera junto a la coordinación). Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
+- **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
 - **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna.
-  - **Llamada de Ureña:** cada noche que Ureña está activo hay cierta probabilidad de que llame al teléfono de la oficina en algún momento entre las 2 y las 4 AM. El teléfono suena unos segundos; si no contestas a tiempo, game over (te mata). Si contestas, no es un examen: es comedia. Ureña llama meloso, saluda al jugador por su nombre y lo felicita por su trabajo mencionando cuántas tareas lleva, y luego suelta tres insinuaciones con doble sentido ofreciéndole "trabajitos extra". Cada una trae tres respuestas barajadas y 6 s para elegir: esquivar con educación (la buena), seguirle el juego o contestar grosero. Ureña reacciona a cada una con una de varias frases al azar. Esquivar no cuesta nada; seguirle el juego baja energía y deja una foto suya en el escritorio; contestar grosero baja energía pero no deja foto; quedarse callado cuenta como seguirle el juego. Nada de esto es game over. Al colgar se despide distinto según si el jugador le siguió el juego alguna vez. En una misma llamada no se repiten insinuaciones. El resto de los profes sigue moviéndose durante la llamada. El banco de insinuaciones, saludos, reacciones y despedidas está en `data/urena_questions.gd`.
+  - **Llamada de Ureña:** cada noche que Ureña está activo hay cierta probabilidad de que llame al teléfono de la oficina en algún momento entre las 2 y las 4 AM. El teléfono suena unos segundos; si no contestas a tiempo, game over (te mata). Si contestas, hace varias preguntas de opción múltiple, cada una con poco tiempo para responder. Cada respuesta mala o sin responder a tiempo: baja energía y aparece (o se queda) una foto de Ureña en la oficina; no es game over. El resto de los profes sigue moviéndose durante la llamada. Las preguntas vienen de un banco de preguntas en `data/urena_questions.gd` (el equipo las escribirá; por ahora usa 3 preguntas de ejemplo).
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Audel Electrix (rol Balloon Boy):** vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
   - **Descarga del pararrayos:** mientras Audel está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
-- **Come Trabas (rol Puppet; antes era el profe Santi):** el ritual de Cuéllar encerró el alma de Santi dentro de la botarga de la mascota de la universidad, y con ella a las Trabas, que viven dentro de la botarga. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca el himno de la universidad (melodía original), sigue desplomada y las Trabas siguen adormecidas adentro. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y las Trabas salen de su boca hacia la oficina: game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía.
-- **Cuéllar (secreto, rol Golden Freddy):** desde la noche 4, aparición rara en la oficina o en una cámara. Si aparece en la oficina, el jugador tiene 3 s para subir las cámaras o muere.
+- **Come Trabas (rol Puppet; antes era el profe Santi):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad, y con ella a las Trabas, que viven dentro de la botarga. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca el himno de la universidad (melodía original), sigue desplomada y las Trabas siguen adormecidas adentro. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y las Trabas salen de su boca hacia la oficina: game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía.
+- **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña en el pasillo; si no, game over "Juan.exe". No usa la reserva del pasillo.
+- **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "YA BÁJALE" en 6 s. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
+- **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
 
 ## Reglas para que las mecánicas no choquen
 
@@ -89,14 +104,16 @@ Las tareas imitan herramientas reales de un coordinador de sistemas, con diseño
 
 ## Niveles de IA por noche
 
-| Noche | Barcosa | Mamador | Ureña | Rochis | Audel | Come Trabas | Cuéllar | Tareas |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 0 | 3 | 0 | 0 | 0 | Lenta | 0 | 2 |
-| 2 | 3 | 5 | 0 | 0 | 0 | Lenta | 0 | 3 |
-| 3 | 5 | 7 | 4 | 3 | 0 | Media | 0 | 3 |
-| 4 | 8 | 9 | 7 | 6 | 5 | Media | 1 | 4 |
-| 5 | 11 | 12 | 10 | 10 | 9 | Rápida | 2 | 4 |
-| 6 | 15 | 16 | 15 | 15 | 14 | Muy rápida | 3 | 5 |
+| Noche | Barcosa | Mamador | Ureña | Rochis | Audel | Come Trabas | Juan.exe | Armando | Tareas |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0 | 3 | 0 | 0 | 0 | Lenta | 2 | 0 | 2 |
+| 2 | 3 | 5 | 0 | 0 | 0 | Lenta | 4 | 2 | 3 |
+| 3 | 5 | 7 | 4 | 3 | 0 | Media | 6 | 4 | 3 |
+| 4 | 8 | 9 | 7 | 6 | 5 | Media | 8 | 6 | 4 |
+| 5 | 11 | 12 | 10 | 10 | 9 | Rápida | 10 | 9 | 4 |
+| 6 | 15 | 16 | 15 | 15 | 14 | Muy rápida | 14 | 13 | 5 |
+
+La mecánica de Claudio de Armando solo se activa desde la noche 4.
 
 Custom Night: cada nivel de 0 a 20.
 
@@ -108,4 +125,4 @@ Custom Night: cada nivel de 0 a 20.
 4. PC con ventana de IA, una tarea de ejemplo y Mamador.
 5. Come Trabas y las Trabas, Ureña con linterna, Rochis con el audio, Audel con el breaker.
 6. Configuración por noche, menú, selección de noche, Custom Night y guardado.
-7. Resto de tareas, Cuéllar y jumpscares.
+7. Resto de tareas y jumpscares.

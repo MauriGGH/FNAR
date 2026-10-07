@@ -1,0 +1,88 @@
+class_name ArmandoPrompts
+extends GlassStalker
+
+## Armando Prompts (rol Chica clásico + Lolbit). Se cree genio, presume títulos
+## inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de
+## linterna que Juan.exe.
+##
+## Lo suyo aparte pasa en la PC: desde la noche 4, cada vez que el jugador
+## pulsa "Resolver tarea" en Claudio hay probabilidad de que su cara tome toda
+## la pantalla. Eso lo maneja la pantalla de la PC; aquí solo vive la
+## probabilidad, las frases y la tecla de depuración.
+
+const ROUTE: Array[String] = ["sala_juntas", "pasillo_norte", "pasillo_sur"]
+const MOVE_INTERVAL: float = 7.0
+const GAME_OVER_CAUSE: String = "Armando Prompts"
+
+## Lo que tarda en irse si el jugador no escribe la frase.
+const TAKEOVER_TIME: float = 6.0
+## Lo que hay que escribir para quitárselo de encima.
+const TAKEOVER_ANSWER: String = "YA BÁJALE"
+## Lo que cuesta no lograrlo.
+const TAKEOVER_POWER_COST: float = 5.0
+## Probabilidad de aparecer, en fracción por punto de nivel de IA: con nivel 6
+## sale 6 de cada 20 veces que se pulsa "Resolver tarea".
+const TAKEOVER_CHANCE_PER_LEVEL: float = 1.0 / 20.0
+
+const PHRASES: Array[String] = [
+	"HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.",
+	"LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.",
+	"ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.",
+	"MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.",
+	"AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.",
+	"¿PENSAR? NAH, ESO ES DE BOOMERS.",
+]
+
+## La PC escucha esto para taparse con su cara.
+signal takeover_requested(phrase: String)
+
+
+func ai_key() -> String:
+	return Nights.ARMANDO
+
+
+func build_route() -> PackedStringArray:
+	return PackedStringArray(ROUTE)
+
+
+func step_interval() -> float:
+	return MOVE_INTERVAL
+
+
+func game_over_cause() -> String:
+	return GAME_OVER_CAUSE
+
+
+## Tecla 6: lo manda directo al cristal.
+func debug_key() -> Key:
+	return KEY_6
+
+
+# --- Lo de la PC --------------------------------------------------------------
+
+## true si esta noche ya puede aparecerse en la pantalla de Claudio.
+func can_take_over_pc() -> bool:
+	return Nights.armando_pc_enabled(GameManager.current_night, ai_level)
+
+
+## Tira el dado de aparecer. Lo llama la PC al pulsar "Resolver tarea".
+func roll_takeover() -> bool:
+	if not can_take_over_pc():
+		return false
+	if randf() >= float(ai_level) * TAKEOVER_CHANCE_PER_LEVEL:
+		return false
+	force_takeover()
+	return true
+
+
+## Tecla 7: lo aparece en la pantalla sin tirar el dado.
+func force_takeover() -> void:
+	takeover_requested.emit(PHRASES[randi() % PHRASES.size()])
+
+
+## Además de la tecla que lo manda al cristal, la 7 lo aparece en la PC.
+func _unhandled_input(event: InputEvent) -> void:
+	super(event)
+	var key: InputEventKey = event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_7:
+		force_takeover()

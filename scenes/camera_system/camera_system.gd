@@ -7,6 +7,8 @@ extends Control
 signal opened()
 signal closed()
 signal camera_changed(camera: int)
+## Un suceso raro de las cámaras de ambiente, para el aviso de la pantalla.
+signal notice_requested(text: String, duration: float)
 
 const MINIMAP_DATA_PATH: String = "res://data/minimapa_camaras.json"
 ## Imagen de un estado de cámara, sin extensión: basta agregar el archivo
@@ -16,6 +18,11 @@ const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s"
 ## pone la etiqueta de texto encima. Así se pueden ir agregando de a poco.
 const BASE_STATES: Array[String] = ["etapa0", "vacia", "base"]
 const DEFAULT_CAMERA: int = 1
+
+## La CAM 7 mira hacia arriba de la escalera y alcanza a ver el final del
+## pasillo, así que además de su cuarto muestra a quien esté en pasillo_sur.
+const STAIRS_CAMERA: int = 7
+const STAIRS_EXTRA_ROOM: String = "pasillo_sur"
 
 # Estática: medio segundo fuerte al cambiar de cámara y luego de reposo.
 const STATIC_IDLE: float = 0.07
@@ -61,6 +68,8 @@ var _rochis: Rochis = null
 var _winding: bool = false
 var _image_cache: Dictionary = {}  # ruta -> Texture2D, o null si no existe
 var _camera_signature: String = ""
+var _ambient_elapsed: float = 0.0
+var _ambient_tween: Tween = null
 
 @onready var feed_image: TextureRect = $FeedImage
 @onready var static_overlay: ColorRect = $StaticOverlay
@@ -175,13 +184,27 @@ func _refresh_view() -> void:
 ## quiénes están en la habitación. Si cambia cualquiera de los dos mientras la
 ## estás viendo, entra la interferencia.
 func _signature_of(camera: int) -> String:
-	var room: String = Rooms.room_of_camera(camera)
-	var names: PackedStringArray = PackedStringArray()
-	for animatronic: Animatronic in _animatronics:
-		if animatronic.current_room == room:
-			names.append(animatronic.display_name)
+	var names: PackedStringArray = _occupants_of(camera)
 	names.sort()
 	return "%d|%s|%s" % [camera, _state_of(camera), "/".join(names)]
+
+
+## Qué habitaciones alcanza a ver una cámara. Casi siempre solo la suya.
+func _rooms_seen_by(camera: int) -> PackedStringArray:
+	var rooms: PackedStringArray = PackedStringArray([Rooms.room_of_camera(camera)])
+	if camera == STAIRS_CAMERA:
+		rooms.append(STAIRS_EXTRA_ROOM)
+	return rooms
+
+
+## Quiénes se ven en esa cámara, contando lo que alcanza a ver de reojo.
+func _occupants_of(camera: int) -> PackedStringArray:
+	var rooms: PackedStringArray = _rooms_seen_by(camera)
+	var names: PackedStringArray = PackedStringArray()
+	for animatronic: Animatronic in _animatronics:
+		if animatronic.current_room in rooms:
+			names.append(animatronic.display_name)
+	return names
 
 
 ## El primer profe que tenga algo que decir de esta cámara define el estado.
@@ -190,6 +213,13 @@ func _state_of(camera: int) -> String:
 		var state: String = animatronic.camera_state_for(camera)
 		if not state.is_empty():
 			return state
+	# Lo que ve de reojo no tiene estado propio, así que el estado es el
+	# nombre del profe: la CAM 7 busca cam07_barcosa.png y así.
+	var extra: PackedStringArray = _rooms_seen_by(camera)
+	for i: int in range(1, extra.size()):
+		for animatronic: Animatronic in _animatronics:
+			if animatronic.current_room == extra[i]:
+				return animatronic.image_slug()
 	return ""
 
 
@@ -226,9 +256,7 @@ func _refresh_fallback_label(state: String, is_exact: bool, room: String) -> voi
 	var parts: PackedStringArray = PackedStringArray()
 	if not state.is_empty():
 		parts.append(state)
-	for animatronic: Animatronic in _animatronics:
-		if animatronic.current_room == room:
-			parts.append(animatronic.display_name)
+	parts.append_array(_occupants_of(current_camera))
 	fallback_label.visible = not parts.is_empty()
 	if fallback_label.visible:
 		fallback_label.text = "[sin imagen] " + " - ".join(parts)
@@ -320,12 +348,8 @@ func _on_audio_pressed() -> void:
 
 ## Etiqueta de depuración: quién hay en la habitación que se está viendo, en qué
 ## anda cada profe y si el pasillo está reservado. La reemplazarán los sprites.
-func _refresh_occupants(room: String) -> void:
-	var here: PackedStringArray = PackedStringArray()
-	for animatronic: Animatronic in _animatronics:
-		if animatronic.current_room == room:
-			here.append(animatronic.display_name)
-
+func _refresh_occupants(_room: String) -> void:
+	var here: PackedStringArray = _occupants_of(current_camera)
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("[F3] aqui: " + (", ".join(here) if not here.is_empty() else "nadie"))
 	for animatronic: Animatronic in _animatronics:
@@ -349,6 +373,7 @@ func _process(delta: float) -> void:
 	if no_signal_label.visible:
 		no_signal_label.modulate.a = 1.0 if fmod(_blink_elapsed(), NO_SIGNAL_BLINK_TIME * 2.0) < NO_SIGNAL_BLINK_TIME else 0.1
 		_set_static_strength(NO_SIGNAL_STATIC)
+	_process_ambient(delta)
 	_debug_elapsed += delta
 	if _debug_elapsed < DEBUG_REFRESH_TIME:
 		return
@@ -358,6 +383,36 @@ func _process(delta: float) -> void:
 	check_camera_change()
 	if debug_label.visible:
 		_refresh_occupants(Rooms.room_of_camera(current_camera))
+
+
+## En las cámaras de ambiente, cada tanto pasa algo raro sin consecuencias:
+## la imagen parpadea y sale un aviso. Solo mientras el jugador las mira.
+func _process_ambient(delta: float) -> void:
+	if not AmbientEvents.is_ambient(current_camera) or no_signal_label.visible:
+		_ambient_elapsed = 0.0
+		return
+	_ambient_elapsed += delta
+	if _ambient_elapsed < AmbientEvents.CHECK_TIME:
+		return
+	_ambient_elapsed = 0.0
+	if randf() >= AmbientEvents.CHANCE:
+		return
+	_play_ambient_event()
+
+
+## El parpadeo va en la propia imagen, no en la estática: así no pelea con la
+## interferencia de los profes, que es la que de verdad importa.
+func _play_ambient_event() -> void:
+	var notice: String = AmbientEvents.pick_notice(current_camera)
+	if not notice.is_empty():
+		notice_requested.emit(notice, AmbientEvents.NOTICE_TIME)
+	if _ambient_tween != null and _ambient_tween.is_valid():
+		_ambient_tween.kill()
+	var half: float = AmbientEvents.FLICKER_TIME * 0.25
+	_ambient_tween = create_tween()
+	for i: int in 2:
+		_ambient_tween.tween_property(feed_image, "modulate:a", 0.12, half)
+		_ambient_tween.tween_property(feed_image, "modulate:a", 1.0, half)
 
 
 ## Cualquier cambio en la cámara que se está viendo tapa la imagen: que un

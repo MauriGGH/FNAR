@@ -11,9 +11,6 @@ enum State {
 	CORTASO,   # Haciendo el cortaso en la oficina
 }
 
-## Nivel de IA mientras no exista la configuración por noche (hito 6).
-## Para probar: 10. El nivel real de la noche 4 es 5.
-const DEBUG_AI_LEVEL: int = 10
 
 const ROUTE: Array[String] = ["techo", "escalera_techo", "recepcion", "oficina"]
 const STEP_TECHO: int = 0
@@ -46,8 +43,12 @@ var _state: State = State.WALKING
 var _cortaso_elapsed: float = 0.0
 
 
+func ai_key() -> String:
+	return Nights.AUDEL
+
+
 func start() -> void:
-	ai_level = DEBUG_AI_LEVEL
+	ai_level = night_ai_level()
 	move_interval = MOVE_INTERVAL
 	route = PackedStringArray(ROUTE)
 	super()

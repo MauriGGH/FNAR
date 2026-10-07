@@ -6,6 +6,7 @@
 [ext_resource type="Shader" path="res://scenes/pc_screen/crt_screen.gdshader" id="4_crt"]
 [ext_resource type="PackedScene" path="res://scenes/pc_screen/terminal.tscn" id="5_terminal"]
 [ext_resource type="PackedScene" path="res://scenes/tasks/network_sim/network_sim.tscn" id="6_netsim"]
+[ext_resource type="Script" path="res://scenes/pc_screen/armando_takeover.gd" id="30_armando"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
 shader = ExtResource("4_crt")
@@ -49,6 +50,33 @@ corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_claudio"]
+bg_color = Color(0.82, 0.42, 0.24, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_claudio_hover"]
+bg_color = Color(0.88, 0.5, 0.3, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_claudio_pressed"]
+bg_color = Color(0.64, 0.3, 0.17, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_claudio_bar_bg"]
+bg_color = Color(0.86, 0.81, 0.72, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_claudio_bar_fill"]
+bg_color = Color(0.82, 0.42, 0.24, 1)
 
 [node name="PcScreen" type="Control"]
 visible = false
@@ -130,7 +158,12 @@ offset_top = 82.0
 offset_right = 1006.0
 offset_bottom = 472.0
 script = ExtResource("3_window")
-window_title = "Asistente IA"
+window_title = "Claudio"
+body_color = Color(0.96, 0.93, 0.86, 1)
+title_color = Color(0.82, 0.42, 0.24, 1)
+border_color = Color(0.64, 0.3, 0.17, 1)
+title_text_color = Color(1, 0.97, 0.93, 1)
+show_claudio_logo = true
 
 [node name="ChatLabel" type="Label" parent="Screen/Windows/AiWindow"]
 layout_mode = 0
@@ -139,7 +172,7 @@ offset_top = 36.0
 offset_right = 322.0
 offset_bottom = 272.0
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.78, 0.74, 0.95, 1)
+theme_override_colors/font_color = Color(0.24, 0.2, 0.18, 1)
 theme_override_font_sizes/font_size = 17
 autowrap_mode = 2
 
@@ -150,7 +183,11 @@ offset_top = 286.0
 offset_right = 322.0
 offset_bottom = 318.0
 focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.97, 0.93, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_claudio")
+theme_override_styles/hover = SubResource("StyleBoxFlat_claudio_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_claudio_pressed")
 text = "Resolver tarea"
 
 [node name="HintButton" type="Button" parent="Screen/Windows/AiWindow"]
@@ -160,7 +197,11 @@ offset_top = 324.0
 offset_right = 322.0
 offset_bottom = 356.0
 focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.97, 0.93, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_claudio")
+theme_override_styles/hover = SubResource("StyleBoxFlat_claudio_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_claudio_pressed")
 text = "Pedir pista"
 
 [node name="SolveProgress" type="ProgressBar" parent="Screen/Windows/AiWindow"]
@@ -169,6 +210,8 @@ offset_left = 12.0
 offset_top = 362.0
 offset_right = 322.0
 offset_bottom = 380.0
+theme_override_styles/background = SubResource("StyleBoxFlat_claudio_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_claudio_bar_fill")
 show_percentage = false
 
 [node name="NetworkWindow" type="Control" parent="Screen/Windows"]
@@ -275,3 +318,10 @@ offset_right = 1024.0
 offset_bottom = 520.0
 mouse_filter = 2
 color = Color(1, 1, 1, 1)
+
+[node name="ArmandoTakeover" type="Control" parent="Screen"]
+visible = false
+layout_mode = 0
+offset_right = 1024.0
+offset_bottom = 576.0
+script = ExtResource("30_armando")

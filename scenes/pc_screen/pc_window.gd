@@ -11,12 +11,23 @@ signal focused()
 
 @export var window_title: String = "Ventana"
 @export var closable: bool = true
+## La ventana de Claudio tiene su propia paleta (crema y naranja terracota),
+## así que los colores se pueden cambiar por ventana en vez de estar fijos.
+@export var body_color: Color = BODY_COLOR
+@export var title_color: Color = TITLE_COLOR
+@export var border_color: Color = BORDER_COLOR
+@export var title_text_color: Color = Color(1.0, 1.0, 1.0)
+## Si es true, dibuja el logo de Claudio a la izquierda del título.
+@export var show_claudio_logo: bool = false
 
 const TITLE_HEIGHT: float = 28.0
 const BODY_COLOR: Color = Color(0.1, 0.12, 0.15)
 const TITLE_COLOR: Color = Color(0.08, 0.32, 0.34)
 const BORDER_COLOR: Color = Color(0.42, 0.56, 0.58)
 const TITLE_FONT_SIZE: int = 18
+## Hueco que se le deja al logo de Claudio en la barra de título.
+const LOGO_SPACE: float = 30.0
+const LOGO_RADIUS: float = 8.5
 
 var title_label: Label = null
 
@@ -33,6 +44,7 @@ func _ready() -> void:
 	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_label.add_theme_font_size_override("font_size", TITLE_FONT_SIZE)
+	title_label.add_theme_color_override("font_color", title_text_color)
 	add_child(title_label)
 
 	if closable:
@@ -55,8 +67,10 @@ func set_window_title(text: String) -> void:
 
 func _layout_chrome() -> void:
 	if title_label != null:
-		title_label.position = Vector2(10.0, 2.0)
-		title_label.size = Vector2(maxf(size.x - 46.0, 10.0), TITLE_HEIGHT - 4.0)
+		# Con logo, el título se corre para dejarle su hueco.
+		var left: float = LOGO_SPACE if show_claudio_logo else 10.0
+		title_label.position = Vector2(left, 2.0)
+		title_label.size = Vector2(maxf(size.x - left - 36.0, 10.0), TITLE_HEIGHT - 4.0)
 	var close_button: Button = get_node_or_null("CloseButton")
 	if close_button != null:
 		close_button.position = Vector2(size.x - 28.0, 3.0)
@@ -95,6 +109,8 @@ func _clamp_inside_parent() -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), BODY_COLOR)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(size.x, TITLE_HEIGHT)), TITLE_COLOR)
-	draw_rect(Rect2(Vector2.ZERO, size), BORDER_COLOR, false, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, size), body_color)
+	draw_rect(Rect2(Vector2.ZERO, Vector2(size.x, TITLE_HEIGHT)), title_color)
+	draw_rect(Rect2(Vector2.ZERO, size), border_color, false, 1.0)
+	if show_claudio_logo:
+		ClaudioLogo.draw_logo(self, Vector2(14.0, TITLE_HEIGHT * 0.5), LOGO_RADIUS)

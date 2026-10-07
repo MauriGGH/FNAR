@@ -43,7 +43,12 @@ const ROOMS: Dictionary = {
 	"pasillo_norte": {
 		"display_name": "Pasillo norte",
 		"camera": 1,
-		"links": ["pasillo_sur", "salon_1", "salon_2", "salon_b", "salon_d"],
+		"links": ["pasillo_sur", "salon_1", "salon_2", "salon_b", "salon_d", "sala_juntas"],
+	},
+	"sala_juntas": {
+		"display_name": "Sala de juntas",
+		"camera": 13,
+		"links": ["pasillo_norte"],
 	},
 	"pasillo_sur": {
 		"display_name": "Pasillo sur",

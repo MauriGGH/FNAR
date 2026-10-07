@@ -15,8 +15,6 @@ enum State { CUBICLE, COMING, INSIDE }
 const ROOM: String = "cubiculo_2"
 const RECEPTION: String = "recepcion"
 
-## Nivel de IA mientras no exista la configuración por noche (hito 6).
-const DEBUG_AI_LEVEL: int = 10
 ## Cada cuánto tira el dado para avanzar de etapa.
 const MOVE_INTERVAL: float = 7.0
 
@@ -61,9 +59,13 @@ var _state_elapsed: float = 0.0
 var _annoyed: bool = false
 
 
+func ai_key() -> String:
+	return Nights.ROCHIS
+
+
 func start() -> void:
 	route = PackedStringArray([ROOM, RECEPTION])
-	ai_level = DEBUG_AI_LEVEL
+	ai_level = night_ai_level()
 	move_interval = MOVE_INTERVAL
 	super()
 	stage = Stage.SITTING

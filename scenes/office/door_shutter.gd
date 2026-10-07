@@ -12,13 +12,12 @@ extends Control
 ## La misma vista con la cortina cerrada, sin extensión.
 const CLOSED_IMAGE_PATH: String = "res://assets/art/office/oficina_centro_cortina"
 
-## En la foto, la cortina no ocupa exactamente la zona entrance_door: arranca
-## más arriba (ahí va el cajón del rodillo) y termina antes de tocar el piso.
-## Medido comparando oficina_centro con oficina_centro_cortina: arriba sobra
-## 0.236 del alto de la puerta y abajo faltan 0.058. Si cambias la foto, estos
-## dos son los que hay que ajustar.
-const IMAGE_TOP_EXTRA: float = 0.236
-const IMAGE_BOTTOM_TRIM: float = 0.058
+## Qué recortar de esa foto, en coordenadas normalizadas de la vista (la foto
+## está alineada con oficina_centro). El recorte incluye el cajón de la cortina.
+const IMAGE_AREA: Rect2 = Rect2(0.289, 0.293, 0.122, 0.391)
+## De aquí hacia abajo está la lámina, y es lo único que se anima. El cajón,
+## que es lo que queda arriba, aparece de golpe al cerrar la chapa.
+const CURTAIN_TOP: float = 0.335
 
 # Bajar: 0.3 s de caída y 0.05 s de rebote, 0.35 s en total.
 const CLOSE_TIME: float = 0.3
@@ -82,33 +81,39 @@ func is_hidden_away() -> bool:
 
 
 func _draw() -> void:
-	if is_hidden_away() or _door_rect.size.y <= 0.0:
+	if is_hidden_away():
 		return
-	var area: Rect2 = _curtain_rect()
-	var shown: Rect2 = Rect2(area.position,
-		Vector2(area.size.x, area.size.y * clampf(progress, 0.0, 1.0)))
 	if _texture != null:
-		_draw_from_image(shown)
-	else:
-		_draw_slats(shown)
+		_draw_from_image()
+		return
+	if _door_rect.size.y <= 0.0:
+		return
+	# Sin foto, la cortina dibujada llena justo el hueco de la puerta.
+	var shown: Rect2 = Rect2(_door_rect.position,
+		Vector2(_door_rect.size.x, _door_rect.size.y * clampf(progress, 0.0, 1.0)))
+	_draw_slats(shown)
 	_draw_bottom_bar(shown)
 
 
-## Por dónde baja la cortina. Con la foto se usa el área real que ocupa ahí;
-## la cortina dibujada llena justo el hueco de la puerta.
-func _curtain_rect() -> Rect2:
-	if _texture == null:
-		return _door_rect
-	return Rect2(
-		Vector2(_door_rect.position.x, _door_rect.position.y - _door_rect.size.y * IMAGE_TOP_EXTRA),
-		Vector2(_door_rect.size.x, _door_rect.size.y * (1.0 + IMAGE_TOP_EXTRA - IMAGE_BOTTOM_TRIM)))
+## Recorta de la foto con la cortina cerrada. El cajón va completo desde el
+## primer frame; la lámina se revela de arriba hacia abajo.
+func _draw_from_image() -> void:
+	var area: Rect2 = Rect2(IMAGE_AREA.position * size, IMAGE_AREA.size * size)
+	var top: float = CURTAIN_TOP * size.y
+	if top > area.position.y:
+		_blit(Rect2(area.position, Vector2(area.size.x, top - area.position.y)))
+	var height: float = (area.end.y - top) * clampf(progress, 0.0, 1.0)
+	if height <= 0.0:
+		return
+	var slat: Rect2 = Rect2(Vector2(area.position.x, top), Vector2(area.size.x, height))
+	_blit(slat)
+	_draw_bottom_bar(slat)
 
 
-## Recorta de la foto con la cortina cerrada justo la parte ya bajada.
-func _draw_from_image(shown: Rect2) -> void:
+## Un pedazo de la foto de la cortina, en su mismo sitio.
+func _blit(rect: Rect2) -> void:
 	var factor: Vector2 = _texture.get_size() / size
-	draw_texture_rect_region(_texture, shown,
-		Rect2(shown.position * factor, shown.size * factor))
+	draw_texture_rect_region(_texture, rect, Rect2(rect.position * factor, rect.size * factor))
 
 
 ## Cortina provisional: láminas con su ranura, rieles a los lados y un brillo.

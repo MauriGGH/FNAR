@@ -163,6 +163,19 @@
         "w": 150,
         "h": 85
       }
+    },
+    {
+      "id": 13,
+      "label": "CAM 13",
+      "place": "Sala de juntas",
+      "x": 195.0,
+      "y": 101.0,
+      "hit": {
+        "x": 140,
+        "y": 80,
+        "w": 150,
+        "h": 60
+      }
     }
   ],
   "note": "x,y = esquina superior izquierda del boton. hit = rectangulo del cuarto completo que responde al clic."

@@ -83,6 +83,28 @@ func try_move() -> bool:
 	return true
 
 
+## Gancho: la clave de este profe en la tabla de niveles de data/nights.gd.
+## Cadena vacía = su nivel lo decide él mismo.
+func ai_key() -> String:
+	return ""
+
+
+## El nivel de IA que le toca esta noche según la tabla. Lo llama su start().
+func night_ai_level() -> int:
+	var key: String = ai_key()
+	if key.is_empty():
+		return ai_level
+	return Nights.ai_level(GameManager.current_night, key)
+
+
+## Gancho de depuración: lo pone a moverse aunque la noche le haya dado
+## nivel 0. Lo usan las teclas que mandan a un profe a su posición de ataque.
+func debug_activate() -> void:
+	if route.is_empty():
+		return
+	is_active = true
+
+
 ## Gancho: cada profe decide si puede moverse ahora mismo
 ## (por ejemplo, Barcosa espera a que el pasillo esté libre).
 func can_move() -> bool:
@@ -106,6 +128,16 @@ func debug_text() -> String:
 ## Lo reemplazarán los sprites.
 func zone_presence(_zone_id: String) -> String:
 	return ""
+
+
+## Nombre corto, en minúsculas y sin acentos, para buscar imágenes del tipo
+## camXX_<slug>.png. Lo usa la CAM 7 para mostrar a quien esté en el pasillo.
+func image_slug() -> String:
+	var slug: String = display_name.to_lower()
+	for pair: Array in [["á", "a"], ["é", "e"], ["í", "i"], ["ó", "o"], ["ú", "u"],
+			["ü", "u"], ["ñ", "n"], [" ", "_"], [".", "_"]]:
+		slug = slug.replace(str(pair[0]), str(pair[1]))
+	return slug
 
 
 ## Estado de la cámara que vigila a este profe, para buscar la imagen

@@ -2,17 +2,20 @@ extends Control
 
 ## La PC de la oficina. La pantalla va enmarcada por el bisel del monitor CRT y
 ## adentro hay un escritorio retro con cuatro íconos: Terminal, Simulador de
-## red, Tareas y Asistente IA. Las ventanas se pueden tapar entre ellas y la
-## que se clica pasa al frente, como en un escritorio de verdad.
-## La ventana del asistente sigue trabajando aunque el jugador baje la PC, y
-## eso es justo lo que lo delata ante Mamador.
+## red, Tareas y Claudio (el asistente de IA). Las ventanas se pueden tapar
+## entre ellas y la que se clica pasa al frente, como en un escritorio de
+## verdad. La ventana de Claudio sigue trabajando aunque el jugador baje la PC,
+## y eso es justo lo que lo delata ante Mamador.
 
 signal opened()
 signal closed()
+## Armando no logró ser echado: hay que quitarle energía al guardia.
+signal armando_won()
 
-## Lo que tarda el asistente en resolver una tarea.
+## Lo que tarda Claudio en resolver una tarea.
 const AI_SOLVE_TIME: float = 8.0
 const AI_CHAT_LINES: int = 5
+const CLAUDIO_GREETING: String = "Claudio v0.9 — asistente de la Coordinación"
 
 const ICON_LEFT: float = 20.0
 const ICON_TOP: float = 48.0
@@ -32,6 +35,7 @@ var _solve_mode: SolveMode = SolveMode.NONE
 var _solve_elapsed: float = 0.0
 var _chat: PackedStringArray = PackedStringArray()
 var _icons: Array[DesktopIcon] = []
+var _armando: ArmandoPrompts = null
 
 @onready var bezel: Control = $Bezel
 @onready var screen: Control = $Screen
@@ -57,6 +61,7 @@ var _icons: Array[DesktopIcon] = []
 @onready var ai_solve_button: Button = $Screen/Windows/AiWindow/SolveButton
 @onready var ai_hint_button: Button = $Screen/Windows/AiWindow/HintButton
 @onready var ai_progress: ProgressBar = $Screen/Windows/AiWindow/SolveProgress
+@onready var armando_takeover: Control = $Screen/ArmandoTakeover
 
 
 func _ready() -> void:
@@ -77,6 +82,8 @@ func _ready() -> void:
 	terminal_window.close_requested.connect(func() -> void: terminal_window.visible = false)
 	network_window.close_requested.connect(func() -> void: network_window.visible = false)
 
+	armando_takeover.survived.connect(_on_armando_survived)
+	armando_takeover.failed.connect(_on_armando_failed)
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.task_completed.connect(_on_any_task_completed)
 	_solve_mode = SolveMode.NONE
@@ -86,8 +93,8 @@ func _ready() -> void:
 	task_window.visible = false
 	terminal_window.visible = false
 	ai_progress.value = 0.0
-	_chat.append("Asistente IA v0.9 (Coordinación de Sistemas)")
-	_chat.append("Abre una tarea y pulsa Resolver tarea.")
+	_chat.append(CLAUDIO_GREETING)
+	_chat.append(Claudio.say("Abre una tarea y pulsa Resolver tarea."))
 	_refresh_chat()
 
 
@@ -97,6 +104,7 @@ func _fit_screen() -> void:
 	screen.position = hole.position
 	screen.size = hole.size
 	crt_overlay.size = hole.size
+	armando_takeover.size = hole.size
 
 
 # --- Abrir y cerrar la PC -----------------------------------------------------
@@ -150,7 +158,7 @@ func _build_icons() -> void:
 	_add_icon("terminal", DesktopIcon.Glyph.TERMINAL, "Terminal")
 	_add_icon("network", DesktopIcon.Glyph.NETWORK, "Simulador de red")
 	_add_icon("tasks", DesktopIcon.Glyph.TASKS, "Tareas")
-	_add_icon("ai", DesktopIcon.Glyph.AI, "Asistente IA")
+	_add_icon("claudio", DesktopIcon.Glyph.CLAUDIO, "Claudio")
 
 
 func _add_icon(icon_id: String, glyph: DesktopIcon.Glyph, text: String) -> void:
@@ -171,7 +179,7 @@ func _on_icon_pressed(icon_id: String) -> void:
 			_show_window(network_window)
 		"tasks":
 			_show_window(tasks_window)
-		"ai":
+		"claudio":
 			_set_ai_window_open(true)
 			_bring_to_front(ai_window)
 
@@ -245,7 +253,7 @@ func _open_task(index: int) -> void:
 	var task: Dictionary = tasks[index]
 	var scene_path: String = Tasks.scene_for_type(str(task.get("type", "")))
 	if scene_path.is_empty():
-		_log("Esa tarea todavía no está programada.")
+		_log(Claudio.sorry("Esa tarea todavía no está programada."))
 		return
 
 	var scene: PackedScene = load(scene_path)
@@ -295,7 +303,42 @@ func _on_any_task_completed(_task_id: String) -> void:
 	_refresh_task_list()
 
 
-# --- Asistente IA -------------------------------------------------------------
+# --- Armando en la pantalla ---------------------------------------------------
+
+## El night.gd le pasa a Armando para poder tirar su dado y escucharlo.
+func set_armando(armando: ArmandoPrompts) -> void:
+	_armando = armando
+	if _armando != null:
+		_armando.takeover_requested.connect(_on_armando_takeover)
+
+
+func _on_armando_takeover(phrase: String) -> void:
+	armando_takeover.play(phrase)
+	_bring_to_front_of_screen()
+
+
+## La cara se dibuja encima de todo el escritorio, ventanas incluidas.
+func _bring_to_front_of_screen() -> void:
+	screen.move_child(armando_takeover, -1)
+
+
+func _on_armando_survived() -> void:
+	_log(Claudio.say("No sé cómo entró a mi ventana. Perdón."))
+
+
+## Se le acabó el tiempo al jugador: la tarea abierta vuelve a empezar y la
+## señal avisa al night.gd para que le quite energía.
+func _on_armando_failed() -> void:
+	var index: int = _open_task_index
+	_cancel_solve("")
+	if index >= 0:
+		_close_task()
+		_open_task(index)
+	_log(Claudio.sorry("Armando borró tu progreso. Yo no fui."))
+	armando_won.emit()
+
+
+# --- Claudio -------------------------------------------------------------
 
 func _close_ai_window() -> void:
 	_set_ai_window_open(false)
@@ -308,19 +351,22 @@ func _set_ai_window_open(is_window_open: bool) -> void:
 	ai_window.visible = is_window_open
 	GameManager.set_ai_window_open(is_window_open)
 	if not is_window_open:
-		_cancel_solve("Resolución cancelada: cerraste el asistente.")
+		_cancel_solve(Claudio.sorry("Cancelé la resolución: cerraste mi ventana."))
 
 
 func _request_solve() -> void:
 	if not is_ai_window_open:
 		return
 	if _task_instance == null:
-		_log("Abre una tarea primero.")
+		_log(Claudio.say("Abre una tarea primero."))
 		return
 	if _task_instance.get("is_completed") == true:
-		_log("Esa tarea ya está lista.")
+		_log(Claudio.say("Esa tarea ya está lista."))
 		return
 	if _solving:
+		return
+	# Antes de empezar, Armando puede aparecerse y tomar la pantalla.
+	if _armando != null and _armando.roll_takeover():
 		return
 
 	_solving = true
@@ -331,17 +377,17 @@ func _request_solve() -> void:
 		_solve_mode = SolveMode.ACTIONS
 		_show_window(network_window)
 		network_sim.queue_actions(_task_instance.solve_actions())
-		_log("Haciendo los pasos en el simulador... no cierres esta ventana.")
+		_log(Claudio.sorry("Haciendo los pasos en el simulador, no cierres esta ventana."))
 		return
 	# Las de consola se resuelven tecleando los comandos a la vista.
 	if _task_instance.has_method("solve_commands"):
 		_solve_mode = SolveMode.TYPING
 		_show_window(terminal_window)
 		terminal.queue_commands(_task_instance.solve_commands())
-		_log("Tecleando los comandos... no cierres esta ventana.")
+		_log(Claudio.sorry("Tecleando los comandos, no cierres esta ventana."))
 		return
 	_solve_mode = SolveMode.TIMER
-	_log("Resolviendo... no cierres esta ventana.")
+	_log(Claudio.sorry("Ya casi termino tu tarea, no cierres esta ventana."))
 
 
 ## Explica qué comandos usar, sin resolver nada.
@@ -349,12 +395,12 @@ func _request_hint() -> void:
 	if not is_ai_window_open:
 		return
 	if _task_instance == null:
-		_log("Abre una tarea primero.")
+		_log(Claudio.say("Abre una tarea primero."))
 		return
 	if not _task_instance.has_method("hint"):
-		_log("De esa tarea no tengo pistas.")
+		_log(Claudio.sorry("De esa tarea no tengo pistas."))
 		return
-	_log(str(_task_instance.hint()))
+	_log(Claudio.say(str(_task_instance.hint())))
 
 
 func _cancel_solve(message: String) -> void:
@@ -378,7 +424,7 @@ func _finish_solve() -> void:
 	ai_progress.value = 100.0
 	if _task_instance != null and _task_instance.has_method("solve"):
 		_task_instance.solve()
-	_log("Tarea resuelta. De nada.")
+	_log(Claudio.done("Tarea resuelta."))
 
 
 ## El simulador terminó todos los pasos que le pasó el asistente.
@@ -388,7 +434,7 @@ func _on_actions_finished() -> void:
 	_solving = false
 	_solve_mode = SolveMode.NONE
 	ai_progress.value = 100.0
-	_log("Pasos terminados. De nada.")
+	_log(Claudio.done("Pasos terminados."))
 
 
 ## La consola terminó de teclear todo lo que le pasó el asistente.
@@ -398,7 +444,7 @@ func _on_typing_finished() -> void:
 	_solving = false
 	_solve_mode = SolveMode.NONE
 	ai_progress.value = 100.0
-	_log("Comandos enviados. De nada.")
+	_log(Claudio.done("Comandos enviados."))
 
 
 ## El asistente trabaja aunque la PC esté bajada, pero solo mientras su
@@ -407,7 +453,7 @@ func _process(delta: float) -> void:
 	if not _solving:
 		return
 	if not is_ai_window_open:
-		_cancel_solve("Resolución cancelada: cerraste el asistente.")
+		_cancel_solve(Claudio.sorry("Cancelé la resolución: cerraste mi ventana."))
 		return
 	if _solve_mode == SolveMode.TYPING:
 		ai_progress.value = terminal.typing_progress() * 100.0

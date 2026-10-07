@@ -6,7 +6,7 @@ extends Control
 
 signal pressed(icon_id: String)
 
-enum Glyph { TERMINAL, NETWORK, TASKS, AI }
+enum Glyph { TERMINAL, NETWORK, TASKS, CLAUDIO }
 
 const ICON_SIZE: Vector2 = Vector2(104.0, 102.0)
 const GLYPH_SIZE: float = 56.0
@@ -18,6 +18,8 @@ const INK: Color = Color(0.82, 0.88, 0.9)
 const SCREEN_INK: Color = Color(0.1, 0.14, 0.16)
 const GREEN_INK: Color = Color(0.4, 0.95, 0.5)
 const PAPER: Color = Color(0.76, 0.75, 0.68)
+## El crema de Claudio, el mismo de su ventana.
+const CREAM: Color = Color(0.96, 0.93, 0.86)
 
 var icon_id: String = ""
 var glyph: Glyph = Glyph.TERMINAL
@@ -75,8 +77,8 @@ func _draw() -> void:
 			_draw_network(box)
 		Glyph.TASKS:
 			_draw_tasks(box)
-		Glyph.AI:
-			_draw_ai(box)
+		Glyph.CLAUDIO:
+			_draw_claudio(box)
 
 
 ## Monitor con el prompt y el cursor.
@@ -118,19 +120,12 @@ func _draw_tasks(box: Rect2) -> void:
 	draw_line(check + Vector2(5.0, 6.0), check + Vector2(14.0, -8.0), GREEN_INK, 3.0)
 
 
-## Cabeza del asistente, con antena y dos ojos.
-func _draw_ai(box: Rect2) -> void:
-	var head: Rect2 = Rect2(box.position + Vector2(5.0, 12.0), Vector2(box.size.x - 10.0, box.size.y - 20.0))
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = SCREEN_INK
-	style.set_corner_radius_all(10)
-	style.set_border_width_all(2)
-	style.border_color = INK
-	draw_style_box(style, head)
-	var antenna_base: Vector2 = Vector2(box.position.x + box.size.x * 0.5, box.position.y + 12.0)
-	draw_line(antenna_base, antenna_base - Vector2(0.0, 9.0), INK, 2.0)
-	draw_circle(antenna_base - Vector2(0.0, 11.0), 3.5, GREEN_INK)
-	var eye_y: float = head.position.y + head.size.y * 0.42
-	draw_rect(Rect2(Vector2(head.position.x + 9.0, eye_y), Vector2(9.0, 7.0)), GREEN_INK)
-	draw_rect(Rect2(Vector2(head.end.x - 18.0, eye_y), Vector2(9.0, 7.0)), GREEN_INK)
-	draw_rect(Rect2(Vector2(head.position.x + 12.0, head.end.y - 13.0), Vector2(head.size.x - 24.0, 3.0)), INK)
+## El logo de Claudio sobre su cuadrito crema.
+func _draw_claudio(box: Rect2) -> void:
+	var card: StyleBoxFlat = StyleBoxFlat.new()
+	card.bg_color = CREAM
+	card.set_corner_radius_all(8)
+	card.set_border_width_all(2)
+	card.border_color = ClaudioLogo.ORANGE_DARK
+	draw_style_box(card, box)
+	ClaudioLogo.draw_logo(self, box.get_center(), box.size.x * 0.34)

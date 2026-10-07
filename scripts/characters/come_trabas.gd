@@ -18,9 +18,6 @@ const DRAIN_TIMES: Dictionary = {
 	Speed.VERY_FAST: 40.0,
 }
 
-## Velocidad mientras no exista la configuración por noche (hito 6).
-const DEBUG_SPEED: int = Speed.MEDIUM
-
 const ROOM: String = "cubiculo_3"
 
 const MAX_WIND: float = 100.0
@@ -48,7 +45,7 @@ signal music_stopped()
 var wind: float = MAX_WIND
 var is_winding: bool = false
 var is_attacking: bool = false
-var speed: int = DEBUG_SPEED
+var speed: int = Speed.SLOW
 
 var _attack_elapsed: float = 0.0
 
@@ -57,7 +54,9 @@ func start() -> void:
 	route = PackedStringArray([ROOM])
 	super()
 	is_active = true  # La clase base pide nivel de IA; este no lo usa.
-	speed = DEBUG_SPEED
+	# Su reloj no es el dado sino la cuerda, así que de la tabla de noches
+	# toma la velocidad en vez de un nivel de IA.
+	speed = Nights.come_trabas_speed(GameManager.current_night)
 	wind = MAX_WIND
 	is_winding = false
 	is_attacking = false

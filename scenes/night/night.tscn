@@ -21,6 +21,8 @@
 [ext_resource type="PackedScene" path="res://scenes/phone/phone_call.tscn" id="20_phone"]
 [ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="16_static"]
 [ext_resource type="Script" path="res://scripts/characters/rochis.gd" id="22_rochis"]
+[ext_resource type="Script" path="res://scripts/characters/juan_exe.gd" id="23_juan"]
+[ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
 shader = ExtResource("16_static")
@@ -77,6 +79,14 @@ display_name = "Rochis"
 [node name="ComeTrabas" type="Node" parent="Animatronics"]
 script = ExtResource("11_come_trabas")
 display_name = "Come Trabas"
+
+[node name="JuanExe" type="Node" parent="Animatronics"]
+script = ExtResource("23_juan")
+display_name = "Juan.exe"
+
+[node name="Armando" type="Node" parent="Animatronics"]
+script = ExtResource("24_armando")
+display_name = "Armando Prompts"
 
 [node name="TestProfe" type="Node" parent="Animatronics"]
 script = ExtResource("4_test_profe")
