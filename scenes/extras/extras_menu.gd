@@ -33,7 +33,7 @@ const SHEETS: Dictionary = {
 	"audel": ["Mago Eléctrico", "rol Balloon Boy", "Vive en el techo, tira la corriente y desconecta los cables."],
 	"juan": ["Juan.exe", "rol Bonnie clásico", "Sin mecánica propia: al cristal y a esperar los destellos."],
 	"armando": ["Armando Prompts", "rol Chica clásico", "Se cree genio y te toma la pantalla de la PC."],
-	"come_trabas": ["Come Trabas", "rol Puppet", "La botarga con el alma de Santi. Solo la cuerda la mantiene quieta."],
+	"come_trabas": ["Come Trabas", "rol Puppet", "La botarga con el alma de Santi, alumno de Sistemas. Solo la cuerda la mantiene quieta."],
 }
 
 var _section: Section = Section.DOSSIERS

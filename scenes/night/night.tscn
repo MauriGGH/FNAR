@@ -24,6 +24,7 @@
 [ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
 [ext_resource type="Script" path="res://scenes/night/pause_menu.gd" id="50_pause"]
 [ext_resource type="Script" path="res://scenes/night/ticket_chime.gd" id="60_chime"]
+[ext_resource type="Script" path="res://scenes/night/music_box.gd" id="61_musicbox"]
 [ext_resource type="Script" path="res://scenes/night/jumpscare_overlay.gd" id="70_jump"]
 [ext_resource type="Script" path="res://scenes/night/scream_sound.gd" id="71_scream"]
 [ext_resource type="Script" path="res://scenes/night/blackout_death.gd" id="72_blackout"]
@@ -248,6 +249,9 @@ horizontal_alignment = 2
 
 [node name="TicketChime" type="AudioStreamPlayer" parent="Hud"]
 script = ExtResource("60_chime")
+
+[node name="MusicBox" type="AudioStreamPlayer" parent="Hud"]
+script = ExtResource("61_musicbox")
 
 [node name="DebugHelp" type="Label" parent="Hud"]
 visible = false

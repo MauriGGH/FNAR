@@ -9,6 +9,8 @@ extends Control
 
 ## Llegó el momento del salto.
 signal strike()
+## Ya se ven las chispas: es cuando suena la cajita musical.
+signal sparks_started()
 
 const MIN_WAIT: float = 3.0
 const MAX_WAIT: float = 12.0
@@ -64,6 +66,7 @@ func _process(delta: float) -> void:
 		if _wait_left <= 0.0:
 			is_showing_sparks = true
 			queue_redraw()
+			sparks_started.emit()
 		return
 	_sparks_left -= delta
 	queue_redraw()
