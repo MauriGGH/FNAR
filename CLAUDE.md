@@ -24,13 +24,14 @@ El documento de diseño completo lo tiene el equipo; este archivo resume lo nece
 
 ```
 res://
-  autoload/        game_manager.gd, power_manager.gd, night_config.gd, audio_manager.gd
+  autoload/        game_manager.gd, power_manager.gd, save_game.gd, display_manager.gd, audio_manager.gd
   scenes/          main_menu, night, office, camera_system, pc_screen, game_over, win_screen
   scenes/tasks/    una escena por tarea (minijuego)
   scripts/characters/  animatronic.gd (clase base) y un script por profe
   data/            rooms.gd (grafo de habitaciones), nights.gd (niveles por noche)
   scenes/ui/           pantalla de carga y shaders compartidos (estática, scanlines, blanco y negro, bloqueado)
-  scripts/ui/          ayudantes: fonts.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd
+  scripts/ui/          ayudantes: fonts.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd, options_panel.gd
+  scripts/audio/       tone_builder.gd, los sonidos provisionales generados por código
   assets/art/backgrounds, assets/art/characters, assets/audio
   assets/fonts/        VT323, Special Elite, Oswald y game_theme.tres
 ```
@@ -43,6 +44,25 @@ res://
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
 - **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+
+## Audio
+
+Todo el sonido pasa por el autoload **AudioManager**: nadie carga un archivo a mano ni pone un
+`AudioStreamPlayer` en una escena. Se le pide un sonido por su id del catálogo
+(`data/sounds.gd`), que dice el archivo que espera en `assets/audio/`, el bus y el volumen.
+
+**Si el archivo de verdad no está**, el AudioManager usa el provisional que genera
+`scripts/audio/tone_builder.gd` y lo avisa **una sola vez** en consola (`[audio] <id>: falta
+<archivo>, suena el provisional`). Para meter un sonido real basta con dejar el archivo con ese
+nombre en `assets/audio/`: no hay que tocar código.
+
+**Buses** (en `assets/audio/buses.tres`): Master, Ambiente, Efectos, Voces y Música. El jugador
+los sube y los baja en el menú de opciones y queda guardado en `save.cfg`. El TTS no sale por los
+buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume()` a mano.
+
+**Opciones:** `scripts/ui/options_panel.gd` es una capa que se abre encima de lo que haya, así que
+sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
+deslizadores y la pantalla completa, y todo se guarda al momento.
 
 ## Tipografías
 
@@ -70,13 +90,15 @@ como override donde toca.
   en `Extras.ORIGIN_CAMERAS` (la CAM 10 no tiene `vacia`: usa `cam10_salio`).
 - **Pantallas de carga:** entre el menú, las noches y los periódicos. Negro con estática leve y una
   frase del lore al azar de `data/loading_lines.gd`. Se entra con `LoadingScreen.go_to(árbol, ruta)`.
-- **Fin de noche:** 6 AM → recorte de periódico → las hojas que entregue esa noche → lo siguiente.
-  La noche 5 entrega el recibo; la 6, el recibo y la carta de despido, y de ahí al final.
+- **Fin de noche:** 6 AM → recorte de periódico → el recibo, si esa noche lo da → lo siguiente.
+  Ganar una Custom Night no da recorte: da la carta de despido y vuelve a Extras.
 
 ## Documentos
 
 `assets/art/extras/documentos/recibo_noche5.png`, `recibo_noche6.png` y `carta_despido.png`
-(1920x1080, la hoja completa). Lo único que dibuja el código encima es el nombre del jugador, con
+(1920x1080, la hoja completa). Se entregan así: el **recibo de la noche 5** al pasar la noche 5, el
+**recibo de la noche 6** al pasar la 6, y la **carta de despido** al ganar una Custom Night, la que
+sea. Clic para seguir. Verlos una vez los deja guardados en la pestaña **Documentos** de Extras. Lo único que dibuja el código encima es el nombre del jugador, con
 Special Elite en el color #231e1e y unos 26 px a 1080p (se escala con el alto). Las posiciones y la
 inclinación están medidas sobre las imágenes y viven en `data/documents.gd`: en los recibos la
 esquina superior izquierda del texto va en x 0.387, y 0.230 con 2° de inclinación; en la carta, en
@@ -127,12 +149,35 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Mago Eléctrico (rol Balloon Boy; antes Audel Electrix):** en pantalla y diálogos se llama "Mago Eléctrico"; en código, ids, estados y archivos se sigue usando `audel` (por ejemplo `cam06_audel-acecho`, `centro_audel.png`) para no romper nada. vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
   - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible como ya funciona el cortaso.
-  - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga. Tras 3 a 12 s al azar en oscuridad total aparecen dos chispas azules a lo lejos durante 2 s, acompañadas de la misma canción de cajita musical que toca la botarga, y luego `jumpscare_audel` con la animación de siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago esté en nivel 0, porque el apagón es suyo. Si dan las 6 AM antes del salto, el jugador sobrevive.
+  - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
+    secuencia de cuatro tiempos, en `blackout_death.gd`: 3 a 12 s al azar de oscuridad total;
+    aparecen dos chispas azules a lo lejos que **parpadean al ritmo de la cajita musical**, una
+    por nota, mientras suena la melodía entera (la de la botarga se calla: a oscuras solo se oye
+    esta); al acabar la melodía, las chispas se apagan y hay **silencio total de 2 a 5 s**; luego
+    se oyen **tres pasos que se acercan** y, al terminar, `jumpscare_audel` con la animación de
+    siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
+    esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
+    secuencia, el jugador se salva** y todo se calla.
   - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña en el pasillo; si no, game over "Juan.exe". No usa la reserva del pasillo.
 - **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
 - **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
+
+## Alucinaciones
+
+Desde la noche 2, de vez en cuando aparece **un solo cuadro durante 0.1 a 0.2 s** con un golpe
+grave, y se va. No hacen nada: ni matan, ni quitan energía, ni hay nada que contestar; están solo
+para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las noches altas y
+**nunca sale una antes de 90 s** desde la anterior. Los números y los cuadros están en
+`data/hallucinations.gd`; la capa es `scenes/night/hallucination_overlay.gd`.
+
+| Cuadro | Qué se ve |
+| --- | --- |
+| `foto_esposa` | La foto de la esposa difunta de Rochis, recortada de la capa de la CAM 3 y a pantalla completa, mirando de frente. |
+| `es_impresionante` | "ES IMPRESIONANTE" en rojo sobre el monitor. Solo sale con la PC abierta, que es cuando se ve la pantalla; si está bajada, se elige otro. |
+| `botarga` | La botarga sentada en la silla de la oficina: su propio jumpscare muy oscurecido, para que se adivine la silueta. |
+| `expediente` | Un expediente cualquiera con el nombre del jugador escrito donde va el del profe. |
 
 ## Jumpscares
 
@@ -177,6 +222,18 @@ La mecánica de Claudio de Armando solo se activa desde la noche 4.
 
 Custom Night: cada nivel de 0 a 20.
 
+**Retos de Custom Night** (`data/custom_challenges.gd`): botones que dejan los ocho niveles ya
+puestos. Ganar uno se guarda y el botón queda con una palomita. Tocar un nivel a mano deja de
+contar como reto.
+
+| Reto | Niveles | Gracia |
+| --- | --- | --- |
+| Junta de academia | Mamador, Juan.exe y Armando en 20 | Los tres de la sala de juntas a la vez. |
+| Puros nuevos | Juan.exe y Armando en 20 | Sin nadie que te distraiga. |
+| Fuera de horario | Barcosa y Rochis en 20 | Barcosa corriendo y Rochis levantándose. |
+| Apagón | Mago Eléctrico en 20 | Empieza con el 50 % de energía. |
+| Todos en 20 | los ocho en 20 | Además vale la tercera estrella del menú. |
+
 ## Lore, periódicos y Extras
 
 La historia de fondo no se explica en el juego: se va descubriendo en recortes de periódico. Al terminar cada noche, la pantalla de las 6 AM da paso a un recorte nuevo (como el periódico de FNAF), que se desbloquea y queda guardado en `user://save.cfg`. Las imágenes están en `assets/art/extras/periodico_0..6.png` (1920x1080, la página completa) y son
@@ -200,6 +257,8 @@ plantilla dibujada, que solo se usa si falta una imagen.
   teclas de dirección. Debajo, el nombre en pantalla, el rol y una línea. Se desbloquea la ficha de
   un profe la primera vez que te mata o al pasar la noche donde se activa.
 - **Periódicos:** los recortes desbloqueados, para releerlos.
+- **Documentos:** los recibos de pago y la carta de despido que ya te entregaron, con tu nombre
+  escrito encima. Clic en uno para verlo a pantalla completa.
 - **Jumpscares:** galería para reproducir los jumpscares ya vistos.
 - **Custom Night** (si no está ya en el menú principal).
 Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
