@@ -10,7 +10,7 @@ extends Control
 
 const MENU_CONFIRM: GDScript = preload("res://scenes/main_menu/confirm_box.gd")
 
-const TITLE_TEXT: String = "CINCO NOCHES\nEN LA COORDINACIÓN\nDE SISTEMAS"
+const TITLE_TEXT: String = "FIVE NIGHTS AT ROCHA'S"
 const TEXT_COLOR: Color = Color(0.95, 0.95, 0.93)
 const DIM_COLOR: Color = Color(0.52, 0.53, 0.55)
 const MARKER: String = ">>"
