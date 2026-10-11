@@ -47,6 +47,7 @@ const FLASH_TIME: float = 0.28
 @onready var jumpscare: Control = $Hud/JumpscareOverlay
 @onready var blackout_death: Control = $Hud/BlackoutDeath
 @onready var hallucinations: Control = $Hud/HallucinationOverlay
+@onready var call_subtitles: Control = $Hud/CallSubtitles
 @onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
@@ -109,6 +110,8 @@ func _ready() -> void:
 	phone_call.urena_snubbed.connect(_on_urena_snubbed)
 	phone_call.snub_line.connect(_on_snub_line)
 	phone_call.call_ended.connect(_on_call_ended)
+	phone_call.recording_started.connect(_on_recording_started)
+	call_subtitles.finished.connect(phone_call.end_recording)
 	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
 	server_room.closed.connect(_leave_server_room)
@@ -190,14 +193,19 @@ func animatronics() -> Array[Animatronic]:
 	return _animatronics
 
 
-## El panel de pruebas dispara la llamada de inicio de noche. Si esa noche no
-## tiene guion escrito, avisa en vez de quedarse callado.
+## El panel de pruebas: que suene la llamada de esta noche sin esperar.
 func debug_night_call() -> void:
-	var lines: PackedStringArray = NightCalls.for_night(GameManager.current_night)
-	if lines.is_empty():
+	if not NightCalls.has_call(GameManager.current_night):
 		notice_banner.show_notice(NO_CALL_NOTICE, NOTICE_SHORT)
 		return
-	phone_call.queue_message(lines, NightCalls.RING_TIME)
+	phone_call.queue_recording(GameManager.current_night, NightCalls.RING_TIME)
+
+
+## Contestaron: arrancan el audio y los subtítulos de abajo.
+func _on_recording_started(night: int) -> void:
+	call_subtitles.play(night)
+
+
 
 
 ## Los profes son hijos del nodo Animatronics, así se agregan sin tocar código.
@@ -390,7 +398,7 @@ func _process_calls(delta: float) -> void:
 	if _nightly_call_left > 0.0:
 		_nightly_call_left -= delta
 		if _nightly_call_left <= 0.0:
-			phone_call.queue_message(NightCalls.for_night(GameManager.current_night), NightCalls.RING_TIME)
+			phone_call.queue_recording(GameManager.current_night, NightCalls.RING_TIME)
 		return
 	if _urena_calls_at.is_empty() or GameManager.night_progress() < _urena_calls_at[0]:
 		return
@@ -646,6 +654,7 @@ func _end_night() -> void:
 	camera_system.close()
 	pc_screen.close()
 	hallucinations.set_process(false)
+	call_subtitles.mute()
 	AudioManager.stop_all()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

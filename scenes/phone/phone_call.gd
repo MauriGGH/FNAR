@@ -2,11 +2,11 @@ extends Control
 
 ## El teléfono de la oficina: la ventanita de la llamada, abajo del todo.
 ## Vive en la capa del HUD, así que se sigue viendo con las cámaras arriba.
-## Sirve para dos cosas: la llamada con la que empieza la noche (subtítulos
-## que salen poco a poco, con voz, y se pueden silenciar) y la llamada de
-## Ureña, que es una conversación: saluda, suelta tres insinuaciones con tres
-## respuestas contrarreloj cada una, reacciona a lo que conteste el jugador y
-## se despide.
+## Sirve para dos cosas: la llamada con la que empieza la noche, que es audio
+## grabado (aquí solo vive el timbre; el audio y los subtítulos los lleva
+## `call_subtitles.gd`), y la llamada de Ureña, que es una conversación:
+## saluda, suelta tres insinuaciones con tres respuestas contrarreloj cada una,
+## reacciona a lo que conteste el jugador y se despide.
 
 signal ringing_started(seconds: float)
 signal ring_tick()
@@ -20,8 +20,11 @@ signal call_ended()
 ## Lo que contestó el jugador a una insinuación de Ureña. El valor es un
 ## UrenaQuestions.Answer; sin contestar a tiempo cuenta como seguirle el juego.
 signal answer_given(kind: int)
+## Contestaron la llamada grabada de la noche: que empiecen el audio y los
+## subtítulos. De eso se encarga la barra de subtítulos, no esta ventanita.
+signal recording_started(night: int)
 
-enum Mode { NONE, MESSAGE, URENA }
+enum Mode { NONE, RECORDING, URENA }
 ## Por dónde va la llamada de Ureña.
 enum Step { GREETING, LINE, REACTION, FAREWELL }
 
@@ -29,8 +32,6 @@ enum Step { GREETING, LINE, REACTION, FAREWELL }
 const RING_TICK_TIME: float = 1.0
 ## Velocidad de los subtítulos, en letras por segundo.
 const TYPE_SPEED: float = 26.0
-## Lo que se queda cada línea ya escrita antes de pasar a la siguiente.
-const LINE_PAUSE: float = 1.1
 
 var is_ringing: bool = false
 var is_open: bool = false
@@ -41,12 +42,9 @@ var _ring_tick_left: float = 0.0
 var _fatal_if_missed: bool = false
 
 # Llamada de inicio de noche.
-var _lines: PackedStringArray = PackedStringArray()
+## Qué noche es la llamada grabada que está en marcha.
+var _recording_night: int = 0
 ## La última línea que se mandó a la voz, para no repetirla cada cuadro.
-var _spoken_line: int = -1
-var _line_index: int = 0
-var _typed: float = 0.0
-var _pause_left: float = 0.0
 
 # Llamada de Ureña.
 var _lines_urena: Array[Dictionary] = []
@@ -109,19 +107,17 @@ func answer() -> void:
 	if not is_ringing:
 		return
 	is_ringing = false
+	call_answered.emit()
+	if mode == Mode.RECORDING:
+		# La grabada no abre la ventanita: sus subtítulos van abajo al centro.
+		is_open = false
+		visible = false
+		recording_started.emit(_recording_night)
+		return
 	is_open = true
 	visible = true
-	call_answered.emit()
 	if mode == Mode.URENA:
 		_start_urena()
-	else:
-		_line_index = 0
-		_typed = 0.0
-		_pause_left = 0.0
-		_spoken_line = -1
-		options.visible = false
-		timer_label.visible = false
-		mute_button.visible = true
 
 
 func hang_up() -> void:
@@ -147,14 +143,22 @@ func hang_up() -> void:
 
 # --- Las dos clases de llamada -----------------------------------------------
 
-## El mensaje de la noche: suena, y si contestas salen los subtítulos.
-func queue_message(lines: PackedStringArray, seconds: float) -> void:
-	if lines.is_empty():
-		return  # Esa noche no hay guion: el teléfono no suena.
-	mode = Mode.MESSAGE
-	_lines = lines
-	caller_label.text = "LLAMADA ENTRANTE"
+## La llamada grabada de la noche: el teléfono suena y, al contestar, arranca
+## el audio con sus subtítulos. La ventanita del teléfono no se abre: los
+## subtítulos van abajo al centro y el juego sigue.
+func queue_recording(night: int, seconds: float) -> void:
+	_recording_night = night
+	mode = Mode.RECORDING
 	start_ringing(seconds, false)
+
+
+## La barra de subtítulos avisó de que la llamada acabó o se silenció.
+func end_recording() -> void:
+	if mode != Mode.RECORDING:
+		return
+	mode = Mode.NONE
+	_recording_night = 0
+	call_ended.emit()
 
 
 ## Los índices usados esta noche, para que el night.gd no repita ninguna.
@@ -183,8 +187,6 @@ func _process(delta: float) -> void:
 		return
 	if mode == Mode.URENA:
 		_process_urena(delta)
-	else:
-		_process_message(delta)
 
 
 func _process_ringing(delta: float) -> void:
@@ -206,28 +208,6 @@ func _process_ringing(delta: float) -> void:
 # --- Mensaje de la noche ------------------------------------------------------
 
 ## Los subtítulos salen letra por letra y la llamada se cuelga sola al final.
-func _process_message(delta: float) -> void:
-	if _line_index >= _lines.size():
-		hang_up()
-		return
-	if _pause_left > 0.0:
-		_pause_left -= delta
-		if _pause_left <= 0.0:
-			_line_index += 1
-			_typed = 0.0
-		return
-
-	var line: String = _lines[_line_index]
-	# La voz arranca con la línea, no letra por letra.
-	if _spoken_line != _line_index:
-		_spoken_line = _line_index
-		_speak(line)
-	_typed = minf(_typed + TYPE_SPEED * delta, float(line.length()))
-	subtitle_label.text = line.substr(0, int(_typed))
-	if int(_typed) >= line.length():
-		_pause_left = LINE_PAUSE
-
-
 ## El tono de ocupado primero y, en cuanto termina, Ureña hablando por el
 ## altavoz. No hace falta contestar: se oye en la oficina.
 ## El temporizador es uno solo y se reusa: si le cuelgas dos veces en la

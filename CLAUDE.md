@@ -70,7 +70,7 @@ buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (20 ids). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (26 ids: 20 más las seis llamadas de noche). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -95,6 +95,27 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `despertador` | `despertador.ogg` | Efectos | −8 | sí | el rodillo de las 6 AM |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 (si no, la voz sintética) |
+| `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
+
+## Llamadas de inicio de noche
+
+Como el Phone Guy de FNAF: a los 3 s de empezar la noche el teléfono timbra 10 s y, si
+se contesta, se reproduce **audio grabado con subtítulos**. No bloquea el juego: se sigue
+usando el monitor, la puerta y la linterna, y hay un botón **"Silenciar llamada"** que la
+corta en cualquier momento.
+
+- **Audio:** `assets/audio/llamadas/llamada_nocheN.ogg`, por el bus Voces. **Una noche tiene
+  llamada si existe ese archivo**; si falta, el teléfono no suena esa noche y no pasa nada.
+- **Subtítulos:** `data/llamadas/llamada_nocheN.txt`, una línea por frase con el formato
+  `m:ss|texto`. Las líneas que empiezan con `#` y las vacías se ignoran, y cada frase se queda
+  hasta que entra la siguiente. Si se recorta el audio, hay que reajustar los tiempos.
+- Van **abajo al centro**, como mucho dos líneas, en VT323 sobre un fondo semitransparente
+  (`scenes/phone/call_subtitles.gd`). El tiempo se lee de la posición del audio, no de un
+  contador propio, así que no se desfasan si el juego da un tirón.
+- El guion completo para grabar las noches que faltan está en `docs/guion_voces.md`.
+
+La llamada de Ureña es otra cosa y sigue como estaba: conversación con respuestas, en la
+ventanita de la esquina y con síntesis de voz.
 
 ## Tipografías
 

@@ -74,6 +74,14 @@ func has_real_file(id: String) -> bool:
 	return not path.is_empty() and ResourceLoader.exists(path)
 
 
+## Por dónde va la reproducción, en segundos. Los subtítulos de las llamadas se
+## cuelgan de esto y no de un contador propio: así no se desfasan aunque el
+## juego dé un tirón.
+func playback_position(id: String) -> float:
+	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
+	return 0.0 if player == null else player.get_playback_position()
+
+
 ## Lo que dura un sonido, en segundos. Hace falta para encadenar cosas con él
 ## (hablar después del tono de ocupado, saltar después de los pasos).
 func length(id: String) -> float:
@@ -178,7 +186,10 @@ func _set_looping(stream: AudioStream, looping: bool) -> void:
 	if wav != null:
 		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD if looping else AudioStreamWAV.LOOP_DISABLED
 		wav.loop_begin = 0
-		wav.loop_end = 0
+		# OJO: loop_end tiene que ser el final de verdad. Dejarlo en 0 no
+		# significa "hasta el final": significa un bucle de largo cero, y el
+		# sonido se corta al instante en vez de repetirse.
+		wav.loop_end = _frame_count(wav) if looping else 0
 		return
 	var ogg: AudioStreamOggVorbis = stream as AudioStreamOggVorbis
 	if ogg != null:
@@ -187,3 +198,10 @@ func _set_looping(stream: AudioStream, looping: bool) -> void:
 	var mp3: AudioStreamMP3 = stream as AudioStreamMP3
 	if mp3 != null:
 		mp3.loop = looping
+
+
+## Cuántas muestras tiene un wav, contando el formato y los canales.
+func _frame_count(wav: AudioStreamWAV) -> int:
+	var bytes_per_sample: int = 2 if wav.format == AudioStreamWAV.FORMAT_16_BITS else 1
+	var channels: int = 2 if wav.stereo else 1
+	return wav.data.size() / (bytes_per_sample * channels)

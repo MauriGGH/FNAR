@@ -52,6 +52,15 @@ const CAMERA_STATIC: String = "estatica_camara"
 ## el botón de la CAM 3 la dice con la síntesis de voz.
 const IMPRESSIVE: String = "es_impresionante"
 
+## Las llamadas grabadas con las que empieza cada noche. Tampoco llevan
+## provisional: si no está el archivo, esa noche no hay llamada y ya.
+const NIGHT_CALL: String = "llamada_noche%d"
+
+
+## El id de la llamada de una noche.
+static func night_call(night: int) -> String:
+	return NIGHT_CALL % night
+
 ## El catálogo. Por sonido: "file" (nombre dentro de assets/audio/, sin ruta),
 ## "bus", "volume_db" y "generator" (el nombre de la función de ToneBuilder que
 ## lo arma si el archivo falta; vacío si no hay provisional).
@@ -135,6 +144,30 @@ const CATALOG: Dictionary = {
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",
 		"volume_db": -2.0, "generator": "",
+	},
+	"llamada_noche1": {
+		"file": "llamadas/llamada_noche1.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"llamada_noche2": {
+		"file": "llamadas/llamada_noche2.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"llamada_noche3": {
+		"file": "llamadas/llamada_noche3.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"llamada_noche4": {
+		"file": "llamadas/llamada_noche4.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"llamada_noche5": {
+		"file": "llamadas/llamada_noche5.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"llamada_noche6": {
+		"file": "llamadas/llamada_noche6.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
 	},
 }
 
