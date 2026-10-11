@@ -1,4 +1,4 @@
-# Juego de terror en la Coordinación de Sistemas
+# Five Nights at Rocha's
 
 Juego de supervivencia estilo FNAF 2 hecho en Godot 4.7 con GDScript. El jugador es el guardia nocturno de un campus universitario y sobrevive de 12 AM a 6 AM en la oficina de la Coordinación de Sistemas, vigilando cámaras y defendiéndose de las almas de profesores ficticios.
 
@@ -17,7 +17,7 @@ El documento de diseño completo lo tiene el equipo; este archivo resume lo nece
 - Nombres de archivos, nodos, variables y funciones en inglés con snake_case; comentarios en español.
 - Comunicación entre sistemas con señales; nada de referencias rígidas entre escenas cuando una señal basta.
 - Valores de diseño (tiempos, niveles de IA, consumo de energía) en constantes o recursos, nunca números mágicos sueltos.
-- Todo el arte es placeholder por ahora: rectángulos de color y etiquetas de texto (por ejemplo "CAM 3: Rochis sentado"). No inventes rutas a imágenes que no existen.
+- No inventes rutas a imágenes que no existen.
 - Cambios pequeños y probables: una tarea a la vez. Al terminar, di cómo probarlo y sugiere un mensaje de commit.
 
 ## Estructura de carpetas
@@ -338,7 +338,7 @@ en la última noche y no distingue entre pasar la 5 y pasar la 6).
 ## Hitos del prototipo
 
 1. Reloj, energía, oficina placeholder, puerta, pantallas de 6 AM y game over.
-2. Grafo de habitaciones, clase Animatronic y sistema de 12 cámaras con etiquetas de texto.
+2. Grafo de habitaciones, clase Animatronic y sistema de 13 cámaras con etiquetas de texto.
 3. Barcosa completo.
 4. PC con ventana de IA, una tarea de ejemplo y Mamador.
 5. Come Trabas (la botarga), Ureña con linterna, Rochis con el audio, Mago Eléctrico con el breaker.

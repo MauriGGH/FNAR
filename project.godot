@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="FNAR"
+config/name="Five Nights at Rocha's"
 config/version="0.8.0"
 run/main_scene="res://scenes/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")

@@ -1,55 +1,55 @@
 {
   "source_image_size": [
-    1678,
-    937
+    1375,
+    768
   ],
-  "note": "Coordenadas normalizadas (0 a 1) sobre la vista derecha. clickable=true son zonas de clic.",
+  "note": "Coordenadas normalizadas (0 a 1) sobre la vista derecha nueva. clickable=true son zonas de clic.",
   "zones": {
     "server_room": {
-      "x": 0.5959,
-      "y": 0.3148,
-      "w": 0.2533,
-      "h": 0.4642,
+      "x": 0.6,
+      "y": 0.17,
+      "w": 0.385,
+      "h": 0.55,
       "clickable": true,
       "desc": "Clic: entrar a la sala de servidores (patch panel)"
     },
     "patch_panel": {
-      "x": 0.8832,
-      "y": 0.302,
-      "w": 0.0513,
-      "h": 0.1974,
+      "x": 0.886,
+      "y": 0.305,
+      "w": 0.091,
+      "h": 0.195,
       "clickable": false,
       "desc": "Patch panel en la pared de la sala de servidores"
     },
     "cubicle3_botarga": {
-      "x": 0.1013,
-      "y": 0.4696,
-      "w": 0.0894,
-      "h": 0.2668,
+      "x": 0.112,
+      "y": 0.485,
+      "w": 0.078,
+      "h": 0.22,
       "clickable": false,
       "desc": "Botarga de Santi en el cubículo 3"
     },
     "rochis_cubicle": {
-      "x": 0.298,
-      "y": 0.2988,
-      "w": 0.2324,
-      "h": 0.5229,
+      "x": 0.398,
+      "y": 0.19,
+      "w": 0.198,
+      "h": 0.655,
       "clickable": false,
-      "desc": "Cubículo de Rochis"
+      "desc": "Cubículo de Rochis (puerta abierta con persianas)"
     },
     "doorway": {
-      "x": 0.3754,
-      "y": 0.1974,
-      "w": 0.2384,
-      "h": 0.8026,
+      "x": 0.375,
+      "y": 0.19,
+      "w": 0.34,
+      "h": 0.81,
       "clickable": false,
-      "desc": "Marco sin puerta de la oficina"
+      "desc": "Paso de la oficina hacia los cubículos"
     },
     "desk_fan": {
-      "x": 0.0238,
-      "y": 0.5763,
-      "w": 0.0954,
-      "h": 0.2775,
+      "x": 0.028,
+      "y": 0.58,
+      "w": 0.089,
+      "h": 0.27,
       "clickable": false,
       "desc": "Ventilador (ancla con la vista central)"
     }
