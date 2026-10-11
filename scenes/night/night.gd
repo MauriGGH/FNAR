@@ -151,6 +151,9 @@ func _ready() -> void:
 	# El panel se arma después de arrancar la noche: hasta aquí los profes no
 	# tienen ruta, y el panel la necesita para su lista de cuartos.
 	mod_menu.bind(self)
+	# El ambiente de la oficina y del pasillo suena toda la noche.
+	AudioManager.play_loop(Sounds.OFFICE_AMBIENCE)
+	AudioManager.play_loop(Sounds.HALLWAY_AMBIENCE)
 	# La botarga toca mientras le quede cuerda, desde el minuto uno.
 	if _come_trabas != null and _come_trabas.is_active:
 		AudioManager.play_loop(Sounds.MUSIC_BOX)
@@ -331,12 +334,15 @@ func _on_power_changed(percent: float) -> void:
 ## La puerta la necesitan la energía y los profes que llegan a ella.
 func _on_door_toggled(is_closed: bool) -> void:
 	PowerManager.set_door_closed(is_closed)
+	AudioManager.play(Sounds.DOOR_SHUTTER)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_door_closed(is_closed)
 
 
 func _on_cameras_opened() -> void:
 	PowerManager.set_cameras_open(true)
+	AudioManager.play_loop(Sounds.CAMERA_STATIC)
+	AudioManager.play(Sounds.CAMERA_BLIP)
 	camera_bar.set_pointing_up(false)
 	# Con las cámaras arriba la oficina se queda quieta: si no, el mouse en el
 	# borde la haría girar a espaldas del jugador.
@@ -346,12 +352,14 @@ func _on_cameras_opened() -> void:
 
 func _on_cameras_closed() -> void:
 	PowerManager.set_cameras_open(false)
+	AudioManager.stop(Sounds.CAMERA_STATIC)
 	camera_bar.set_pointing_up(true)
 	office.set_interactive(true)
 	_update_watched_camera()
 
 
 func _on_camera_changed(_camera: int) -> void:
+	AudioManager.play(Sounds.CAMERA_BLIP)
 	_update_watched_camera()
 
 
@@ -367,6 +375,7 @@ func _update_watched_camera() -> void:
 
 func _on_flashlight_changed(is_on: bool) -> void:
 	PowerManager.set_flashlight_on(is_on)
+	AudioManager.play(Sounds.FLASHLIGHT_CLICK)
 	notice_banner.show_notice(FLASHLIGHT_CLICK, NOTICE_SHORT)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_flashlight_on(is_on)
@@ -435,6 +444,7 @@ func trigger_urena_call() -> void:
 
 func _on_ringing_started(_seconds: float) -> void:
 	office.set_phone_ringing(true)
+	AudioManager.play_loop(Sounds.PHONE_RING)
 
 
 func _on_ring_tick() -> void:
@@ -444,6 +454,7 @@ func _on_ring_tick() -> void:
 
 func _on_call_answered() -> void:
 	office.set_phone_ringing(false)
+	AudioManager.stop(Sounds.PHONE_RING)
 	office.set_phone_in_call(true)
 
 
@@ -452,6 +463,7 @@ func _on_call_answered() -> void:
 ## _on_urena_snubbed.
 func _on_call_missed() -> void:
 	office.set_phone_ringing(false)
+	AudioManager.stop(Sounds.PHONE_RING)
 	office.set_phone_in_call(false)
 
 
@@ -535,6 +547,7 @@ func _on_discharge(_cameras: PackedInt32Array) -> void:
 
 ## El breaker: "[clac]", el temblor lo hace el tablero, y la oficina a oscuras.
 func _on_breaker_pulled() -> void:
+	AudioManager.play(Sounds.BREAKER_LEVER)
 	notice_banner.show_notice(BREAKER_NOTICE, BREAKER_NOTICE_TIME)
 
 
@@ -571,6 +584,11 @@ func _on_jumpscare_finished() -> void:
 
 func _on_blackout_changed(is_blackout: bool) -> void:
 	office.set_blackout(is_blackout)
+	# Sin corriente no hay lámparas ni ventilador: el zumbido se va con la luz.
+	if is_blackout:
+		AudioManager.stop(Sounds.OFFICE_AMBIENCE)
+	elif GameManager.is_night_active:
+		AudioManager.play_loop(Sounds.OFFICE_AMBIENCE)
 	if not is_blackout:
 		return
 	camera_system.close()

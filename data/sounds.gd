@@ -36,6 +36,21 @@ const FOOTSTEPS: String = "pasos_acercandose"
 const LOW_HIT: String = "golpe_grave"
 ## Cuando uno de los del cristal se va con el cuarto destello.
 const GLASS_REPEL: String = "se_aleja"
+## Ambiente, en bucle toda la noche.
+const OFFICE_AMBIENCE: String = "ambiente_oficina"
+const HALLWAY_AMBIENCE: String = "ambiente_pasillo"
+## El timbre del teléfono, en bucle mientras suena.
+const PHONE_RING: String = "telefono_timbre"
+const DOOR_SHUTTER: String = "puerta_cortina"
+const DOOR_BANGS: String = "golpes_cortina"
+const CAMERA_BLIP: String = "camara_cambio"
+const FLASHLIGHT_CLICK: String = "linterna_click"
+const BREAKER_LEVER: String = "breaker_palanca"
+## El siseo de fondo mientras el monitor está abierto.
+const CAMERA_STATIC: String = "estatica_camara"
+## La voz de Rochis. No tiene provisional por código: mientras no esté grabada,
+## el botón de la CAM 3 la dice con la síntesis de voz.
+const IMPRESSIVE: String = "es_impresionante"
 
 ## El catálogo. Por sonido: "file" (nombre dentro de assets/audio/, sin ruta),
 ## "bus", "volume_db" y "generator" (el nombre de la función de ToneBuilder que
@@ -81,10 +96,53 @@ const CATALOG: Dictionary = {
 		"file": "golpe_grave.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "low_hit",
 	},
+	"ambiente_oficina": {
+		"file": "ambiente_oficina.ogg", "bus": "Ambiente",
+		"volume_db": -14.0, "generator": "office_ambience",
+	},
+	"ambiente_pasillo": {
+		"file": "ambiente_pasillo.ogg", "bus": "Ambiente",
+		"volume_db": -20.0, "generator": "hallway_ambience",
+	},
+	"telefono_timbre": {
+		"file": "telefono_timbre.ogg", "bus": "Efectos",
+		"volume_db": -6.0, "generator": "phone_ring",
+	},
+	"puerta_cortina": {
+		"file": "puerta_cortina.ogg", "bus": "Efectos",
+		"volume_db": -5.0, "generator": "door_shutter",
+	},
+	"golpes_cortina": {
+		"file": "golpes_cortina.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "door_bang",
+	},
+	"camara_cambio": {
+		"file": "camara_cambio.ogg", "bus": "Efectos",
+		"volume_db": -10.0, "generator": "camera_blip",
+	},
+	"linterna_click": {
+		"file": "linterna_click.ogg", "bus": "Efectos",
+		"volume_db": -14.0, "generator": "flashlight_click",
+	},
+	"breaker_palanca": {
+		"file": "breaker_palanca.ogg", "bus": "Efectos",
+		"volume_db": -6.0, "generator": "breaker_lever",
+	},
+	"estatica_camara": {
+		"file": "estatica_camara.ogg", "bus": "Ambiente",
+		"volume_db": -22.0, "generator": "camera_static",
+	},
+	"es_impresionante": {
+		"file": "es_impresionante.ogg", "bus": "Voces",
+		"volume_db": -2.0, "generator": "",
+	},
 }
 
 ## Los que suenan en bucle: el AudioManager les marca el bucle al cargarlos.
-const LOOPING: Array[String] = ["cajita_musical", "despertador"]
+const LOOPING: Array[String] = [
+	"cajita_musical", "despertador", "ambiente_oficina", "ambiente_pasillo",
+	"telefono_timbre", "estatica_camara",
+]
 
 
 static func ids() -> Array:

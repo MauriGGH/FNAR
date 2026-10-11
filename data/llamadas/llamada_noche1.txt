@@ -1,0 +1,61 @@
+# Subtítulos llamada noche 1 — formato: m:ss|texto   (cada línea dura hasta que empieza la siguiente)
+# Tiempos del audio crudo; si recortas el audio, ajusta aquí.
+0:00|¿Bueno? ¿Bueno, bueno?
+0:04|Ah, qué bueno que contestas.
+0:08|Quería grabarte un mensaje para que sepas cómo instalarte la primera noche.
+0:15|Y bueno, yo cubría este turno antes que tú.
+0:18|De hecho, estoy terminando mi última semana de servicio social.
+0:21|Sé que puede ser un poco abrumador, pero no te preocupes, todo saldrá bien.
+0:26|Vamos a centrarnos en que superes tu primera semana, ¿de acuerdo?
+0:35|A ver, primero hay un saludo institucional que estoy obligado a leer.
+0:38|Es algo legal, ¿sabes?
+0:44|"La Coordinación de Sistemas no se hace responsable de daños a la propiedad, a las personas ni a los expedientes académicos.
+0:52|En caso de desaparición, se presentará el reporte correspondiente en un plazo de 72 horas hábiles,
+0:59|o tan pronto como el área se haya limpiado y se hayan reinstalado los sistemas." Bla, bla, bla.
+1:09|Sé que puede sonar mal, pero en realidad no hay nada de qué preocuparse.
+1:15|Los profes de aquí se portan un poco raros por la noche.
+1:18|¿Pero los culpo?
+1:20|No, realmente no.
+1:24|Si a ti te obligaran a darle la misma clase al mismo idiota todos los días durante meses,
+1:31|probablemente también estarías un poco irritable por la noche, ¿sabes?
+1:38|Así que ten en cuenta que los profes tienden a deambular un poco.
+1:42|Se quedan en una especie de modo libre por la noche.
+1:48|Algo sobre que... no sé, algo se les traba si se quedan apagados mucho tiempo.
+1:58|En fin, no son los mismos desde aquella junta.
+2:04|¿Ya te contaron lo de la junta?
+2:07|¿No?
+2:08|Bueno, mejor no te cuento.
+2:10|El punto es que...
+2:12|Olvídalo.
+2:16|Y ahora, respecto a tu seguridad.
+2:18|El único riesgo real para ti como guardia nocturno, si es que hay alguno,
+2:24|es que estos profes, si te ven fuera de horario, probablemente no te reconozcan como alumno.
+2:32|Probablemente te vean como...
+2:35|No sé. No quiero saber.
+2:39|Y como eso va en contra de las reglas de la universidad, probablemente intenten meterte a la junta.
+2:50|Ahora, eso no sería tan malo...
+2:52|Bueno, si las juntas no fueran como son.
+2:55|Así que imagina tener que sentarte en una sala de juntas sin ventanas, con un proyector que no funciona
+3:03|y un café que se acabó hace tres horas. Puede causar un poco de incomodidad. Y la muerte.
+3:12|Je, je.
+3:13|Pero bueno, el primer día debería ser pan comido.
+3:21|Ah, sí, se me olvidaba lo importante.
+3:25|La puerta tiene una cortina metálica que gasta mucha energía.
+3:28|Ciérrala solo cuando haga falta.
+3:32|Las cámaras están en el monitor. Úsalas seguido, pero también gastan.
+3:37|Los tickets de la PC te los pagan. Los que se vencen, no.
+3:41|O sea, tú trabaja, pero no te pases de listo.
+3:48|Ahora sí, los profes. Desde aquella junta de academia no han vuelto a salir del edificio.
+3:57|Si ves al profe Mamador en la cámara, ten cuidado. Solo viene a revisar que todo esté en orden.
+4:06|Cuando llegue al cristal, que no vea la ventana de la asistente abierta ni la puerta cerrada.
+4:15|Se lo toma muy en serio.
+4:19|Demasiado.
+4:22|Al profe Juan, alúmbralo con la linterna cuando esté en el cristal. Varias veces. Se va solo.
+4:27|Ah, y si te llama en la noche para felicitarte por tu proyecto, no le sigas la plática.
+4:36|Empieza muy amable y luego se pone muy cariñoso. ¿Me entiendes?
+4:45|Y la botarga del cubículo 3... solo recuerda: dale cuerda en la cámara 4. Siempre.
+4:55|No preguntes por qué.
+5:01|Bueno, ya te dejo. Te hablo mañana.
+5:05|Solo revisa las cámaras y ahorra energía.
+5:12|Bien, de acuerdo.
+5:14|Buenas noches.

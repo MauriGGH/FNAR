@@ -69,6 +69,32 @@ buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
+**El catálogo** (20 ids). Todos tienen provisional por código salvo `es_impresionante`, que
+mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
+
+| id | archivo | bus | dB | bucle | cuándo suena |
+| --- | --- | --- | --- | --- | --- |
+| `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | −14 | sí | toda la noche; se calla con el apagón |
+| `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
+| `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
+| `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
+| `cajita_musical_apagon` | `cajita_musical.ogg` | Música | −4 | no | las chispas del apagón (mismo archivo) |
+| `telefono_timbre` | `telefono_timbre.ogg` | Efectos | −6 | sí | mientras el teléfono suena |
+| `tono_ocupado` | `tono_ocupado.ogg` | Efectos | −6 | no | al colgarle a Ureña |
+| `ticket_nuevo` | `ticket_nuevo.ogg` | Efectos | −4 | no | llega un ticket |
+| `puerta_cortina` | `puerta_cortina.ogg` | Efectos | −5 | no | la cortina al bajar o subir |
+| `golpes_cortina` | `golpes_cortina.ogg` | Efectos | −3 | no | cada golpe de Barcosa |
+| `camara_cambio` | `camara_cambio.ogg` | Efectos | −10 | no | abrir cámaras y cambiar de una a otra |
+| `linterna_click` | `linterna_click.ogg` | Efectos | −14 | no | prender y apagar la linterna |
+| `breaker_palanca` | `breaker_palanca.ogg` | Efectos | −6 | no | bajar el breaker |
+| `se_aleja` | `se_aleja.ogg` | Efectos | −3 | no | uno del cristal se va con el cuarto destello |
+| `pasos_acercandose` | `pasos_acercandose.ogg` | Efectos | −2 | no | los tres pasos del apagón |
+| `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | no | el cuadro de una alucinación |
+| `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
+| `despertador` | `despertador.ogg` | Efectos | −8 | sí | el rodillo de las 6 AM |
+| `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
+| `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 (si no, la voz sintética) |
+
 ## Tipografías
 
 Tres familias en `assets/fonts/`, pedidas siempre por `Fonts` (`scripts/ui/fonts.gd`), que las
@@ -205,7 +231,7 @@ para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las
 | `foto_esposa` | La foto de la esposa difunta de Rochis, recortada de la capa de la CAM 3 y a pantalla completa, mirando de frente. |
 | `es_impresionante` | "ES IMPRESIONANTE" en rojo sobre el monitor. Solo sale con la PC abierta, que es cuando se ve la pantalla; si está bajada, se elige otro. |
 | `botarga` | La botarga sentada en la silla de la oficina: su propio jumpscare muy oscurecido, para que se adivine la silueta. |
-| `expediente` | Un expediente cualquiera con el nombre del jugador escrito donde va el del profe. |
+| `expediente` | Un expediente cualquiera con el nombre del jugador escrito donde va el del profe. El valor del campo NOMBRE empieza en x 0.072, y 0.253 y llega a x 0.296, con alto 0.033, sobre una hoja girada −2.5°: el parche (color del papel #d6c49e) y el nombre se giran ese mismo ángulo apoyados en esa esquina. El nombre va en Special Elite a 30 px en 1080p, color #282019. |
 
 ## Jumpscares
 

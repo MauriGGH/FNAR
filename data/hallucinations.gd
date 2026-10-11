@@ -50,15 +50,20 @@ const IMPRESSIVE_SIZE: int = 96
 const COSTUME_IMAGE: String = "res://assets/art/jumpscares/jumpscare_cometrabas"
 const COSTUME_DARKEN: float = 0.62
 
-## Un expediente cualquiera con el nombre del jugador donde va el del profe. El
-## renglón del nombre está medido sobre `expediente_rochis` (la plantilla es la
-## misma en todos): el parche tapa el nombre viejo y encima se escribe el nuevo.
-const DOSSIER_NAME_PATCH: Rect2 = Rect2(0.070, 0.244, 0.195, 0.044)
-## El tono del papel, para que el parche no se note en un vistazo de 0.1 s.
-const DOSSIER_PAPER: Color = Color(0.788, 0.702, 0.573)
-const DOSSIER_NAME_AT: Vector2 = Vector2(0.073, 0.248)
-const DOSSIER_NAME_SIZE_AT_1080: float = 34.0
-const DOSSIER_INK: Color = Color(0.16, 0.13, 0.11)
+## Un expediente cualquiera con el nombre del jugador donde va el del profe.
+## El valor del campo NOMBRE empieza en x 0.072, y 0.253 y llega hasta x 0.296,
+## con un alto de 0.033; son medidas sobre la hoja, que en la imagen está
+## girada −2.5°. El parche tapa el nombre impreso y encima se escribe el nuevo,
+## los dos girados ese mismo ángulo sobre esa esquina, para que caigan en el
+## renglón y no de través.
+const DOSSIER_NAME_PATCH: Rect2 = Rect2(0.072, 0.253, 0.224, 0.033)
+const DOSSIER_TILT_DEGREES: float = -2.5
+## El tono del papel (#d6c49e), para que el parche no se note en un vistazo de
+## una décima de segundo.
+const DOSSIER_PAPER: Color = Color(0.8392, 0.7686, 0.6196)
+const DOSSIER_NAME_SIZE_AT_1080: float = 30.0
+## La tinta de la máquina de escribir (#282019).
+const DOSSIER_INK: Color = Color(0.1569, 0.1255, 0.0980)
 const REFERENCE_HEIGHT: float = 1080.0
 
 
@@ -88,3 +93,8 @@ static func pick(is_pc_open: bool) -> String:
 ## El tamaño del nombre del expediente para una pantalla de este alto.
 static func dossier_name_size(view_height: float) -> int:
 	return maxi(10, roundi(DOSSIER_NAME_SIZE_AT_1080 * view_height / REFERENCE_HEIGHT))
+
+
+## Lo girada que está la hoja, en radianes, que es lo que pide draw_set_transform.
+static func dossier_tilt() -> float:
+	return deg_to_rad(DOSSIER_TILT_DEGREES)

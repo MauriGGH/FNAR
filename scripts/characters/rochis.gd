@@ -34,6 +34,8 @@ const AUDIO_COOLDOWN: float = 2.0
 
 const GAME_OVER_CAUSE: String = "Rochis"
 const AUDIO_NOTICE: String = "[es impresionante]"
+## Lo que dice la síntesis de voz mientras no esté grabada la de Rochis.
+const IMPRESSIVE_TEXT: String = "Es impresionante"
 const STEPS_NOTICE: String = "[pasos en la recepción]"
 const NAME_NOTICE_FORMAT: String = "Rochis: %s…"
 const SIDE_PRESENCE: String = "[Rochis en el marco]"
@@ -133,12 +135,26 @@ func play_audio() -> bool:
 		return false
 	cooldown_left = AUDIO_COOLDOWN
 	made_noise.emit(AUDIO_NOTICE, NOTICE_TIME)
+	_play_impressive()
 	if stage > Stage.SITTING:
 		_set_stage(stage - 1)
 	else:
 		# Ya estaba sentado: el audio lo molesta y acelera su avance.
 		_annoyed = true
 	return true
+
+
+## Suena "es impresionante". Si ya está grabada la voz de Rochis se usa esa; si
+## no, la dice la síntesis de voz, que es el provisional de este sonido.
+func _play_impressive() -> void:
+	if AudioManager.has_real_file(Sounds.IMPRESSIVE):
+		AudioManager.play(Sounds.IMPRESSIVE)
+		return
+	var voice: String = _spanish_voice()
+	if voice.is_empty():
+		return
+	var volume: int = roundi(float(TTS_VOLUME) * AudioManager.voice_volume())
+	DisplayServer.tts_speak(IMPRESSIVE_TEXT, voice, volume, TTS_PITCH, TTS_RATE)
 
 
 ## De 0 a 1: qué tan listo está el botón para volver a usarse.

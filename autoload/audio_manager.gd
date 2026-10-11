@@ -66,6 +66,14 @@ func stop_all() -> void:
 		stop(str(id))
 
 
+## true si el archivo de verdad ya está en assets/audio/. Lo pregunta quien
+## tiene un plan B que no es un provisional por código: el botón de Rochis usa
+## la síntesis de voz mientras no esté grabada la suya.
+func has_real_file(id: String) -> bool:
+	var path: String = Sounds.file_path(id)
+	return not path.is_empty() and ResourceLoader.exists(path)
+
+
 ## Lo que dura un sonido, en segundos. Hace falta para encadenar cosas con él
 ## (hablar después del tono de ocupado, saltar después de los pasos).
 func length(id: String) -> float:

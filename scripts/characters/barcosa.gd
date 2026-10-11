@@ -211,6 +211,7 @@ func _process_banging(delta: float) -> void:
 	_knock_timer -= delta
 	if _knock_timer <= 0.0:
 		_knock_timer = KNOCK_INTERVAL
+		AudioManager.play(Sounds.DOOR_BANGS)
 		PowerManager.drain(KNOCK_POWER_COST)
 
 

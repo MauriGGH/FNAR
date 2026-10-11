@@ -34,6 +34,24 @@ static func build(generator: String) -> AudioStreamWAV:
 			return low_hit()
 		"glass_repel":
 			return glass_repel()
+		"office_ambience":
+			return office_ambience()
+		"hallway_ambience":
+			return hallway_ambience()
+		"phone_ring":
+			return phone_ring()
+		"door_shutter":
+			return door_shutter()
+		"door_bang":
+			return door_bang()
+		"camera_blip":
+			return camera_blip()
+		"flashlight_click":
+			return flashlight_click()
+		"breaker_lever":
+			return breaker_lever()
+		"camera_static":
+			return camera_static()
 	return null
 
 # --- Cajita musical ----------------------------------------------------------
@@ -267,6 +285,220 @@ static func glass_repel() -> AudioStreamWAV:
 	return _to_wav(buffer)
 
 
+# --- Ambiente de la oficina --------------------------------------------------
+## Un bucle de 4 s: el zumbido de las lámparas (la red y su armónico) y el aire
+## del ventilador. Las frecuencias caben un número entero de veces en los 4 s,
+## así que el zumbido empalma solo; al ruido del ventilador le toca el
+## entrecruzado del final.
+const OFFICE_LENGTH: float = 4.0
+const OFFICE_HUM_HZ: Array[float] = [120.0, 240.0]
+const OFFICE_HUM_GAINS: Array[float] = [0.5, 0.18]
+## El ventilador: ruido grave con un vaivén lento, como un aspa que pasa.
+const OFFICE_FAN_CUTOFF: float = 0.04
+const OFFICE_FAN_GAIN: float = 0.5
+const OFFICE_FAN_WOBBLE_HZ: float = 3.0
+const OFFICE_FAN_WOBBLE: float = 0.22
+const LOOP_CROSSFADE: float = 0.25
+
+
+static func office_ambience() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(OFFICE_LENGTH + LOOP_CROSSFADE)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var value: float = 0.0
+		for h: int in OFFICE_HUM_HZ.size():
+			value += sin(TAU * OFFICE_HUM_HZ[h] * t) * OFFICE_HUM_GAINS[h]
+		buffer[i] = value
+	var fan: PackedFloat32Array = _low_passed_noise(buffer.size(), OFFICE_FAN_CUTOFF)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var wobble: float = 1.0 - OFFICE_FAN_WOBBLE \
+			+ OFFICE_FAN_WOBBLE * sin(TAU * OFFICE_FAN_WOBBLE_HZ * t)
+		buffer[i] += fan[i] * OFFICE_FAN_GAIN * wobble
+	return _to_wav(_seamless(buffer, OFFICE_LENGTH))
+
+
+# --- Ambiente del pasillo ----------------------------------------------------
+## Viento lejano con crujidos de vez en cuando. Bucle de 8 s.
+const HALLWAY_LENGTH: float = 8.0
+const HALLWAY_WIND_CUTOFF: float = 0.012
+const HALLWAY_WIND_GAIN: float = 0.75
+## El viento no es parejo: sube y baja muy despacio.
+const HALLWAY_SWELL_HZ: float = 0.17
+const HALLWAY_SWELL: float = 0.45
+## Los crujidos: en qué segundo cae cada uno y su tono.
+const HALLWAY_CREAKS: Array[float] = [1.4, 3.9, 6.6]
+const HALLWAY_CREAK_HZ: Array[float] = [148.0, 96.0, 205.0]
+const HALLWAY_CREAK_TIME: float = 0.4
+const HALLWAY_CREAK_GAIN: float = 0.22
+
+
+static func hallway_ambience() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(HALLWAY_LENGTH + LOOP_CROSSFADE)
+	var wind: PackedFloat32Array = _low_passed_noise(buffer.size(), HALLWAY_WIND_CUTOFF)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var swell: float = 1.0 - HALLWAY_SWELL \
+			+ HALLWAY_SWELL * sin(TAU * HALLWAY_SWELL_HZ * t)
+		buffer[i] = wind[i] * HALLWAY_WIND_GAIN * swell
+	for c: int in HALLWAY_CREAKS.size():
+		_add_creak(buffer, HALLWAY_CREAKS[c], HALLWAY_CREAK_HZ[c])
+	return _to_wav(_seamless(buffer, HALLWAY_LENGTH))
+
+
+## Un crujido de madera: un tono que se desafina y se apaga, con ruido encima.
+static func _add_creak(buffer: PackedFloat32Array, start: float, frequency: float) -> void:
+	var first: int = int(start * SAMPLE_RATE)
+	var samples: int = int(HALLWAY_CREAK_TIME * SAMPLE_RATE)
+	var phase: float = 0.0
+	for i: int in samples:
+		var index: int = first + i
+		if index >= buffer.size():
+			return
+		var t: float = float(i) / float(samples)
+		phase += TAU * (frequency * (1.0 + t * 0.35)) / float(SAMPLE_RATE)
+		var envelope: float = sin(PI * t) * sin(PI * t)
+		buffer[index] += (sin(phase) * 0.6 + randf_range(-1.0, 1.0) * 0.4) \
+			* envelope * HALLWAY_CREAK_GAIN
+
+
+# --- Timbre del teléfono -----------------------------------------------------
+## Teléfono de oficina: dos ráfagas cortas y un silencio largo, en bucle. El
+## tono es la mezcla de dos frecuencias, que es lo que le da el "rrring".
+const RING_HZ: Array[float] = [440.0, 480.0]
+const RING_BURST: float = 0.4
+const RING_BURST_GAP: float = 0.2
+const RING_BURSTS: int = 2
+const RING_SILENCE: float = 2.0
+## El temblor que hace que suene a campanilla y no a pitido.
+const RING_TREMOLO_HZ: float = 20.0
+const RING_AMPLITUDE: float = 0.35
+
+
+static func phone_ring() -> AudioStreamWAV:
+	var length: float = float(RING_BURSTS) * RING_BURST \
+		+ float(RING_BURSTS - 1) * RING_BURST_GAP + RING_SILENCE
+	var buffer: PackedFloat32Array = _buffer(length)
+	for burst: int in RING_BURSTS:
+		var start: float = float(burst) * (RING_BURST + RING_BURST_GAP)
+		var first: int = int(start * SAMPLE_RATE)
+		var samples: int = int(RING_BURST * SAMPLE_RATE)
+		for i: int in samples:
+			var index: int = first + i
+			if index >= buffer.size():
+				break
+			var t: float = float(i) / float(SAMPLE_RATE)
+			var fade: float = minf(1.0, minf(float(i), float(samples - i)) / (0.01 * SAMPLE_RATE))
+			var tremolo: float = 0.65 + 0.35 * sin(TAU * RING_TREMOLO_HZ * t)
+			var value: float = 0.0
+			for hz: float in RING_HZ:
+				value += sin(TAU * hz * t)
+			buffer[index] += value * 0.5 * tremolo * fade * RING_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- Cortina metálica --------------------------------------------------------
+## La lámina bajando o subiendo: un traqueteo de ruido con un golpe al final.
+const SHUTTER_LENGTH: float = 0.95
+const SHUTTER_RATTLE_HZ: float = 26.0
+const SHUTTER_CUTOFF: float = 0.25
+const SHUTTER_GAIN: float = 0.55
+## El golpe de la lámina al llegar abajo.
+const SHUTTER_THUD_AT: float = 0.78
+const SHUTTER_THUD_HZ: float = 58.0
+
+
+static func door_shutter() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(SHUTTER_LENGTH)
+	var rattle: PackedFloat32Array = _low_passed_noise(buffer.size(), SHUTTER_CUTOFF)
+	var samples: int = buffer.size()
+	for i: int in samples:
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var progress: float = float(i) / float(samples)
+		# El traqueteo va por golpecitos, como los eslabones de la lámina.
+		var ticks: float = 0.5 + 0.5 * sin(TAU * SHUTTER_RATTLE_HZ * t)
+		var envelope: float = minf(progress * 8.0, 1.0) * (1.0 - progress * 0.55)
+		buffer[i] = rattle[i] * ticks * envelope * SHUTTER_GAIN
+	_add_thud(buffer, SHUTTER_THUD_AT, SHUTTER_THUD_HZ, 0.2, 0.8, 22.0, 0.35)
+	return _to_wav(buffer)
+
+
+# --- Barcosa golpeando -------------------------------------------------------
+## Un golpe en la lámina: el porrazo grave y el repique metálico encima.
+const BANG_LENGTH: float = 0.45
+const BANG_HZ: float = 62.0
+const BANG_RING_HZ: float = 430.0
+const BANG_RING_GAINS: Array[float] = [1.0, 0.6, 0.3]
+const BANG_RING_PARTIALS: Array[float] = [1.0, 2.41, 4.17]
+
+
+static func door_bang() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(BANG_LENGTH)
+	_add_thud(buffer, 0.0, BANG_HZ, BANG_LENGTH, 0.9, 16.0, 0.4)
+	_add_bell(buffer, 0.0, BANG_RING_HZ, BANG_RING_PARTIALS, BANG_RING_GAINS,
+		9.0, BANG_LENGTH, 0.3)
+	return _to_wav(buffer)
+
+
+# --- Blip al cambiar de cámara -----------------------------------------------
+const BLIP_HZ: float = 1600.0
+const BLIP_TIME: float = 0.06
+const BLIP_AMPLITUDE: float = 0.3
+
+
+static func camera_blip() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(BLIP_TIME)
+	_add_tone(buffer, 0.0, BLIP_HZ, BLIP_TIME, BLIP_AMPLITUDE)
+	return _to_wav(buffer)
+
+
+# --- Clic de la linterna -----------------------------------------------------
+## Un chasquido seco: un golpe de ruido muy corto y agudo.
+const CLICK_LENGTH: float = 0.05
+const CLICK_DECAY: float = 160.0
+const CLICK_AMPLITUDE: float = 0.5
+
+
+static func flashlight_click() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(CLICK_LENGTH)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		buffer[i] = randf_range(-1.0, 1.0) * exp(-CLICK_DECAY * t) * CLICK_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- Palanca del breaker -----------------------------------------------------
+## Más pesada que el clic de la linterna: dos chasquidos, el de la palanca al
+## soltarse y el del contacto al cerrar.
+const LEVER_LENGTH: float = 0.3
+const LEVER_CLACKS: Array[float] = [0.0, 0.07]
+const LEVER_HZ: float = 190.0
+const LEVER_DECAY: float = 45.0
+const LEVER_AMPLITUDE: float = 0.6
+
+
+static func breaker_lever() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(LEVER_LENGTH)
+	for clack: float in LEVER_CLACKS:
+		_add_thud(buffer, clack, LEVER_HZ, 0.12, LEVER_AMPLITUDE, LEVER_DECAY, 0.65)
+	return _to_wav(buffer)
+
+
+# --- Estática de las cámaras -------------------------------------------------
+## El siseo de fondo mientras el monitor está abierto. Bucle de 3 s, suave.
+const STATIC_LENGTH: float = 3.0
+const STATIC_CUTOFF: float = 0.5
+const STATIC_GAIN: float = 0.5
+
+
+static func camera_static() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(STATIC_LENGTH + LOOP_CROSSFADE)
+	var hiss: PackedFloat32Array = _low_passed_noise(buffer.size(), STATIC_CUTOFF)
+	for i: int in buffer.size():
+		buffer[i] = hiss[i] * STATIC_GAIN
+	return _to_wav(_seamless(buffer, STATIC_LENGTH))
+
+
 # --- Primitivas --------------------------------------------------------------
 
 static func _buffer(seconds: float) -> PackedFloat32Array:
@@ -355,3 +587,35 @@ static func _to_wav(buffer: PackedFloat32Array) -> AudioStreamWAV:
 	wav.stereo = false
 	wav.data = data
 	return wav
+
+
+## Ruido pasado por un filtro de un polo: cuanto más chico el corte, más grave.
+static func _low_passed_noise(samples: int, cutoff: float) -> PackedFloat32Array:
+	var out: PackedFloat32Array = PackedFloat32Array()
+	out.resize(samples)
+	var value: float = 0.0
+	for i: int in samples:
+		value += (randf_range(-1.0, 1.0) - value) * cutoff
+		out[i] = value
+	# El filtro deja la señal muy baja: se renormaliza para no perderla.
+	var peak: float = 0.0
+	for sample: float in out:
+		peak = maxf(peak, absf(sample))
+	if peak > 0.0:
+		for i: int in samples:
+			out[i] /= peak
+	return out
+
+
+## Convierte un buffer largo en un bucle que empalma: la cola de más allá del
+## final se mezcla encima del principio, así el corte no suena a clic.
+static func _seamless(buffer: PackedFloat32Array, length: float) -> PackedFloat32Array:
+	var keep: int = int(length * SAMPLE_RATE)
+	var tail: int = buffer.size() - keep
+	if tail <= 0:
+		return buffer
+	var out: PackedFloat32Array = buffer.slice(0, keep)
+	for i: int in tail:
+		var fade: float = float(i) / float(tail)
+		out[i] = out[i] * fade + buffer[keep + i] * (1.0 - fade)
+	return out

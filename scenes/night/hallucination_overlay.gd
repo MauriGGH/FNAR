@@ -129,24 +129,24 @@ func _draw_costume() -> void:
 		Color(shade, shade, shade, 1.0))
 
 
-## Un expediente con tu nombre donde iba el del profe.
+## Un expediente con tu nombre donde iba el del profe. La hoja está girada, así
+## que el parche que tapa el nombre impreso y el nombre nuevo van girados igual,
+## apoyados en la esquina donde empieza el valor del campo NOMBRE.
 func _draw_dossier() -> void:
 	if _dossier == null:
 		return
 	draw_texture_rect(_dossier, Rect2(Vector2.ZERO, size), false)
-	# El parche tapa el nombre impreso y encima va el del jugador.
-	var patch: Rect2 = Rect2(
-		Hallucinations.DOSSIER_NAME_PATCH.position * size,
-		Hallucinations.DOSSIER_NAME_PATCH.size * size)
-	draw_rect(patch, Hallucinations.DOSSIER_PAPER)
+	var patch: Rect2 = Hallucinations.DOSSIER_NAME_PATCH
+	draw_set_transform(patch.position * size, Hallucinations.dossier_tilt(), Vector2.ONE)
+	draw_rect(Rect2(Vector2.ZERO, patch.size * size), Hallucinations.DOSSIER_PAPER)
 	var font: Font = Fonts.typewriter()
-	if font == null:
-		return
-	var font_size: int = Hallucinations.dossier_name_size(size.y)
-	var at: Vector2 = Hallucinations.DOSSIER_NAME_AT * size
-	draw_string(font, at + Vector2(0.0, font.get_ascent(font_size)),
-		GameManager.player_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size,
-		Hallucinations.DOSSIER_INK)
+	if font != null:
+		var font_size: int = Hallucinations.dossier_name_size(size.y)
+		# draw_string pide la línea base, no la esquina de arriba.
+		draw_string(font, Vector2(0.0, font.get_ascent(font_size)),
+			GameManager.player_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size,
+			Hallucinations.DOSSIER_INK)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## El rectángulo donde pintar algo de ese tamaño para que llene la pantalla sin
