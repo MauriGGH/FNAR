@@ -6,11 +6,14 @@ extends Control
 ##
 ## Cada recorte es un TextureRect propio, no un dibujo en _draw(), porque en la
 ## vista central cada uno lleva su propia máscara del cono de la linterna: los
-## que solo existen con luz desaparecen fuera del haz, y los que se ven siempre
-## (Mamador, Barcosa, el Mago) se pintan apagados fuera y a todo brillo dentro.
+## que solo existen con luz desaparecen fuera del haz; los que se ven siempre
+## (Mamador, Barcosa, el Mago) se pintan apagados fuera y a todo brillo dentro;
+## y las siluetas de los que andan al otro lado del cristal se ven apagadas y
+## desenfocadas fuera del haz, y nítidas dentro.
 ##
 ## Si falta el recorte de alguien, no se pone nada y se queda su etiqueta de
-## presencia, que es lo que hay mientras no haya arte.
+## presencia, que es lo que hay mientras no haya arte. Eso es justo lo que pasa
+## hoy con las siluetas: el arte todavía no existe, así que no se dibuja nada.
 
 const LAYERS_DIR: String = "res://assets/art/office/layers/%s"
 const REVEAL_SHADER: String = "res://scenes/office/flashlight_reveal.gdshader"
@@ -37,7 +40,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-## Le dice quiénes están a la vista. Cada entrada es {"slug", "lit_only"}.
+## Le dice quiénes están a la vista. Cada entrada es
+## {"slug", "lit_only", "silhouette"}.
 func set_present(present: Array[Dictionary]) -> void:
 	if _same_present(present):
 		return
@@ -84,13 +88,17 @@ func _rebuild() -> void:
 		_add_picture(_texture_named(file_name), "", false)
 	for entry: Dictionary in _present:
 		var slug: String = str(entry.get("slug", ""))
-		_add_picture(_texture_for(slug), slug, bool(entry.get("lit_only", false)))
+		var silhouette: bool = bool(entry.get("silhouette", false))
+		var texture: Texture2D = _texture_named(OfficeLayers.silhouette_name(slug)) \
+			if silhouette else _texture_for(slug)
+		_add_picture(texture, slug, bool(entry.get("lit_only", false)), silhouette)
 	_apply_beam()
 
 
 ## Un recorte. En la vista central le cuelga su máscara del cono; en las otras
 ## va tal cual, porque ahí no hay linterna.
-func _add_picture(texture: Texture2D, slug: String, lit_only: bool) -> void:
+func _add_picture(texture: Texture2D, slug: String, lit_only: bool,
+		silhouette: bool = false) -> void:
 	if texture == null:
 		return
 	var picture: TextureRect = TextureRect.new()
@@ -101,7 +109,7 @@ func _add_picture(texture: Texture2D, slug: String, lit_only: bool) -> void:
 	add_child(picture)
 	if not uses_flashlight or slug.is_empty():
 		return
-	var material: ShaderMaterial = _make_material(lit_only, slug)
+	var material: ShaderMaterial = _make_material(lit_only, slug, silhouette)
 	if material != null:
 		picture.material = material
 		_materials[slug] = material
@@ -109,11 +117,17 @@ func _add_picture(texture: Texture2D, slug: String, lit_only: bool) -> void:
 
 ## El material del cono para ese profe. Los que se ven siempre se quedan
 ## apagados fuera del haz; los demás desaparecen.
-func _make_material(lit_only: bool, slug: String) -> ShaderMaterial:
+func _make_material(lit_only: bool, slug: String, silhouette: bool) -> ShaderMaterial:
 	if not ResourceLoader.exists(REVEAL_SHADER):
 		return null
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = load(REVEAL_SHADER)
+	# Una silueta se ve siempre, pero fuera del cono va apagada y desenfocada.
+	if silhouette:
+		material.set_shader_parameter("base_alpha", 1.0)
+		material.set_shader_parameter("base_brightness", OfficeLayers.DIM_BRIGHTNESS)
+		material.set_shader_parameter("outside_blur", OfficeLayers.SILHOUETTE_BLUR)
+		return material
 	var always: bool = not lit_only and OfficeLayers.is_always_visible(slug)
 	material.set_shader_parameter("base_alpha", 1.0 if always else 0.0)
 	material.set_shader_parameter("base_brightness",
@@ -145,6 +159,8 @@ func _same_present(present: Array[Dictionary]) -> bool:
 			return false
 		if present[i].get("lit_only", false) != _present[i].get("lit_only", false):
 			return false
+		if present[i].get("silhouette", false) != _present[i].get("silhouette", false):
+			return false
 	return true
 
 
@@ -154,6 +170,9 @@ func _texture_for(slug: String) -> Texture2D:
 
 ## Un recorte por su nombre de archivo, sin extensión.
 func _texture_named(file_name: String) -> Texture2D:
+	# Las capas desactivadas se tratan como si no existieran.
+	if OfficeLayers.is_disabled(file_name):
+		return null
 	if not _cache.has(file_name):
 		# Se guarda incluso si no existe, para no buscarlo en cada cuadro.
 		_cache[file_name] = GameAssets.load_texture(LAYERS_DIR % file_name)

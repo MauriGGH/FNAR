@@ -1,169 +1,145 @@
 extends Control
 
-## La cortina metálica de la puerta de entrada. Al cerrar la chapa baja en
-## 0.35 s con un rebote chico al tocar el piso; al abrir sube en 0.5 s.
+## La cortina metálica de la puerta de entrada. Es su propia capa,
+## `assets/art/office/cortina_capa.png`, del tamaño de la vista y ya colocada
+## en su sitio (ocupa x 407, y 250, 150 x 271 sobre la imagen de 1375x768).
 ##
-## Si existe la foto de la oficina con la cortina ya cerrada, se recorta de
-## ahí solo el área de la puerta y se va revelando de arriba hacia abajo. Si
-## no existe, se dibuja provisionalmente una cortina de láminas metálicas.
-## El nodo cubre todo el contenido de la vista central, así que la foto
-## recortada cae justo encima de la de abajo.
+## Al cerrar la chapa, la lámina se va revelando de arriba hacia abajo en
+## CLOSE_TIME; al abrir, a la inversa. Cuando termina de bajar, la oficina
+## cambia a las fotos con la puerta ya cerrada, así que a partir de ahí la
+## cortina la trae pintada el fondo y esta capa deja de dibujarse.
+##
+## La caja del rodillo ya viene pintada en las fotos, con la puerta abierta y
+## con la puerta cerrada, así que aquí no se dibuja nada de eso.
+##
+## Mientras baja, la capa respeta el cono de la linterna igual que el fondo:
+## fuera del cono se ve apagada, dentro a todo brillo. De eso se encarga el
+## mismo shader que usa la foto iluminada; como la capa está alineada con la
+## vista, sus UV son las de la vista y el haz le cae donde toca.
 
-## La misma vista con la cortina cerrada, sin extensión.
-const CLOSED_IMAGE_PATH: String = "res://assets/art/office/oficina_centro_cortina"
+## La capa de la cortina, del tamaño de la vista.
+const LAYER_PATH: String = "res://assets/art/office/cortina_capa"
+const REVEAL_SHADER: String = "res://scenes/office/flashlight_reveal.gdshader"
 
-## Qué recortar de esa foto, en coordenadas normalizadas de la vista (la foto
-## está alineada con oficina_centro). El recorte incluye el cajón de la cortina.
-const IMAGE_AREA: Rect2 = Rect2(0.289, 0.293, 0.122, 0.391)
-## De aquí hacia abajo está la lámina, y es lo único que se anima.
-const CURTAIN_TOP: float = 0.335
+## Dónde está la lámina dentro de la capa, en normalizadas de la vista. Medido
+## sobre el PNG: x 407, y 250, 150 x 271 de 1375x768.
+const CURTAIN_RECT: Rect2 = Rect2(0.296, 0.32552, 0.10909, 0.35286)
 
-## El cajón del rodillo es lo que queda arriba de CURTAIN_TOP. La foto de la
-## oficina no lo trae (ahí arriba solo hay un travesaño) y no se va a
-## re-renderizar, así que lo dibuja este nodo recortándolo de la foto con la
-## cortina cerrada. Se ve SIEMPRE, con la puerta abierta y cerrada, y nunca se
-## anima: lo único que sube y baja es la lámina de abajo.
-const DRAW_ROLLER_BOX: bool = true
+## Lo que tarda en bajar y en subir.
+const CLOSE_TIME: float = 0.6
+const OPEN_TIME: float = 0.6
 
-# Bajar: 0.3 s de caída y 0.05 s de rebote, 0.35 s en total.
-const CLOSE_TIME: float = 0.3
-const BOUNCE_TIME: float = 0.025
-## Lo que rebota hacia arriba al tocar el piso, en fracción del alto.
-const BOUNCE: float = 0.06
-const OPEN_TIME: float = 0.5
-
-## Alto de cada lámina de la cortina dibujada.
+## Cortina provisional, por si falta la capa: láminas dibujadas a mano.
 const SLAT_HEIGHT: float = 13.0
-## Alto de la barra del filo de abajo, la que pesa.
 const BAR_HEIGHT: float = 9.0
-## Alto de la caja dibujada, para cuando no hay foto de la cortina.
-const DRAWN_BOX_HEIGHT: float = 22.0
-
 const METAL_TOP: Color = Color(0.3, 0.31, 0.33)
 const METAL_BOTTOM: Color = Color(0.17, 0.175, 0.19)
 const GROOVE: Color = Color(0.06, 0.065, 0.075, 0.85)
 const SLAT_EDGE: Color = Color(1.0, 1.0, 1.0, 0.1)
-const RAIL: Color = Color(0.13, 0.135, 0.15)
 const BAR: Color = Color(0.24, 0.245, 0.26)
-## Brillo vertical, como si le pegara la luz de la oficina de un lado.
-const SHEEN: Color = Color(1.0, 0.97, 0.9, 0.07)
+
+## Terminó de bajar: la oficina ya puede cambiar a las fotos con la puerta
+## cerrada. Al empezar a subir avisa con false, para que vuelva a las normales.
+signal closed_changed(is_closed: bool)
 
 var progress: float = 0.0:
 	set(value):
 		progress = value
 		queue_redraw()
 
-var _door_rect: Rect2 = Rect2()
+## true mientras el fondo ya trae la cortina pintada: entonces esta capa sobra.
+var is_baked: bool = false
+
 var _texture: Texture2D = null
 var _tween: Tween = null
 
 
 func _ready() -> void:
-	_texture = GameAssets.load_texture(CLOSED_IMAGE_PATH)
+	_texture = GameAssets.load_texture(LAYER_PATH)
+	if _texture != null and ResourceLoader.exists(REVEAL_SHADER):
+		var material: ShaderMaterial = ShaderMaterial.new()
+		material.shader = load(REVEAL_SHADER)
+		# Fuera del cono no desaparece: se queda apagada, como el fondo.
+		material.set_shader_parameter("base_alpha", 1.0)
+		material.set_shader_parameter("base_brightness", OfficeLayers.DIM_BRIGHTNESS)
+		self.material = material
 
 
-## El rectángulo de la zona entrance_door, en coordenadas del contenido.
-func set_door_rect(rect: Rect2) -> void:
-	_door_rect = rect
-	queue_redraw()
+## El cono de la linterna, en normalizadas de la vista. Se lo pasa la oficina.
+func set_beam(center: Vector2, half: Vector2, softness: float, strength: float) -> void:
+	var shader: ShaderMaterial = material as ShaderMaterial
+	if shader == null:
+		return
+	shader.set_shader_parameter("beam_center", center)
+	shader.set_shader_parameter("beam_half", half)
+	shader.set_shader_parameter("beam_softness", softness)
+	shader.set_shader_parameter("beam_strength", strength)
+	shader.set_shader_parameter("aspect", size.x / size.y if size.y > 0.0 else 1.78)
 
 
-## Baja o sube la cortina. Al cerrar, el último tramo es el rebote.
+## Baja o sube la cortina, con su sonido.
 func set_closed(closed: bool) -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
-	_tween = create_tween()
+	AudioManager.play(Sounds.DOOR_SHUTTER)
 	if not closed:
+		# Al empezar a subir, el fondo vuelve a ser el de la puerta abierta y
+		# esta capa se encarga otra vez de la lámina.
+		is_baked = false
+		closed_changed.emit(false)
+		queue_redraw()
+		_tween = create_tween()
 		_tween.tween_property(self, "progress", 0.0, OPEN_TIME) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		return
+	_tween = create_tween()
 	_tween.tween_property(self, "progress", 1.0, CLOSE_TIME) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_tween.tween_property(self, "progress", 1.0 - BOUNCE, BOUNCE_TIME)
-	_tween.tween_property(self, "progress", 1.0, BOUNCE_TIME)
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_tween.tween_callback(_on_closed)
 
 
-## true cuando la lámina está recogida del todo. La caja se sigue viendo.
+## Ya tocó el piso: el fondo pasa a las fotos con la cortina pintada.
+func _on_closed() -> void:
+	is_baked = true
+	closed_changed.emit(true)
+	queue_redraw()
+
+
+## true cuando la lámina está recogida del todo.
 func is_hidden_away() -> bool:
 	return progress <= 0.001
 
 
 func _draw() -> void:
-	if _texture != null:
-		_draw_from_image()
+	# Con la cortina ya pintada en el fondo, esta capa estorba.
+	if is_baked or is_hidden_away() or size.x <= 0.0:
 		return
-	if _door_rect.size.y <= 0.0:
+	var area: Rect2 = Rect2(CURTAIN_RECT.position * size, CURTAIN_RECT.size * size)
+	var shown: Rect2 = Rect2(area.position,
+		Vector2(area.size.x, area.size.y * clampf(progress, 0.0, 1.0)))
+	if shown.size.y <= 0.0:
 		return
-	# Sin foto, la caja y la cortina se dibujan a mano.
-	if DRAW_ROLLER_BOX:
-		_draw_roller_box(Rect2(
-			Vector2(_door_rect.position.x, _door_rect.position.y - DRAWN_BOX_HEIGHT),
-			Vector2(_door_rect.size.x, DRAWN_BOX_HEIGHT)))
-	if is_hidden_away():
+	if _texture == null:
+		_draw_slats(shown)
 		return
-	var shown: Rect2 = Rect2(_door_rect.position,
-		Vector2(_door_rect.size.x, _door_rect.size.y * clampf(progress, 0.0, 1.0)))
-	_draw_slats(shown)
-	_draw_bottom_bar(shown)
-
-
-## Recorta de la foto con la cortina cerrada. La caja del rodillo se pinta
-## siempre, esté la puerta abierta o cerrada; la lámina, solo lo que haya
-## bajado, revelándose de arriba hacia abajo desde abajo de la caja.
-func _draw_from_image() -> void:
-	var area: Rect2 = Rect2(IMAGE_AREA.position * size, IMAGE_AREA.size * size)
-	var top: float = CURTAIN_TOP * size.y
-	if DRAW_ROLLER_BOX and top > area.position.y:
-		_blit(Rect2(area.position, Vector2(area.size.x, top - area.position.y)))
-	if is_hidden_away():
-		return
-	var height: float = (area.end.y - top) * clampf(progress, 0.0, 1.0)
-	if height <= 0.0:
-		return
-	var slat: Rect2 = Rect2(Vector2(area.position.x, top), Vector2(area.size.x, height))
-	_blit(slat)
-	_draw_bottom_bar(slat)
-
-
-## Un pedazo de la foto de la cortina, en su mismo sitio.
-func _blit(rect: Rect2) -> void:
+	# La capa está alineada con la vista, así que el recorte en pantalla y el
+	# recorte en la textura son el mismo rectángulo a distinta escala.
 	var factor: Vector2 = _texture.get_size() / size
-	draw_texture_rect_region(_texture, rect, Rect2(rect.position * factor, rect.size * factor))
+	draw_texture_rect_region(_texture, shown,
+		Rect2(shown.position * factor, shown.size * factor))
 
 
-## Cortina provisional: láminas con su ranura, rieles a los lados y un brillo.
+## Cortina provisional, por si algún día falta la capa.
 func _draw_slats(shown: Rect2) -> void:
-	DrawKit.rect_shadow(self, shown, Vector2(0.0, 6.0))
 	var y: float = shown.position.y
 	while y < shown.end.y:
 		var height: float = minf(SLAT_HEIGHT, shown.end.y - y)
 		var slat: Rect2 = Rect2(Vector2(shown.position.x, y), Vector2(shown.size.x, height))
 		DrawKit.gradient_rect(self, slat, METAL_TOP, METAL_BOTTOM)
 		draw_line(Vector2(slat.position.x, y + 0.5), Vector2(slat.end.x, y + 0.5), SLAT_EDGE, 1.0)
-		draw_line(Vector2(slat.position.x, slat.end.y - 0.5), Vector2(slat.end.x, slat.end.y - 0.5), GROOVE, 1.0)
+		draw_line(Vector2(slat.position.x, slat.end.y - 0.5),
+			Vector2(slat.end.x, slat.end.y - 0.5), GROOVE, 1.0)
 		y += SLAT_HEIGHT
-	DrawKit.gradient_rect(self, Rect2(shown.position, Vector2(shown.size.x * 0.4, shown.size.y)),
-		SHEEN, Color(SHEEN.r, SHEEN.g, SHEEN.b, 0.0))
-	var rail: float = maxf(shown.size.x * 0.035, 3.0)
-	DrawKit.gradient_rect(self, Rect2(shown.position, Vector2(rail, shown.size.y)),
-		RAIL.lightened(0.18), RAIL)
-	DrawKit.gradient_rect(self, Rect2(Vector2(shown.end.x - rail, shown.position.y), Vector2(rail, shown.size.y)),
-		RAIL, RAIL.darkened(0.25))
-
-
-## La caja del rodillo dibujada: un tubo metálico con su brillo arriba.
-func _draw_roller_box(box: Rect2) -> void:
-	DrawKit.rect_shadow(self, box, Vector2(0.0, 4.0))
-	DrawKit.gradient_rect(self, box, BAR.lightened(0.1), BAR.darkened(0.45))
-	draw_line(box.position + Vector2(0.0, box.size.y * 0.28),
-		Vector2(box.end.x, box.position.y + box.size.y * 0.28), SLAT_EDGE, 2.0)
-	DrawKit.soft_outline(self, box, RAIL)
-
-
-## La barra del filo de abajo: marca dónde va la cortina mientras se mueve.
-func _draw_bottom_bar(shown: Rect2) -> void:
-	var height: float = minf(BAR_HEIGHT, shown.size.y)
-	var bar: Rect2 = Rect2(Vector2(shown.position.x, shown.end.y - height),
-		Vector2(shown.size.x, height))
-	DrawKit.gradient_rect(self, bar, BAR, BAR.darkened(0.5))
-	draw_line(bar.position, Vector2(bar.end.x, bar.position.y), SLAT_EDGE, 1.0)
+	var bar_height: float = minf(BAR_HEIGHT, shown.size.y)
+	DrawKit.gradient_rect(self, Rect2(Vector2(shown.position.x, shown.end.y - bar_height),
+		Vector2(shown.size.x, bar_height)), BAR, BAR.darkened(0.5))

@@ -26,6 +26,18 @@ const BOXES: Dictionary = {
 const ARMANDO_EYE: Vector2 = Vector2(0.7193, 0.3607)
 const ARMANDO_EYE_COLOR: Color = Color(0.86, 0.45, 0.14)
 
+## Capas que existen como archivo pero todavía no valen: `derecha_rochis.png`
+## es de la vista derecha vieja y no cuadra con la nueva. En cuanto llegue la
+## de verdad, se quita de aquí y vuelve a dibujarse.
+const DISABLED: Array[String] = ["derecha_rochis"]
+
+## Los cuartos que se alcanzan a ver desde la oficina a través del cristal. Un
+## profe que esté en uno de ellos y tenga su `layers/silueta_<id>.png` se
+## dibuja como silueta al fondo del pasillo.
+const GLASS_ROOMS: Array[String] = ["recepcion", "pasillo_sur"]
+## Cómo se ve una silueta fuera del cono: apagada y desenfocada.
+const SILHOUETTE_BLUR: float = 0.004
+
 ## Los que se ven siempre, aunque sea a oscuras, porque ya están dentro o muy
 ## cerca de la oficina. Los demás solo existen dentro del cono.
 const ALWAYS_VISIBLE: Array[String] = ["mamador", "barcosa", "audel"]
@@ -55,3 +67,17 @@ static func has_box(slug: String) -> bool:
 
 static func is_always_visible(slug: String) -> bool:
 	return slug in ALWAYS_VISIBLE
+
+
+static func is_disabled(file_name: String) -> bool:
+	return file_name in DISABLED
+
+
+## El nombre del archivo de la silueta de un profe.
+static func silhouette_name(slug: String) -> String:
+	return "silueta_%s" % slug
+
+
+## true si ese cuarto se ve desde la oficina por el cristal.
+static func is_glass_room(room_id: String) -> bool:
+	return room_id in GLASS_ROOMS

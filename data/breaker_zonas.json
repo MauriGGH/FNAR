@@ -3,7 +3,7 @@
     1024,
     572
   ],
-  "note": "Coordenadas normalizadas (0 a 1) sobre breaker_arriba.png y breaker_abajo.png (misma composición).",
+  "note": "Coordenadas normalizadas (0 a 1) sobre el tablero del breaker, que se dibuja por codigo en breaker_panel.gd.",
   "zones": {
     "lever_track": {
       "x": 0.457,

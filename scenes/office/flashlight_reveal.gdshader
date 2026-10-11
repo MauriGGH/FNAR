@@ -27,6 +27,9 @@ uniform float aspect = 1.78;
 // Cómo se ve lo de fuera de la luz.
 uniform float base_alpha : hint_range(0.0, 1.0) = 0.0;
 uniform float base_brightness : hint_range(0.0, 1.0) = 1.0;
+// Desenfoque de fuera del cono, en fracción del ancho. Lo usan las siluetas
+// tras el cristal: sin luz se ven como un bulto, y con luz, nítidas.
+uniform float outside_blur : hint_range(0.0, 0.05) = 0.0;
 
 void fragment() {
 	// Distancia al borde del rectángulo: 0 dentro, y crece hacia afuera.
@@ -35,7 +38,20 @@ void fragment() {
 	float outside = length(max(away, vec2(0.0)));
 	float inside = (1.0 - smoothstep(0.0, beam_softness, outside)) * beam_strength;
 
-	vec4 source = texture(TEXTURE, UV);
+	// Fuera del cono se puede pedir desenfoque; dentro siempre va nítido.
+	float blur = outside_blur * (1.0 - inside);
+	vec4 source;
+	if (blur <= 0.0001) {
+		source = texture(TEXTURE, UV);
+	} else {
+		source = vec4(0.0);
+		for (int i = -2; i <= 2; i++) {
+			for (int j = -2; j <= 2; j++) {
+				source += texture(TEXTURE, UV + vec2(float(i), float(j) * aspect) * blur);
+			}
+		}
+		source /= 25.0;
+	}
 	float alpha = mix(base_alpha, 1.0, inside);
 	float brightness = mix(base_brightness, 1.0, inside);
 	COLOR = vec4(source.rgb * brightness, source.a * alpha);

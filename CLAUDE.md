@@ -44,9 +44,12 @@ res://
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
 - **Oficina:** tres vistas fijas que se cambian **solo con A y D o con las flechas**, con un barrido de 0.35 s suave al entrar y al salir. El mouse ya no mueve la cámara, así que soltar el monitor te deja mirando donde estabas. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+  Las fotos son de **1375x768** y vienen con su color y su oscuridad finales: el código **no les
+  pone ningún filtro, tinte ni modulate**; el shader de vista solo hace el desenfoque del giro.
   La vista central está **a oscuras**, como el pasillo de FNAF 2: de fondo va
   `oficina_centro_oscura.jpeg` y la foto iluminada (`oficina_centro.jpeg`) solo se ve **donde
-  alumbra la linterna**. La linterna **no se apunta**: ilumina de golpe toda la franja del
+  alumbra la linterna**. Con la cortina abajo se cambian las dos por
+  `oficina_centro_oscura_cerrada.jpeg` y `oficina_centro_cerrada.jpeg`. La linterna **no se apunta**: ilumina de golpe toda la franja del
   pasillo, con el borde difuminado y sin ninguna línea dura
   (`scenes/office/flashlight_reveal.gdshader`), y el foco parpadea un poco. Se mantiene con Ctrl o
   con el clic izquierdo sostenido sobre el cristal, y gasta energía mientras está encendida.
@@ -197,13 +200,31 @@ material, porque en la vista central cada uno se comporta distinto frente al con
   la escalera. Fuera del cono se pintan al 35 % de brillo, dentro al 100 %.
 - **El ojo de Armando:** si está en el cristal y el cono no le da, lo único que se ve de él es un
   punto naranja tenue que parpadea de vez en cuando donde tiene el ojo.
+- **Siluetas tras el cristal:** si un profe está en la recepción o en el tramo de `pasillo_sur` que
+  se ve desde la oficina y existe `layers/silueta_<id>.png`, se dibuja al fondo: fuera del cono, al
+  35 % de brillo y un poco desenfocada; dentro, nítida y a todo brillo. **Si el archivo no existe no
+  se dibuja nada**, que es lo que pasa hoy: el arte llega después.
+- **Capas desactivadas:** `derecha_rochis.png` es de la vista derecha vieja y no cuadra con la
+  nueva, así que está en `OfficeLayers.DISABLED` y no se carga. Cuando llegue la nueva, se quita de
+  esa lista.
 
 Dónde cae cada profe dentro de su recorte, y dónde tiene Armando el ojo, está en
 `data/office_layers.gd`. No se adivina: lo mide `tools/measure_office_layers.py` sobre los propios
 PNG (el recuadro de los píxeles opacos, y el píxel naranja más brillante de `centro_armando`). Si
 cambia el arte, se vuelve a correr.
 
-**Cortina de la puerta:** la caja de la cortina metálica sobre la puerta siempre se ve, aunque la puerta esté abierta. En la CAM 2 viene pintada en las imágenes; en la oficina la dibuja `door_shutter.gd` recortándola de la foto con la puerta cerrada (`DRAW_ROLLER_BOX` en true), porque `oficina_centro` con la puerta abierta no la trae. Lo que está delante de la puerta en la oficina (el mueble de la recepción, los perfiles del cristal) tapa la lámina mientras baja y cuando está cerrada. Al cerrar la puerta, la cortina baja desde esa caja. En la CAM 2, si la puerta está cerrada, el código encima sobre la imagen del estado actual el recorte de `cam02_cortina` en el rectángulo normalizado x 0.729, y 0.223, w 0.1245, h 0.752 (definido en `data/camera_overlays.gd`, que se mide sobre la imagen y no se adivina). Las imágenes `cam02_barcosa-golpeando` ya traen la cortina abajo y no llevan el recorte encima. En la CAM 2, Mamador se pinta a la izquierda de la puerta, frente al cristal del sillón, para no quedar tapado por la cortina.
+**Cortina de la puerta:** la caja del rodillo **ya viene pintada en las cuatro fotos de la vista
+central**, así que el código no la dibuja (`DRAW_ROLLER_BOX` fuera) y **ya no hay oclusores**: no
+queda nada delante de la puerta que tape la lámina.
+
+La lámina es su propia capa, `assets/art/office/cortina_capa.png`, del tamaño de la vista y ya
+colocada en su sitio (ocupa x 407, y 250, 150 x 271 sobre la imagen de 1375x768). Al cerrar la
+chapa se va revelando de arriba hacia abajo en **0.6 s**, con el sonido `puerta_cortina`; al abrir,
+a la inversa. Al terminar de bajar, la vista central cambia a las fotos `*_cerrada` (la oscura y la
+iluminada) y la capa deja de dibujarse, porque a partir de ahí la cortina la trae el fondo.
+Mientras baja, la capa **respeta el cono de la linterna igual que el fondo**: fuera del cono se ve
+apagada, dentro a todo brillo. Por eso el cono abarca también la zona `entrance_door`, que es el
+fondo del pasillo. En la CAM 2, si la puerta está cerrada, el código encima sobre la imagen del estado actual el recorte de `cam02_cortina` en el rectángulo normalizado x 0.729, y 0.223, w 0.1245, h 0.752 (definido en `data/camera_overlays.gd`, que se mide sobre la imagen y no se adivina). Las imágenes `cam02_barcosa-golpeando` ya traen la cortina abajo y no llevan el recorte encima. En la CAM 2, Mamador se pinta a la izquierda de la puerta, frente al cristal del sillón, para no quedar tapado por la cortina.
 
 **Cámaras de ambiente (7, 8, 9):** ninguna ruta de ida pasa por ahí; solo las usan Mamador y Armando al retirarse (ver Rutas de retiro). Además, de vez en cuando muestran sucesos raros sin consecuencias (una sombra, una luz que parpadea), que sirven de atmósfera y de pistas para una secuela.
 

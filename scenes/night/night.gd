@@ -292,8 +292,30 @@ func _refresh_office_presence() -> void:
 			if label.is_empty():
 				label = animatronic.zone_presence(zone_id)
 		office.set_zone_presence(zone_id, label)
+	_add_glass_silhouettes(by_view)
 	for view: int in office.view_count():
 		office.set_view_present(view, by_view[view])
+
+
+## Los que andan al otro lado del cristal (la recepción y el tramo de
+## pasillo_sur que se ve desde la oficina) se dibujan como silueta al fondo.
+## Si todavía no existe su `layers/silueta_<id>.png`, no se dibuja nada.
+func _add_glass_silhouettes(by_view: Dictionary) -> void:
+	var center: Array[Dictionary] = by_view[office.glass_view()]
+	for animatronic: Animatronic in _animatronics:
+		if not animatronic.is_active:
+			continue
+		if not OfficeLayers.is_glass_room(animatronic.current_room):
+			continue
+		var slug: String = animatronic.image_slug()
+		if slug.is_empty():
+			continue
+		# Si ya se está dibujando entero en alguna zona, la silueta sobra.
+		var already: bool = center.any(func(entry: Dictionary) -> bool:
+			return str(entry.get("slug", "")) == slug)
+		if already:
+			continue
+		center.append({"slug": slug, "lit_only": false, "silhouette": true})
 
 
 ## Cada cuadro: la linterna alumbra el pasillo entero, así que a todos los que

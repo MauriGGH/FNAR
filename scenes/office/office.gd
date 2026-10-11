@@ -25,6 +25,14 @@ const LEFT_ZONES_PATH: String = "res://data/oficina_izquierda_zonas.json"
 
 ## Vista derecha con la silla del cubículo 3 vacía: el Come Trabas ya se levantó.
 const RIGHT_EMPTY_TEXTURE: Texture2D = preload("res://assets/art/office/oficina_derecha_vacia.png")
+
+## Las cuatro fotos de la vista central: a oscuras y alumbrada, con la puerta
+## abierta y con la cortina ya abajo. Se cambian de par en par cuando la
+## cortina termina de bajar o empieza a subir.
+const CENTER_DARK: String = "res://assets/art/office/oficina_centro_oscura"
+const CENTER_LIT: String = "res://assets/art/office/oficina_centro"
+const CENTER_DARK_CLOSED: String = "res://assets/art/office/oficina_centro_oscura_cerrada"
+const CENTER_LIT_CLOSED: String = "res://assets/art/office/oficina_centro_cerrada"
 const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay.gd")
 const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
@@ -32,12 +40,6 @@ const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
 const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
 const ARMANDO_EYE: GDScript = preload("res://scenes/office/armando_eye.gd")
-
-## Máscara de oclusión de la puerta: los pedazos de la foto que están más
-## cerca de la cámara que la puerta (el mueble de la recepción, su base y los
-## perfiles del cristal) y que por lo tanto tapan la lámina de la cortina.
-## La genera tools/make_door_occluder.py; si no está, no pasa nada.
-const DOOR_OCCLUDER_PATH: String = "res://assets/art/office/layers/oclusor_puerta"
 
 ## Nombre de cada vista en los archivos de recorte: layers/centro_urena.png.
 const VIEW_LAYER_NAMES: Array[String] = ["izquierda", "centro", "derecha"]
@@ -51,6 +53,8 @@ const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashl
 
 ## La zona del cristal, que es por donde se asoman los del pasillo.
 const GLASS_ZONE: String = "front_glass"
+## La puerta de entrada, al fondo del pasillo. También la alumbra la linterna.
+const GLASS_DOOR_ZONE: String = "entrance_door"
 
 ## La luz de la linterna, en normalizadas de la vista central. No se apunta:
 ## cubre toda la franja del pasillo (el recuadro de los seis recortes juntos,
@@ -84,25 +88,6 @@ const MAX_SWEEP_BLUR: float = 0.028
 
 ## Lo que tarda el acercamiento a la pantalla de la PC.
 const ZOOM_TIME: float = 0.4
-
-# Corrección de color de la vista derecha, medida contra la central:
-# le baja el cian (más rojo, menos verde) y la deja un poco más oscura.
-const RIGHT_CHANNEL_GAIN: Vector3 = Vector3(1.14, 0.94, 1.0)
-const RIGHT_SATURATION: float = 0.84
-const RIGHT_BRIGHTNESS: float = 0.92
-
-# La vista izquierda viene mucho más oscura que la central (luma 0.040 contra
-# 0.119) y con menos cian que la derecha, así que lleva poco ajuste de canal y
-# un brillo alto. Medido: deja luma 0.117 y verde/rojo 1.25 (la central, 1.23).
-const LEFT_CHANNEL_GAIN: Vector3 = Vector3(1.06, 0.96, 1.0)
-const LEFT_SATURATION: float = 0.92
-const LEFT_BRIGHTNESS: float = 2.95
-
-# La vista derecha vacía se renderizó aparte y salió más cian que la normal
-# (verde/rojo 1.75 contra 1.65), así que lleva su propia corrección.
-const RIGHT_EMPTY_CHANNEL_GAIN: Vector3 = Vector3(1.26, 0.93, 0.99)
-const RIGHT_EMPTY_SATURATION: float = 0.9
-const RIGHT_EMPTY_BRIGHTNESS: float = 0.98
 
 const FLASHLIGHT_NOTICE: String = "[sostén Ctrl o el clic sobre el cristal]"
 const DOOR_NOTICE: String = "[clang]"
@@ -183,7 +168,6 @@ var _urena_photos: int = 0
 var flashlight_overlay: Control = null
 var phone_light: Control = null
 var door_shutter: Control = null
-var door_occluder: TextureRect = null
 var photo_viewer: Control = null
 ## El puntito del ojo de Armando, solo en la vista central.
 var armando_eye: Control = null
@@ -201,19 +185,14 @@ func _ready() -> void:
 	_content_nodes = [left_content, center_content, right_content]
 
 	_right_normal_texture = right_image.texture
-	_apply_view_grade(left_image, LEFT_CHANNEL_GAIN, LEFT_SATURATION, LEFT_BRIGHTNESS)
-	_apply_view_grade(right_image, RIGHT_CHANNEL_GAIN, RIGHT_SATURATION, RIGHT_BRIGHTNESS)
 	_build_zones(CENTER_ZONES_PATH, $Views/CenterView/Content/Zones, CENTER_CLICKABLE)
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
-	# El orden importa: la cortina y su caja van sobre la foto, encima de
-	# ellas la máscara de oclusión (lo que está delante de la puerta), después
-	# los recortes de los profes del cristal y al final las etiquetas de
-	# presencia, para que se lean con la cortina cerrada. La capa de oscuridad
-	# se crea después de todo eso, así que la cortina y la máscara también se
-	# apagan cuando se va la luz.
+	# El orden importa: la cortina va sobre la foto, después los recortes de
+	# los profes del cristal y al final las etiquetas de presencia, para que se
+	# lean con la cortina cerrada. La capa de oscuridad se crea después de todo
+	# eso, así que la cortina también se apaga cuando se va la luz.
 	_build_door_shutter()
-	_build_door_occluder()
 	_build_layers()
 	_build_labels()
 	_build_photo_viewer()
@@ -279,6 +258,11 @@ func _update_beam_area() -> void:
 	var hallway: Rect2 = OfficeLayers.hallway_rect()
 	if hallway.size.x <= 0.0:
 		return
+	# La puerta está al fondo del pasillo, a la izquierda de donde se paran los
+	# profes: si no se mete en la cuenta, la cortina nunca se alumbra.
+	var door: Rect2 = _normalized_zone(GLASS_DOOR_ZONE)
+	if door.size.x > 0.0:
+		hallway = hallway.merge(door)
 	_beam_center = hallway.get_center()
 	_beam_half = hallway.size * 0.5 * BEAM_MARGIN
 
@@ -296,6 +280,8 @@ func _apply_beam() -> void:
 		material.set_shader_parameter("aspect", aspect)
 	for layer: Control in _layers:
 		layer.set_beam(_beam_center, _beam_half, BEAM_SOFTNESS, _beam_strength)
+	if door_shutter != null:
+		door_shutter.set_beam(_beam_center, _beam_half, BEAM_SOFTNESS, _beam_strength)
 	if armando_eye != null:
 		armando_eye.set_lit(is_flashlight_on())
 	if flashlight_overlay != null:
@@ -430,13 +416,9 @@ func _layout_flashlight() -> void:
 		armando_eye.position = Vector2.ZERO
 		armando_eye.size = content_size
 	_apply_beam()
-	if door_occluder != null:
-		door_occluder.position = Vector2.ZERO
-		door_occluder.size = content_size
 	if door_shutter != null:
 		door_shutter.position = Vector2.ZERO
 		door_shutter.size = content_size
-		door_shutter.set_door_rect(zone_rect("entrance_door"))
 	if phone_light != null:
 		# Cubre todo el contenido: así el foquito y la pantallita se colocan
 		# con las mismas normalizadas de las zonas y escalan con la vista.
@@ -522,23 +504,10 @@ func _set_blur(amount: float) -> void:
 			material.set_shader_parameter("blur_amount", amount)
 
 
-func _apply_view_grade(image: TextureRect, gain: Vector3, saturation: float, brightness: float) -> void:
-	var material: ShaderMaterial = image.material as ShaderMaterial
-	if material == null:
-		return
-	material.set_shader_parameter("channel_gain", gain)
-	material.set_shader_parameter("saturation", saturation)
-	material.set_shader_parameter("brightness", brightness)
-
-
-## Cuando el Come Trabas se levanta, la silla del cubículo 3 queda vacía.
-## La imagen vacía trae su propio color, así que el ajuste también cambia.
+## Cuando el Come Trabas se levanta, la silla del cubículo 3 queda vacía. Las
+## dos fotos ya vienen con su color final, así que solo se cambia la textura.
 func set_right_view_empty(is_empty: bool) -> void:
 	right_image.texture = RIGHT_EMPTY_TEXTURE if is_empty else _right_normal_texture
-	if is_empty:
-		_apply_view_grade(right_image, RIGHT_EMPTY_CHANNEL_GAIN, RIGHT_EMPTY_SATURATION, RIGHT_EMPTY_BRIGHTNESS)
-	else:
-		_apply_view_grade(right_image, RIGHT_CHANNEL_GAIN, RIGHT_SATURATION, RIGHT_BRIGHTNESS)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -643,6 +612,16 @@ func _build_zones(path: String, holder: Control, default_clickable: Array[String
 		zone.clicked.connect(_on_zone_clicked)
 		holder.add_child(zone)
 		_zones[zone_id] = zone
+
+
+## El rectángulo de una zona en normalizadas de su vista, que es como se mide
+## todo lo del haz.
+func _normalized_zone(zone_id: String) -> Rect2:
+	var content_size: Vector2 = center_content.size
+	if content_size.x <= 0.0 or content_size.y <= 0.0:
+		return Rect2()
+	var rect: Rect2 = zone_rect(zone_id)
+	return Rect2(rect.position / content_size, rect.size / content_size)
 
 
 ## Rectángulo de una zona en píxeles, dentro del contenido de su vista.
@@ -769,6 +748,12 @@ func set_view_present(view: int, present: Array[Dictionary]) -> void:
 	_layers[view].set_present(present)
 
 
+## La vista donde está el cristal, que es la central. La pide el night.gd para
+## meter ahí las siluetas sin tener que saberse el nombre de la zona.
+func glass_view() -> int:
+	return view_of_zone(GLASS_ZONE)
+
+
 ## En qué vista vive una zona, como índice de View.
 func view_of_zone(zone_id: String) -> int:
 	var content: Control = _content_for_zone(zone_id)
@@ -797,20 +782,6 @@ func _build_photo_viewer() -> void:
 	add_child(photo_viewer)
 
 
-## La máscara de oclusión: va justo encima de la cortina, así que la lámina
-## baja por detrás del mueble y de los perfiles del cristal.
-func _build_door_occluder() -> void:
-	var texture: Texture2D = GameAssets.load_texture(DOOR_OCCLUDER_PATH)
-	if texture == null:
-		return  # Todavía no se ha generado: la cortina se dibuja como antes.
-	door_occluder = TextureRect.new()
-	door_occluder.name = "DoorOccluder"
-	door_occluder.texture = texture
-	door_occluder.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	door_occluder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center_content.add_child(door_occluder)
-
-
 ## Sacude la vista un momento. Lo usa el golpe de la cortina.
 func shake() -> void:
 	_shake_left = SHAKE_TIME
@@ -832,7 +803,19 @@ func _build_door_shutter() -> void:
 	door_shutter = DOOR_SHUTTER.new()
 	door_shutter.name = "DoorShutter"
 	door_shutter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	door_shutter.closed_changed.connect(_on_shutter_closed_changed)
 	center_content.add_child(door_shutter)
+
+
+## La cortina terminó de bajar (o empezó a subir): la vista central cambia a
+## las fotos que ya la traen pintada, o vuelve a las normales.
+func _on_shutter_closed_changed(closed: bool) -> void:
+	center_image.texture = GameAssets.load_texture(
+		CENTER_DARK_CLOSED if closed else CENTER_DARK)
+	center_lit.texture = GameAssets.load_texture(
+		CENTER_LIT_CLOSED if closed else CENTER_LIT)
+	if phone_light != null:
+		phone_light.set_background(center_image.texture)
 
 
 ## La linterna y el foquito del teléfono viven en la vista central.
