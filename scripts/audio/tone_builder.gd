@@ -52,6 +52,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return breaker_lever()
 		"camera_static":
 			return camera_static()
+		"phone_hang_up":
+			return phone_hang_up()
 	return null
 
 # --- Cajita musical ----------------------------------------------------------
@@ -497,6 +499,29 @@ static func camera_static() -> AudioStreamWAV:
 	for i: int in buffer.size():
 		buffer[i] = hiss[i] * STATIC_GAIN
 	return _to_wav(_seamless(buffer, STATIC_LENGTH))
+
+
+# --- Colgar el teléfono ------------------------------------------------------
+## Dos clacs secos muy juntos, como el auricular cayendo en la horquilla, y un
+## tintineo corto de la campanilla.
+const HANG_UP_LENGTH: float = 0.45
+const HANG_UP_CLACKS: Array[float] = [0.0, 0.05]
+const HANG_UP_HZ: float = 240.0
+const HANG_UP_DECAY: float = 60.0
+const HANG_UP_AMPLITUDE: float = 0.6
+## El resto de campanilla que deja el golpe.
+const HANG_UP_RING_HZ: float = 900.0
+const HANG_UP_RING_PARTIALS: Array[float] = [1.0, 2.7]
+const HANG_UP_RING_GAINS: Array[float] = [1.0, 0.4]
+
+
+static func phone_hang_up() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(HANG_UP_LENGTH)
+	for clack: float in HANG_UP_CLACKS:
+		_add_thud(buffer, clack, HANG_UP_HZ, 0.1, HANG_UP_AMPLITUDE, HANG_UP_DECAY, 0.7)
+	_add_bell(buffer, 0.04, HANG_UP_RING_HZ, HANG_UP_RING_PARTIALS, HANG_UP_RING_GAINS,
+		14.0, HANG_UP_LENGTH, 0.22)
+	return _to_wav(buffer)
 
 
 # --- Primitivas --------------------------------------------------------------

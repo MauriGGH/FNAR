@@ -263,19 +263,23 @@ func _start_urena() -> void:
 	_line_urena = -1
 	_played_along = false
 	_was_rude = false
-	_say(UrenaQuestions.greeting(GameManager.player_name, GameManager.completed_task_count()),
-		UrenaQuestions.GREETING_HOLD)
+	# Lo que se lee lleva el nombre; lo que se oye, no.
+	var done: int = GameManager.completed_task_count()
+	_say(UrenaQuestions.greeting(GameManager.player_name, done),
+		UrenaQuestions.GREETING_HOLD, UrenaQuestions.greeting_spoken(done))
 	_step = Step.GREETING
 
 
 ## Pone a Ureña a decir algo: se escribe poco a poco y después se queda hold
 ## segundos en pantalla. Mientras habla no hay opciones ni reloj.
-func _say(text: String, hold: float) -> void:
+## `spoken` sirve para que diga una cosa y se lea otra: el saludo se escribe
+## con el nombre del jugador, pero en voz va sin él.
+func _say(text: String, hold: float, spoken: String = "") -> void:
 	_speech = text
 	_speech_typed = 0.0
 	_speech_hold = hold
 	subtitle_label.text = ""
-	_speak(text)
+	_speak(spoken if not spoken.is_empty() else text)
 	options.visible = false
 	timer_label.visible = false
 

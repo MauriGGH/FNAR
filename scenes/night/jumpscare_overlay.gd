@@ -39,6 +39,14 @@ const MAMADOR_TIME: float = 3.2
 const MAMADOR_ZOOM_TO: float = 1.06
 const MAMADOR_TEXT: String = "DELITO FEDERAL"
 const MAMADOR_TEXT_SIZE: int = 74
+
+## El cartel en rojo del jumpscare (el nombre del guardia, en el de Rochis).
+## Medido a 1080p y escalado con el alto, como el resto de los textos grandes.
+const CAPTION_COLOR: Color = Color(0.86, 0.05, 0.05)
+const CAPTION_SIZE_AT_1080: float = 110.0
+const CAPTION_REFERENCE_HEIGHT: float = 1080.0
+## Dónde cae, en fracción de la pantalla: un poco por debajo del centro.
+const CAPTION_AT: Vector2 = Vector2(0.5, 0.78)
 const MAMADOR_LIGHT_TIME: float = 0.28
 const RED_LIGHT: Color = Color(1.0, 0.1, 0.15, 0.26)
 const BLUE_LIGHT: Color = Color(0.2, 0.35, 1.0, 0.26)
@@ -56,6 +64,8 @@ var _left: float = 0.0
 var _elapsed: float = 0.0
 var _zoom: float = ZOOM_FROM
 var _flash_left: int = 0
+## Lo que va escrito encima del salto, si lleva algo.
+var _caption: String = ""
 var _first: Texture2D = null
 var _main: Texture2D = null
 var _cache: Dictionary = {}
@@ -77,9 +87,12 @@ func stop_now() -> void:
 
 
 ## La muerte de un profe, por el id de su imagen (barcosa, urena, audel...).
-func play(jumpscare_id: String) -> void:
+## `caption` es lo que se escribe encima en rojo: Rochis pone ahí el nombre del
+## guardia, que es lo que antes decía en voz.
+func play(jumpscare_id: String, caption: String = "") -> void:
 	if is_playing:
 		return
+	_caption = caption
 	_first = _texture("%s_a" % jumpscare_id)
 	_main = _texture(jumpscare_id)
 	if _main == null and _first == null:
@@ -186,6 +199,7 @@ func _draw() -> void:
 			_draw_image(_first if _first != null else _main, 1.0, _shake())
 		Phase.MAIN:
 			_draw_image(_main if _main != null else _first, _zoom, _shake())
+			_draw_caption()
 		Phase.SCARE_BLACK:
 			pass  # Negro a secas, para que el corte pegue.
 		Phase.SCARE:
@@ -231,10 +245,24 @@ func _draw_police_lights() -> void:
 	draw_rect(Rect2(Vector2(size.x * 0.5, 0.0), half.size), BLUE_LIGHT if red_first else RED_LIGHT)
 
 
-func _draw_centered(text: String, font_size: int, center: Vector2) -> void:
+## El cartel en rojo encima del salto. Tiembla con la imagen, para que parezca
+## parte del golpe y no una etiqueta pegada.
+func _draw_caption() -> void:
+	if _caption.is_empty():
+		return
+	var at: Vector2 = size * CAPTION_AT + _shake()
+	_draw_centered(_caption, _caption_size(), at, CAPTION_COLOR)
+
+
+func _caption_size() -> int:
+	return maxi(24, roundi(CAPTION_SIZE_AT_1080 * size.y / CAPTION_REFERENCE_HEIGHT))
+
+
+func _draw_centered(text: String, font_size: int, center: Vector2,
+		color: Color = TEXT_COLOR) -> void:
 	var font: Font = Fonts.terminal()
 	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	var at: Vector2 = Vector2(center.x - width * 0.5, center.y + float(font_size) * 0.35)
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size,
 		OUTLINE_SIZE, OUTLINE_COLOR)
-	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, TEXT_COLOR)
+	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, color)

@@ -73,7 +73,7 @@ buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (26 ids: 20 más las seis llamadas de noche). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (34 ids). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -99,6 +99,8 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 (si no, la voz sintética) |
 | `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
+| `telefono_colgar` | `telefono_colgar.ogg` | Efectos | −6 | no | al acabar o silenciar una llamada |
+| 7 líneas sueltas | `voces/<id>.ogg` | Voces | 0 | no | ver **Líneas sueltas de profe** |
 
 ## Llamadas de inicio de noche
 
@@ -110,8 +112,14 @@ corta en cualquier momento.
 - **Audio:** `assets/audio/llamadas/llamada_nocheN.ogg`, por el bus Voces. **Una noche tiene
   llamada si existe ese archivo**; si falta, el teléfono no suena esa noche y no pasa nada.
 - **Subtítulos:** `data/llamadas/llamada_nocheN.txt`, una línea por frase con el formato
-  `m:ss|texto`. Las líneas que empiezan con `#` y las vacías se ignoran, y cada frase se queda
-  hasta que entra la siguiente. Si se recorta el audio, hay que reajustar los tiempos.
+  `m:ss|texto`. El tiempo admite centésimas (`1:09.45`) y también vale un número de segundos a
+  secas. Las líneas que empiezan con `#` y las vacías se ignoran, y cada frase se queda hasta que
+  entra la siguiente.
+- **`@offset=X`:** una línea así, en cualquier sitio del archivo, suma X segundos (con decimales
+  y con signo) a **todos** los tiempos. Sirve para cuadrar los subtítulos cuando al audio se le
+  recorta o se le añade silencio al principio, sin reescribir línea por línea.
+- **El archivo de la llamada es solo voz.** El timbre (`telefono_timbre`, en bucle hasta que se
+  contesta) y el clac de colgar (`telefono_colgar`, al acabar o al silenciar) los pone el juego.
 - Van **abajo al centro**, como mucho dos líneas, en VT323 sobre un fondo semitransparente
   (`scenes/phone/call_subtitles.gd`). El tiempo se lee de la posición del audio, no de un
   contador propio, así que no se desfasan si el juego da un tirón.
@@ -119,6 +127,29 @@ corta en cualquier momento.
 
 La llamada de Ureña es otra cosa y sigue como estaba: conversación con respuestas, en la
 ventanita de la esquina y con síntesis de voz.
+
+## Líneas sueltas de profe
+
+Frases de una sola tirada que dicen los profes en la oficina, con su **subtítulo pequeño** abajo
+(encima de los de la llamada, para que no se tapen). Los textos y los ids están en
+`data/voice_lines.gd`; los archivos van en `assets/audio/voces/<id>.ogg`, por el bus Voces.
+**Mientras no estén grabadas las dice la síntesis de voz** y el subtítulo sale igual, así que la
+mecánica se entiende desde el primer día.
+
+| Cuándo | Ids | Qué dice |
+| --- | --- | --- |
+| Barcosa empieza a aporrear la puerta (una al azar) | `barcosa_puerta_1/2/3` | "¿Quién cerró? Tengo clase en este salón." · "Abra, joven. Nada más paso lista y me voy." · "Diez minutos. Le estoy pidiendo diez minutos." |
+| Barcosa se rinde y se va | `barcosa_se_va` | "Bueno, ya. Quedan todos con falta." |
+| Mamador inspecciona y no encuentra nada (una al azar) | `mamador_ok_1/2/3` | "Sin novedad. Me retiro." · "Nada de inteligencia artificial. Así me gusta." · "Todo en orden. Sigan así." |
+
+El profe las pide con la señal `said_line(id)` de `Animatronic`; el `night.gd` se la pasa al nodo
+`Hud/VoiceLine`, que decide entre la grabación y la voz sintética.
+
+**El nombre del jugador no se dice nunca en voz**, porque no se puede grabar:
+
+- El saludo de Ureña se **lee** con el nombre y se **oye** sin él (`GREETING` y `GREETING_SPOKEN`).
+- Rochis ya no lo pronuncia: al entrar, su nombre sale **escrito en rojo y grande sobre el
+  jumpscare** (`Animatronic.jumpscare_caption()`, que solo él rellena).
 
 ## Tipografías
 

@@ -41,7 +41,16 @@ bloquea el juego. **Si el archivo de una noche no existe, esa noche no hay llama
 Los subtítulos van en un `.txt` aparte, una línea por frase con el formato
 `m:ss|texto`. Las líneas que empiezan con `#` se ignoran. Cada frase se queda en
 pantalla hasta que entra la siguiente, así que solo hay que apuntar en qué segundo
-empieza cada una. Si recortas el audio, hay que reajustar los tiempos.
+empieza cada una.
+
+El tiempo admite **centésimas** (`1:09.45`) y también vale un número de segundos a
+secas (`90|...`). Y si recortas o alargas el silencio del principio, **no hace falta
+reescribir nada**: pon una línea `@offset=2.5` (segundos, con decimales y con signo)
+en cualquier sitio del archivo y se suma a todos los tiempos de golpe.
+
+**El archivo de la llamada es solo voz.** El timbre y el clac de colgar los pone el
+juego: `telefono_timbre.ogg` en bucle hasta que contestan, y `telefono_colgar.ogg`
+al acabar la llamada o al silenciarla.
 
 ### Noche 1 — ya grabada (59 líneas, 5:36 de audio)
 
@@ -131,14 +140,17 @@ sustituirían. El jugador no habla: sus respuestas son solo texto en pantalla.
 
 ### Saludo  **[FALTA ENGANCHAR]**
 
-| Texto | Archivo | Cuándo |
-| --- | --- | --- |
-| «¡Quihubo, [NOMBRE]! Ya llevas [N] tareas... qué aplicadito.» | `voces/urena_saludo.ogg` | Al contestar la llamada |
+**Ya está resuelto:** se graba la versión **sin nombre**. El nombre del jugador sale
+solo en el subtítulo, que es lo que se lee.
 
-> **Ojo con el saludo:** lleva el nombre del jugador y el número de tareas. En
-> grabación no se puede. Dos salidas: grabar solo «¡Quihubo!... Ya llevas varias
-> tareas, qué aplicadito» sin los huecos, o grabar la frase partida en dos y dejar
-> el nombre en la síntesis de voz. Hay que decidirlo antes de grabar.
+| Qué | Texto | Archivo |
+| --- | --- | --- |
+| Lo que se **lee** | «¡Quihubo, [NOMBRE]! Ya llevas [N] tareas... qué aplicadito.» | — (lo escribe el juego) |
+| Lo que se **graba** | «¡Quihubo! Ya llevas [N] tareas... qué aplicadito.» | `voces/urena_saludo.ogg` |
+
+> Queda pendiente el `[N]`: el número de tareas tampoco se puede grabar. Lo más
+> práctico es grabar «Ya llevas varias tareas» y dejar la cifra solo en el texto,
+> igual que con el nombre. Dime si lo cambio en `GREETING_SPOKEN`.
 
 ### Insinuaciones  **[FALTA ENGANCHAR]**
 
@@ -180,12 +192,10 @@ Tono: profesor mayor, pausado, satisfecho de sí mismo. Cuando se levanta, va en
 | Texto | Archivo | Cuándo | Estado |
 | --- | --- | --- | --- |
 | «Es impresionante» | `es_impresionante.ogg` | Botón "REPRODUCIR AUDIO" de la CAM 3, para que se vuelva a sentar | **[EN EL JUEGO]** |
-| El nombre del jugador, solo eso | `voces/rochis_nombre.ogg` | Entra a la oficina por el marco lateral, dice tu nombre y es game over | **[FALTA ENGANCHAR]** |
 
-> El nombre del jugador lo escribe él al empezar la partida, así que no se puede
-> grabar. Hoy lo dice la síntesis de voz, grave y lenta. Lo único grabable sería un
-> «...» de arranque antes del nombre, o dejarlo en síntesis a propósito, que da
-> bastante mal cuerpo.
+> **El nombre del jugador ya no se dice en voz.** No hay nada que grabar: al entrar,
+> su nombre sale **escrito en rojo y grande encima del jumpscare**. Si en algún
+> momento quieres un gruñido o un «...» antes del salto, ese sí se podría grabar.
 
 | Grito | Archivo | Cuándo | Estado |
 | --- | --- | --- | --- |
@@ -201,11 +211,20 @@ Tono: enfadado, a gritos, golpeando. Lo que dice no se entiende del todo.
 | Qué | Archivo | Cuándo | Estado |
 | --- | --- | --- | --- |
 | Golpe en la cortina (sin voz) | `golpes_cortina.ogg` | Uno por segundo, los 5 s que aporrea la puerta | **[EN EL JUEGO]** |
-| Bronca de 5 s aporreando la puerta | `voces/barcosa_puerta.ogg` | Con la puerta cerrada, mientras golpea. Se le oye discutir a través de la lámina | **[POR ESCRIBIR]** |
 | Grito del jumpscare | `voces/grito_barcosa.ogg` | Si te pilla con la puerta abierta | **[FALTA ENGANCHAR]** |
 
-> La bronca de la puerta está en el diseño («golpea y habla 5 s») pero nadie ha
-> escrito qué dice. Hace falta un texto, aunque sea medio ininteligible.
+### Lo que dice en la puerta  **[EN EL JUEGO]**
+
+Al empezar a aporrear suelta **una de las tres, al azar**. Al rendirse, siempre la
+misma. Mientras no estén grabadas las dice la voz sintética y el texto sale igual
+como subtítulo pequeño.
+
+| Texto | Archivo | Cuándo |
+| --- | --- | --- |
+| «¿Quién cerró? Tengo clase en este salón.» | `voces/barcosa_puerta_1.ogg` | Empieza a golpear |
+| «Abra, joven. Nada más paso lista y me voy.» | `voces/barcosa_puerta_2.ogg` | Empieza a golpear |
+| «Diez minutos. Le estoy pidiendo diez minutos.» | `voces/barcosa_puerta_3.ogg` | Empieza a golpear |
+| «Bueno, ya. Quedan todos con falta.» | `voces/barcosa_se_va.ogg` | Se rinde y vuelve al salón B |
 
 ---
 
@@ -214,10 +233,21 @@ Tono: enfadado, a gritos, golpeando. Lo que dice no se entiende del todo.
 Tono: autoridad administrativa, seco, sin levantar la voz. Da más miedo por lo
 tranquilo que está.
 
+### Cuando no encuentra nada  **[EN EL JUEGO]**
+
+Una de las tres, al azar, al terminar de inspeccionar desde el cristal.
+
+| Texto | Archivo |
+| --- | --- |
+| «Sin novedad. Me retiro.» | `voces/mamador_ok_1.ogg` |
+| «Nada de inteligencia artificial. Así me gusta.» | `voces/mamador_ok_2.ogg` |
+| «Todo en orden. Sigan así.» | `voces/mamador_ok_3.ogg` |
+
+### El resto
+
 | Texto | Archivo | Cuándo | Estado |
 | --- | --- | --- | --- |
 | «¡Delito federal!» | `voces/mamador_delito.ogg` | Llega al cristal y te ve la ventana de Claudio abierta o la puerta cerrada. Es el game over de los militares | **[FALTA ENGANCHAR]** |
-| Su frase de «todo en orden» | `voces/mamador_ok.ogg` | Llega al cristal, no encuentra nada y se va | **[POR ESCRIBIR]** |
 | Pasos lentos y llavero | `voces/mamador_aviso.ogg` | Su sonido propio de aviso, mientras baja por el pasillo | **[FALTA ENGANCHAR]** |
 
 > Mamador **no tiene jumpscare**: su game over es la pantalla de los militares. No

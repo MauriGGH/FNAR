@@ -11,9 +11,15 @@ extends RefCounted
 ## teléfono no suena: no hay nada que perder ni castigo por no contestar.
 ##
 ## Los subtítulos van en `data/llamadas/llamada_nocheN.txt`, una línea por
-## frase con el formato `m:ss|texto`. Las líneas que empiezan con # y las
-## vacías se ignoran. Cada frase se queda en pantalla hasta que empieza la
+## frase con el formato `m:ss|texto`. El tiempo admite centésimas (`1:09.45`) y
+## también vale un número de segundos a secas. Las líneas que empiezan con # y
+## las vacías se ignoran. Cada frase se queda en pantalla hasta que empieza la
 ## siguiente, así que basta con apuntar en qué segundo entra cada una.
+##
+## Una línea `@offset=X` (segundos, con decimales y con signo) suma X a todos
+## los tiempos del archivo. Sirve para cuadrar los subtítulos cuando al audio
+## se le recorta o se le añade silencio al principio, sin tener que reescribir
+## línea por línea. Puede ir en cualquier sitio y vale la última que aparezca.
 
 ## Lo que tarda en sonar desde que empieza la noche.
 const CALL_DELAY: float = 3.0
@@ -21,6 +27,8 @@ const CALL_DELAY: float = 3.0
 const RING_TIME: float = 10.0
 
 const SUBTITLES_PATH: String = "res://data/llamadas/llamada_noche%d.txt"
+## La línea que desplaza todos los tiempos del archivo.
+const OFFSET_TAG: String = "@offset="
 ## Lo que se quedan los últimos subtítulos después de la última frase, por si
 ## el audio termina justo encima.
 const TAIL_TIME: float = 2.5
@@ -46,31 +54,49 @@ static func has_call(night: int) -> bool:
 ## Los subtítulos de esa noche, en orden: [{"at": segundos, "text": String}].
 ## Vacío si no hay archivo o no trae ninguna línea aprovechable.
 static func subtitles(night: int) -> Array[Dictionary]:
+	return parse_file(SUBTITLES_PATH % night)
+
+
+## Lee un archivo de subtítulos. Va en dos pasadas: primero se busca el
+## `@offset`, que vale para TODO el archivo esté en la línea que esté, y
+## después se leen las frases ya con el desfase puesto.
+static func parse_file(path: String) -> Array[Dictionary]:
 	var lines: Array[Dictionary] = []
-	var path: String = SUBTITLES_PATH % night
 	if not FileAccess.file_exists(path):
 		return lines
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		push_warning("No se pudo abrir " + path)
 		return lines
+	var raw_lines: PackedStringArray = PackedStringArray()
+	var offset: float = 0.0
 	while not file.eof_reached():
 		var raw: String = file.get_line().strip_edges()
 		if raw.is_empty() or raw.begins_with("#"):
 			continue
+		if raw.begins_with(OFFSET_TAG):
+			var value: String = raw.substr(OFFSET_TAG.length()).strip_edges()
+			if value.is_valid_float():
+				offset = float(value)
+			continue
+		raw_lines.append(raw)
+
+	for raw: String in raw_lines:
 		var cut: int = raw.find("|")
 		if cut <= 0:
 			continue
 		var at: float = _parse_time(raw.substr(0, cut))
 		if at < 0.0:
 			continue
-		lines.append({"at": at, "text": raw.substr(cut + 1).strip_edges()})
+		# El desfase puede dejar un tiempo negativo: eso es el segundo cero.
+		lines.append({"at": maxf(at + offset, 0.0), "text": raw.substr(cut + 1).strip_edges()})
 	lines.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return float(a["at"]) < float(b["at"]))
 	return lines
 
 
-## Convierte "m:ss" (o "mm:ss", o solo segundos) en segundos. -1 si no se puede.
+## Convierte "m:ss", "m:ss.cc" o un número de segundos a secas en segundos.
+## Devuelve -1 si no se puede leer.
 static func _parse_time(text: String) -> float:
 	var clean: String = text.strip_edges()
 	if clean.is_empty():

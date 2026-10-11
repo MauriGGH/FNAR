@@ -195,6 +195,7 @@ func _arrive_at_door() -> void:
 	_bang_elapsed = 0.0
 	_knock_timer = 0.0
 	made_noise.emit(KNOCK_NOTICE, BANG_TIME)
+	said_line.emit(VoiceLines.pick(VoiceLines.BARCOSA_DOOR))
 
 
 func _process_banging(delta: float) -> void:
@@ -217,6 +218,9 @@ func _process_banging(delta: float) -> void:
 
 ## Se rinde y vuelve al salón B desde cero, dejando el pasillo libre.
 func _go_home() -> void:
+	# Solo se despide si llegó a aporrear la puerta; si lo pararon antes, no.
+	if _state == State.BANGING:
+		said_line.emit(VoiceLines.BARCOSA_LEAVES)
 	GameManager.release_hallway(self)
 	_state = State.STALKING
 	move_to_step(STEP_SALON_B)

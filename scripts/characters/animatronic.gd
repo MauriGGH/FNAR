@@ -11,6 +11,9 @@ signal moved(from_room: String, to_room: String)
 
 ## Ruido del profe. Mientras no haya audio, la oficina lo muestra como texto.
 signal made_noise(text: String, duration: float)
+## Dijo una línea de voz (un id de data/voice_lines.gd). El night.gd la
+## reproduce y le pone su subtítulo pequeño.
+signal said_line(line_id: String)
 
 @export var display_name: String = "Profe"
 ## Nivel de IA de 0 a 20. En 0 el profe no se mueve en toda la noche.
@@ -119,6 +122,12 @@ func others_in_room() -> int:
 
 ## Gancho: el nombre de su imagen de jumpscare. Casi siempre es el mismo id
 ## que usa en las cámaras; la botarga es la excepción.
+## Lo que se escribe encima de su jumpscare. Vacío en casi todos; Rochis pone
+## ahí el nombre del jugador.
+func jumpscare_caption() -> String:
+	return ""
+
+
 func jumpscare_id() -> String:
 	return image_slug()
 

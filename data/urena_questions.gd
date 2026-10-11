@@ -34,6 +34,9 @@ const NAME_TAG: String = "[NOMBRE]"
 const TASKS_TAG: String = "[N]"
 
 const GREETING: String = "¡Quihubo, [NOMBRE]! Ya llevas [N] tareas... qué aplicadito."
+## Lo mismo pero sin el nombre, que es lo que se dice en voz: el nombre del
+## jugador no se puede grabar, así que solo va escrito en el subtítulo.
+const GREETING_SPOKEN: String = "¡Quihubo! Ya llevas [N] tareas... qué aplicadito."
 
 
 const BANK: Array[Dictionary] = [
@@ -133,9 +136,15 @@ static func line(index: int) -> Dictionary:
 	return {"index": index, "text": str(entry["text"]), "answers": answers}
 
 
-## El saludo, con el nombre del guardia y sus tareas puestos.
+## El saludo que se LEE, con el nombre del guardia y sus tareas puestos.
 static func greeting(player_name: String, tasks_done: int) -> String:
 	return GREETING.replace(NAME_TAG, player_name).replace(TASKS_TAG, str(tasks_done))
+
+
+## El saludo que se OYE: el mismo sin el nombre, porque una grabación no puede
+## decir cómo se llama el jugador.
+static func greeting_spoken(tasks_done: int) -> String:
+	return GREETING_SPOKEN.replace(TASKS_TAG, str(tasks_done))
 
 
 ## Lo que contesta a cada clase de respuesta. Son frases cortas de relleno

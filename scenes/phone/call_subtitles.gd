@@ -131,6 +131,8 @@ func mute() -> void:
 		return
 	is_playing = false
 	AudioManager.stop(_sound_id)
+	# El archivo de la llamada es solo voz: el clac de colgar lo pone el juego.
+	AudioManager.play(Sounds.PHONE_HANG_UP)
 	var tween: Tween = create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, FADE_TIME)
 	tween.tween_callback(func() -> void: visible = false)

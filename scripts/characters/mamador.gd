@@ -35,7 +35,6 @@ const INSPECT_TIME: float = 4.0
 
 const GAME_OVER_CAUSE: String = "Delito federal"
 const HALLWAY_NOTICE: String = "[pasos lentos y llavero]"
-const PHRASE_NOTICE: String = "[Mamador: ¡delito federal!]"
 const NOTICE_TIME: float = 2.5
 const WINDOW_PRESENCE: String = "Mamador mirando por el cristal"
 
@@ -139,7 +138,7 @@ func _process_inspecting(delta: float) -> void:
 ## No encontró nada: dice su frase y empieza a bajar hacia el estacionamiento.
 ## El pasillo lo suelta en cuanto pisa la escalera, no aquí.
 func _leave() -> void:
-	made_noise.emit(PHRASE_NOTICE, NOTICE_TIME)
+	said_line.emit(VoiceLines.pick(VoiceLines.MAMADOR_OK))
 	_state = State.WALKING
 	_direction = 1
 	advance()

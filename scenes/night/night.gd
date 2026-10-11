@@ -48,6 +48,7 @@ const FLASH_TIME: float = 0.28
 @onready var blackout_death: Control = $Hud/BlackoutDeath
 @onready var hallucinations: Control = $Hud/HallucinationOverlay
 @onready var call_subtitles: Control = $Hud/CallSubtitles
+@onready var voice_line: Control = $Hud/VoiceLine
 @onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
@@ -80,6 +81,7 @@ func _ready() -> void:
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.made_noise.connect(notice_banner.show_notice)
+		animatronic.said_line.connect(voice_line.say)
 		if animatronic is ComeTrabas:
 			_come_trabas = animatronic as ComeTrabas
 			# Al quedarse sin cuerda, la silla del cubículo 3 queda vacía y la
@@ -644,6 +646,7 @@ func _on_game_over(cause: String) -> void:
 	_end_night()
 	blackout_death.cancel()
 	var jumpscare_id: String = BLACKOUT_JUMPSCARE if cause == BLACKOUT_CAUSE else ""
+	var caption: String = ""
 	# El apagón es cosa del Mago, aunque no se le haya visto venir.
 	GameManager.last_game_over_slug = BLACKOUT_JUMPSCARE if cause == BLACKOUT_CAUSE else ""
 	for animatronic: Animatronic in _animatronics:
@@ -652,6 +655,7 @@ func _on_game_over(cause: String) -> void:
 		SaveGame.unlock_dossier(animatronic.image_slug())
 		GameManager.last_game_over_slug = animatronic.image_slug()
 		jumpscare_id = animatronic.jumpscare_id()
+		caption = animatronic.jumpscare_caption()
 		break
 	SaveGame.unlock_jumpscare(cause)
 	# Mamador no salta: su pantalla es la de los militares.
@@ -661,7 +665,7 @@ func _on_game_over(cause: String) -> void:
 	if jumpscare_id.is_empty():
 		get_tree().change_scene_to_file(Screens.GAME_OVER)
 		return
-	jumpscare.play(jumpscare_id)
+	jumpscare.play(jumpscare_id, caption)
 
 
 ## La botarga se quedó sin cuerda: la cajita musical se calla y por eso el
@@ -677,6 +681,7 @@ func _end_night() -> void:
 	pc_screen.close()
 	hallucinations.set_process(false)
 	call_subtitles.mute()
+	voice_line.stop()
 	AudioManager.stop_all()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

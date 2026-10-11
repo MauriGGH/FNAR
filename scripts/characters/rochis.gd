@@ -66,6 +66,11 @@ func image_slug() -> String:
 	return "rochis"
 
 
+## Lo que sale escrito en rojo sobre su jumpscare: el nombre del guardia.
+func jumpscare_caption() -> String:
+	return GameManager.player_name
+
+
 func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
 
@@ -236,17 +241,11 @@ func _appear() -> void:
 	_say_player_name()
 
 
-## Dice el nombre del guardia con la síntesis de voz de Godot, en español y
-## grave. Si el sistema no tiene voces, queda solo el aviso en pantalla.
+## El nombre del guardia **no se dice en voz**: no hay manera de grabarlo. Sale
+## escrito en rojo y grande encima del jumpscare, que es lo que de verdad pone
+## los pelos de punta. Aquí solo queda el aviso de la oficina.
 func _say_player_name() -> void:
-	made_noise.emit(NAME_NOTICE_FORMAT % GameManager.PLAYER_NAME, NOTICE_TIME)
-	var voice: String = _spanish_voice()
-	if voice.is_empty():
-		return
-	# El TTS no sale por los buses de audio, así que el deslizador de Voces se
-	# aplica aquí a mano.
-	var volume: int = roundi(float(TTS_VOLUME) * AudioManager.voice_volume())
-	DisplayServer.tts_speak(GameManager.PLAYER_NAME, voice, volume, TTS_PITCH, TTS_RATE)
+	made_noise.emit(NAME_NOTICE_FORMAT % GameManager.player_name, NOTICE_TIME)
 
 
 func _spanish_voice() -> String:

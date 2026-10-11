@@ -48,6 +48,8 @@ const FLASHLIGHT_CLICK: String = "linterna_click"
 const BREAKER_LEVER: String = "breaker_palanca"
 ## El siseo de fondo mientras el monitor está abierto.
 const CAMERA_STATIC: String = "estatica_camara"
+## El clac de colgar, al acabar o silenciar una llamada.
+const PHONE_HANG_UP: String = "telefono_colgar"
 ## La voz de Rochis. No tiene provisional por código: mientras no esté grabada,
 ## el botón de la CAM 3 la dice con la síntesis de voz.
 const IMPRESSIVE: String = "es_impresionante"
@@ -55,6 +57,11 @@ const IMPRESSIVE: String = "es_impresionante"
 ## Las llamadas grabadas con las que empieza cada noche. Tampoco llevan
 ## provisional: si no está el archivo, esa noche no hay llamada y ya.
 const NIGHT_CALL: String = "llamada_noche%d"
+
+
+## El id de una línea suelta de profe es el mismo que el de data/voice_lines.gd.
+static func voice_line(line_id: String) -> String:
+	return line_id
 
 
 ## El id de la llamada de una noche.
@@ -137,6 +144,10 @@ const CATALOG: Dictionary = {
 		"file": "breaker_palanca.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "breaker_lever",
 	},
+	"telefono_colgar": {
+		"file": "telefono_colgar.ogg", "bus": "Efectos",
+		"volume_db": -6.0, "generator": "phone_hang_up",
+	},
 	"estatica_camara": {
 		"file": "estatica_camara.ogg", "bus": "Ambiente",
 		"volume_db": -22.0, "generator": "camera_static",
@@ -144,6 +155,34 @@ const CATALOG: Dictionary = {
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",
 		"volume_db": -2.0, "generator": "",
+	},
+	"barcosa_puerta_1": {
+		"file": "voces/barcosa_puerta_1.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"barcosa_puerta_2": {
+		"file": "voces/barcosa_puerta_2.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"barcosa_puerta_3": {
+		"file": "voces/barcosa_puerta_3.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"barcosa_se_va": {
+		"file": "voces/barcosa_se_va.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"mamador_ok_1": {
+		"file": "voces/mamador_ok_1.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"mamador_ok_2": {
+		"file": "voces/mamador_ok_2.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+	},
+	"mamador_ok_3": {
+		"file": "voces/mamador_ok_3.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
 	},
 	"llamada_noche1": {
 		"file": "llamadas/llamada_noche1.ogg", "bus": "Voces",
