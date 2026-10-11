@@ -7,34 +7,28 @@ extends Animatronic
 ## game over. Ninguno usa la reserva del pasillo, así que pueden coincidir
 ## entre ellos y con Barcosa o Mamador.
 ##
-## Un destello cuenta cuando el cono de la linterna le da **a ese profe** al
-## menos FLASH_MIN_TIME seguidos. Hay que quitarle el cono de encima para que
-## cuente el siguiente, así que tener la linterna fija no sirve: hay que
-## alumbrarlo cuatro veces. Cada profe lleva su propia cuenta, y alumbrar a uno
-## no le cuenta a los demás aunque estén al lado.
+## La linterna ya no se apunta: alumbra todo el pasillo, así que le da a todos
+## los que estén en el cristal a la vez. Cada uno lleva su propio "susto", que
+## sube mientras hay luz y baja despacio en cuanto se apaga. Al llenarse, se va.
+## No hay ritmo que acertar: vale mantenerla encendida o darle parpadeos
+## rápidos, porque lo que cuenta es la luz acumulada.
+##
+## Los tiempos están en night_config.gd, para poder ajustarlos sin tocar esto.
 
 enum State { WALKING, AT_GLASS }
-
-## Lo que hay que tenerle el cono encima para que un destello cuente. No hay
-## tope por arriba: dejar la linterna puesta cuenta uno, no cero, porque
-## alumbrar para ver quién es también es alumbrar.
-const FLASH_MIN_TIME: float = 0.2
-const FLASHES_TO_REPEL: int = 4
-## Lo que aguanta en el cristal antes de entrar.
-const GLASS_TIME: float = 10.0
 
 const GLASS_ZONE: String = "front_glass"
 const ARRIVE_NOTICE: String = "[respiración en el cristal]"
 const NOTICE_TIME: float = 2.2
 
-var flashes: int = 0
+## De 0 a 1. A 1 se va. No se enseña: el jugador lo nota porque el profe acaba
+## yéndose, no porque haya una barra.
+var fear: float = 0.0
 
 var _state: State = State.WALKING
 var _glass_elapsed: float = 0.0
-## Lo que lleva el cono encima de este profe, y si ese rato ya se contó. Hace
-## falta quitarle el cono para que el contador se arme otra vez.
-var _lit_time: float = 0.0
-var _lit_counted: bool = false
+## Lo que aguanta en el cristal esta noche, de night_config.gd.
+var _glass_time: float = NightConfig.GLASS_TIME_FIRST_NIGHT
 ## +1 avanzando por la ruta, -1 de regreso. Solo lo usa el que se retira
 ## caminando (Armando), que sale del edificio y después da la vuelta.
 var _direction: int = 1
@@ -47,9 +41,9 @@ func start() -> void:
 	super()
 	_state = State.WALKING
 	_glass_elapsed = 0.0
-	_reset_beam()
+	_glass_time = NightConfig.glass_time(GameManager.current_night)
+	fear = 0.0
 	_direction = 1
-	flashes = 0
 
 
 func _process(delta: float) -> void:
@@ -60,7 +54,7 @@ func _process(delta: float) -> void:
 			super(delta)  # El dado de la IA de la clase base
 		State.AT_GLASS:
 			_glass_elapsed += delta
-			if _glass_elapsed >= GLASS_TIME:
+			if _glass_elapsed >= _glass_time:
 				_catch_player()
 
 
@@ -78,34 +72,27 @@ func advance() -> void:
 		_arrive_at_glass()
 
 
-## Al apagar la linterna se le quita el cono de encima a todos, así que el
-## siguiente destello vuelve a contar.
-func set_flashlight_on(is_on: bool) -> void:
-	if not is_on:
-		_reset_beam()
+## La clase base se lo manda a todos; aquí no hace falta hacer nada con el
+## encendido en sí: lo que cuenta es la luz acumulada, y de eso se encarga
+## update_beam() cuadro a cuadro.
+func set_flashlight_on(_is_on: bool) -> void:
+	pass
 
 
-## El night.gd le dice, en cada cuadro, si el cono le está dando a este profe.
-## Aguantar el cono encima cuenta un destello y nada más: para el siguiente hay
-## que quitárselo y volvérselo a poner.
+## El night.gd le dice, en cada cuadro, si la linterna lo está alumbrando. Con
+## luz el susto sube; sin luz baja, pero mucho más despacio, así que los
+## parpadeos se van sumando.
 func update_beam(is_lit: bool, delta: float) -> void:
-	if not is_lit:
-		_reset_beam()
-		return
 	if _state != State.AT_GLASS:
+		fear = 0.0
 		return
-	_lit_time += delta
-	if _lit_counted or _lit_time < FLASH_MIN_TIME:
-		return
-	_lit_counted = true
-	flashes += 1
-	if flashes >= FLASHES_TO_REPEL:
+	if is_lit:
+		fear += delta / NightConfig.FLASH_FILL_TIME
+	else:
+		fear -= delta / NightConfig.FLASH_DECAY_TIME
+	fear = clampf(fear, 0.0, 1.0)
+	if fear >= 1.0:
 		_repel()
-
-
-func _reset_beam() -> void:
-	_lit_time = 0.0
-	_lit_counted = false
 
 
 ## Solo se ve pegado al cristal si la linterna está encendida.
@@ -127,8 +114,8 @@ func zone_presence(zone_id: String) -> String:
 
 func debug_text() -> String:
 	if _state == State.AT_GLASS:
-		return "en el cristal, %d/%d destellos, %.1f s" % [
-			flashes, FLASHES_TO_REPEL, maxf(GLASS_TIME - _glass_elapsed, 0.0)]
+		return "en el cristal, susto %d %%, le quedan %.1f s" % [
+			roundi(fear * 100.0), maxf(_glass_time - _glass_elapsed, 0.0)]
 	var text: String = "en %s" % Rooms.display_name(current_room)
 	if is_stalking:
 		text += " (acechando)"
@@ -200,9 +187,8 @@ func repel_notice() -> String:
 func _arrive_at_glass() -> void:
 	_state = State.AT_GLASS
 	_glass_elapsed = 0.0
-	flashes = 0
-	# Llega limpio: un destello que ya estaba en marcha no le cuenta.
-	_reset_beam()
+	# Llega sin susto, aunque la linterna ya estuviera encendida.
+	fear = 0.0
 	made_noise.emit(ARRIVE_NOTICE, NOTICE_TIME)
 
 
@@ -211,8 +197,7 @@ func _repel() -> void:
 	AudioManager.play(Sounds.GLASS_REPEL)
 	_state = State.WALKING
 	_glass_elapsed = 0.0
-	flashes = 0
-	_reset_beam()
+	fear = 0.0
 	if not retreats_walking():
 		_direction = 1
 		move_to_step(retreat_step())

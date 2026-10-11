@@ -41,25 +41,14 @@ const LEVELS: Dictionary = {
 ## noche. Cuántos llegan lo dice Tasks.TASKS_PER_NIGHT; aquí va el reparto y
 ## el plazo de cada uno.
 ##
-## El plazo está en HORAS DE JUEGO, no en segundos, así que se acorta solo en
-## modo prueba y se puede leer contra el reloj: en la noche 1 tienes dos horas
-## y media para cada ticket, en la noche 6 poco más de una.
-const TICKET_DEADLINE_HOURS: Dictionary = {
-	1: 2.5, 2: 2.2, 3: 2.0, 4: 1.7, 5: 1.4, 6: 1.1,
-}
-
 ## El primer ticket llega casi al empezar; los demás se reparten hasta poco
 ## antes de las 5 AM, con algo de azar para que no caigan siempre en la misma
-## hora. El último entra a las 4.2 y no a las 5 para que su plazo quepa dentro
-## de la noche y se pueda terminar.
+## hora. El último entra a las 4.2 y no a las 5 para que dé tiempo de hacerlo:
+## los tickets ya no vencen, pero la noche sí se acaba.
 const FIRST_TICKET_AT: float = 0.15
 const LAST_TICKET_AT: float = 4.2
 const TICKET_JITTER: float = 0.35
 
-## Lo que cuesta dejar vencer un ticket, y lo que sube Mamador por una hora.
-const TICKET_POWER_COST: float = 5.0
-const TICKET_MAMADOR_BOOST: int = 3
-const TICKET_BOOST_HOURS: float = 1.0
 
 ## --- Esperas de las tareas --------------------------------------------------
 ## Casi toda tarea tiene un paso que tarda, con barra. En la noche 1 entre 10
@@ -74,10 +63,6 @@ const URENA_SNUB_HOURS: float = 1.0
 
 
 ## El plazo de un ticket esa noche, en horas de juego.
-static func ticket_deadline_hours(night: int) -> float:
-	return float(TICKET_DEADLINE_HOURS.get(clampi(night, FIRST_NIGHT, LAST_NIGHT), 2.0))
-
-
 ## A qué hora de la noche llega cada ticket, de 0 (12 AM) a 6 (6 AM).
 static func ticket_times(night: int, count: int) -> PackedFloat32Array:
 	var times: PackedFloat32Array = PackedFloat32Array()

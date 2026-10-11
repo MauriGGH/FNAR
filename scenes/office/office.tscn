@@ -18,8 +18,8 @@ shader_parameter/blur_amount = 0.0
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_lit"]
 shader = ExtResource("6_reveal")
 shader_parameter/beam_center = Vector2(0.5, 0.5)
-shader_parameter/beam_radius = 0.0
-shader_parameter/beam_softness = 0.12
+shader_parameter/beam_half = Vector2(0.3, 0.3)
+shader_parameter/beam_softness = 0.14
 shader_parameter/beam_strength = 0.0
 shader_parameter/aspect = 1.78
 shader_parameter/base_alpha = 0.0

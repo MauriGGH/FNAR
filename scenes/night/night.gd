@@ -31,8 +31,8 @@ const FLASH_TIME: float = 0.28
 @onready var camera_system: Control = $CameraSystem
 @onready var pc_screen: Control = $PcScreen
 @onready var animatronics_holder: Node = $Animatronics
-@onready var clock_label: Label = $Hud/ClockLabel
-@onready var night_label: Label = $Hud/NightLabel
+@onready var clock_label: Label = $Hud/TopRight/ClockLabel
+@onready var night_label: Label = $Hud/TopRight/NightLabel
 @onready var power_label: Label = $Hud/PowerLabel
 @onready var usage_bars: Control = $Hud/UsageBars
 @onready var camera_bar: Control = $Hud/CameraBar
@@ -43,7 +43,7 @@ const FLASH_TIME: float = 0.28
 @onready var phone_call: Control = $Hud/PhoneCall
 @onready var debug_help: Label = $Hud/DebugHelp
 @onready var pause_menu: Control = $Hud/PauseMenu
-@onready var ticket_label: Label = $Hud/TicketLabel
+@onready var ticket_label: Label = $Hud/TopRight/TicketLabel
 @onready var jumpscare: Control = $Hud/JumpscareOverlay
 @onready var blackout_death: Control = $Hud/BlackoutDeath
 @onready var hallucinations: Control = $Hud/HallucinationOverlay
@@ -59,7 +59,6 @@ const NO_CALL_NOTICE: String = "[esta noche no tiene guion de llamada]"
 const BLACKOUT_CAUSE: String = "Mago Eléctrico"
 const BLACKOUT_JUMPSCARE: String = "audel"
 const TICKET_NOTICE: String = "[ticket nuevo: %s]"
-const TICKET_EXPIRED_NOTICE: String = "[se te vencio un ticket]"
 ## Cada cuánto se repinta el contador de tickets.
 const TICKET_REFRESH_TIME: float = 0.25
 
@@ -136,7 +135,6 @@ func _ready() -> void:
 	pc_screen.armando_won.connect(_on_armando_won)
 
 	GameManager.ticket_arrived.connect(_on_ticket_arrived)
-	GameManager.ticket_expired.connect(_on_ticket_expired)
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
 	GameManager.night_won.connect(_on_night_won)
@@ -244,13 +242,6 @@ func _on_ticket_arrived(index: int) -> void:
 
 
 ## Se venció: cuesta energía y Mamador se pone más agresivo por una hora.
-func _on_ticket_expired(_index: int) -> void:
-	PowerManager.drain(Nights.TICKET_POWER_COST)
-	GameManager.add_ai_boost(Nights.MAMADOR, Nights.TICKET_MAMADOR_BOOST, Nights.TICKET_BOOST_HOURS)
-	notice_banner.show_notice(TICKET_EXPIRED_NOTICE, NOTICE_SHORT)
-	_refresh_tickets(0.0, true)
-
-
 ## El contador de la esquina: cuántos tickets llevas y cuánto le queda al más
 ## urgente. Mientras no llegue ninguno no se enseña nada.
 func _refresh_tickets(delta: float, force: bool = false) -> void:
@@ -263,11 +254,7 @@ func _refresh_tickets(delta: float, force: bool = false) -> void:
 		ticket_label.text = ""
 		return
 	var done: int = GameManager.paid_task_count()
-	var text: String = "TICKETS %d/%d" % [done, arrived]
-	var left: float = GameManager.next_ticket_seconds_left()
-	if left >= 0.0:
-		text += " · %d:%02d restante" % [int(left) / 60, int(left) % 60]
-	ticket_label.text = text
+	ticket_label.text = "TICKETS %d/%d" % [done, arrived]
 
 
 ## Por cada zona de presencia busca al primer profe que se vea ahí. Con
@@ -301,11 +288,10 @@ func _refresh_office_presence() -> void:
 		office.set_view_present(view, by_view[view])
 
 
-## Cada cuadro: a quién le está dando el cono, para contar sus destellos y
-## para mover el contador discreto debajo del haz.
+## Cada cuadro: la linterna alumbra el pasillo entero, así que a todos los que
+## estén en el cristal les sube el susto a la vez.
 func _update_glass_beams(delta: float) -> void:
-	var lit_label: String = ""
-	var lit_flashes: int = 0
+	var is_lit: bool = office.is_flashlight_on()
 	var armando_at_glass: bool = false
 	for animatronic: Animatronic in _animatronics:
 		var stalker: GlassStalker = animatronic as GlassStalker
@@ -313,12 +299,7 @@ func _update_glass_beams(delta: float) -> void:
 			continue
 		if stalker is ArmandoPrompts and stalker.is_at_glass():
 			armando_at_glass = true
-		var is_lit: bool = stalker.is_at_glass() and office.is_slug_lit(stalker.image_slug())
 		stalker.update_beam(is_lit, delta)
-		if is_lit and lit_label.is_empty():
-			lit_label = stalker.display_name
-			lit_flashes = stalker.flashes
-	office.set_flash_progress(lit_label, lit_flashes, GlassStalker.FLASHES_TO_REPEL)
 	office.set_armando_at_glass(armando_at_glass)
 
 

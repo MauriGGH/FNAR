@@ -28,7 +28,8 @@ var _cache: Dictionary = {}
 var _materials: Dictionary = {}
 
 var _beam_center: Vector2 = Vector2(0.5, 0.5)
-var _beam_radius: float = 0.0
+var _beam_half: Vector2 = Vector2(0.3, 0.3)
+var _beam_softness: float = 0.14
 var _beam_strength: float = 0.0
 
 
@@ -52,10 +53,11 @@ func set_pinned(file_names: PackedStringArray) -> void:
 	_rebuild()
 
 
-## El cono de la linterna, en coordenadas normalizadas de la vista.
-func set_beam(center: Vector2, radius: float, strength: float) -> void:
+## La zona que alumbra la linterna, en normalizadas de la vista.
+func set_beam(center: Vector2, half: Vector2, softness: float, strength: float) -> void:
 	_beam_center = center
-	_beam_radius = radius
+	_beam_half = half
+	_beam_softness = softness
 	_beam_strength = strength
 	_apply_beam()
 
@@ -123,7 +125,8 @@ func _apply_beam() -> void:
 	for slug: Variant in _materials:
 		var material: ShaderMaterial = _materials[slug] as ShaderMaterial
 		material.set_shader_parameter("beam_center", _beam_center)
-		material.set_shader_parameter("beam_radius", _beam_radius)
+		material.set_shader_parameter("beam_half", _beam_half)
+		material.set_shader_parameter("beam_softness", _beam_softness)
 		material.set_shader_parameter("beam_strength", _beam_strength)
 		material.set_shader_parameter("aspect", _aspect())
 

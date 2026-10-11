@@ -33,6 +33,18 @@ const ALWAYS_VISIBLE: Array[String] = ["mamador", "barcosa", "audel"]
 const DIM_BRIGHTNESS: float = 0.35
 
 
+## Todo el pasillo: el recuadro que abarca a los seis recortes juntos. Es lo
+## que tiene que alumbrar la linterna, que ya no se apunta a nadie en concreto.
+static func hallway_rect() -> Rect2:
+	var union: Rect2 = Rect2()
+	var first: bool = true
+	for slug: Variant in BOXES:
+		var box: Rect2 = BOXES[slug] as Rect2
+		union = box if first else union.merge(box)
+		first = false
+	return union
+
+
 static func box_of(slug: String) -> Rect2:
 	return BOXES.get(slug, Rect2()) as Rect2
 

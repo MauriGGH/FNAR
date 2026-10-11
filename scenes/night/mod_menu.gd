@@ -404,10 +404,8 @@ func _build_events_section() -> void:
 				_night.camera_system.debug_play_ambient(camera, index))
 
 	_add_label(body, "Tickets:")
-	_add_row(body, [
-		["Nuevo", func() -> void: GameManager.debug_arrive_next_ticket()],
-		["Vencer uno", func() -> void: GameManager.debug_expire_next_ticket()],
-	])
+	_add_button(body, "Que llegue uno nuevo",
+		func() -> void: GameManager.debug_arrive_next_ticket())
 
 
 # --- Pantallas ----------------------------------------------------------------
@@ -574,16 +572,11 @@ func _build_view_section() -> void:
 	_add_label(body, "Linterna del pasillo:")
 	_add_check(body, "Siempre encendida", false,
 		func(on: bool) -> void: _night.office.debug_force_flashlight = on)
-	_add_label(body, "Clavar el cono en:")
-	var aims: Array = [["seguir el mouse", func() -> void: _night.office.debug_aim_slug = ""]]
-	for slug: Variant in OfficeLayers.BOXES:
-		var target: String = str(slug)
-		aims.append([target.substr(0, 8), func() -> void: _night.office.debug_aim_slug = target])
-		if aims.size() == 2:
-			_add_row(body, aims)
-			aims = []
-	if not aims.is_empty():
-		_add_row(body, aims)
+	_add_label(body, "Margen en el cristal por noche:")
+	var margins: String = ""
+	for night: int in range(1, NightConfig.LAST_NIGHT + 1):
+		margins += "N%d %.1fs   " % [night, NightConfig.glass_margin(night)]
+	_add_label(body, margins)
 	_add_check(body, "Ver etiquetas de estado", false,
 		func(on: bool) -> void: _night.camera_system.set_debug_visible(on))
 	var show_states: CheckBox = _add_check(body, "Ver el estado de cada cámara", false,

@@ -51,6 +51,36 @@ const PC_DRAIN_PER_HOUR: float = 12.0      # extra mientras la PC está encendid
 const FLASHLIGHT_DRAIN_PER_HOUR: float = 16.0  # extra mientras la linterna alumbra
 
 
+# --- Linterna y los del cristal ----------------------------------------------
+# La linterna ya no se apunta: alumbra todo el pasillo de golpe. Mantenerla
+# encendida (o darle parpadeos rápidos) le va acumulando susto al que esté en
+# el cristal; al llenarse, se va. La barra no se ve.
+## Luz acumulada que hace falta para ahuyentar a uno del cristal.
+const FLASH_FILL_TIME: float = 1.75
+## Lo que tarda el susto en bajar de lleno a cero con la linterna apagada. Es
+## mucho más lento que lo que tarda en subir, así que los parpadeos se suman.
+const FLASH_DECAY_TIME: float = 5.0
+
+## Lo que aguanta uno del cristal antes de entrar, en la primera y en la última
+## noche; las de en medio se interpolan. Descontando los FLASH_FILL_TIME de luz,
+## deja unos 7 s de margen en la noche 1 y unos 4 en la 6.
+const GLASS_TIME_FIRST_NIGHT: float = 9.0
+const GLASS_TIME_LAST_NIGHT: float = 5.5
+
+
+## Lo que aguanta uno del cristal esa noche antes de entrar.
+static func glass_time(night: int) -> float:
+	var span: int = maxi(LAST_NIGHT - 1, 1)
+	var t: float = float(clampi(night, 1, LAST_NIGHT) - 1) / float(span)
+	return lerpf(GLASS_TIME_FIRST_NIGHT, GLASS_TIME_LAST_NIGHT, t)
+
+
+## El margen de reacción que queda esa noche: lo que aguanta menos lo que
+## cuesta ahuyentarlo. Lo usa el panel de pruebas para enseñarlo.
+static func glass_margin(night: int) -> float:
+	return glass_time(night) - FLASH_FILL_TIME
+
+
 # --- Breaker y cortaso -------------------------------------------------------
 ## Lo que dura la corriente cortada cuando se baja la palanca.
 const BLACKOUT_TIME: float = 3.0

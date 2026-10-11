@@ -43,12 +43,13 @@ res://
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
-- **Oficina:** vista panorámica que gira con el mouse. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+- **Oficina:** tres vistas fijas que se cambian **solo con A y D o con las flechas**, con un barrido de 0.35 s suave al entrar y al salir. El mouse ya no mueve la cámara, así que soltar el monitor te deja mirando donde estabas. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
   La vista central está **a oscuras**, como el pasillo de FNAF 2: de fondo va
-  `oficina_centro_oscura.jpeg` y la foto iluminada (`oficina_centro.jpeg`) solo se ve **dentro del
-  cono de la linterna**, que sigue al mouse. El cono es un círculo de borde suave
-  (`scenes/office/flashlight_reveal.gdshader`); se mantiene con Ctrl o con el clic izquierdo
-  sostenido sobre el cristal.
+  `oficina_centro_oscura.jpeg` y la foto iluminada (`oficina_centro.jpeg`) solo se ve **donde
+  alumbra la linterna**. La linterna **no se apunta**: ilumina de golpe toda la franja del
+  pasillo, con el borde difuminado y sin ninguna línea dura
+  (`scenes/office/flashlight_reveal.gdshader`), y el foco parpadea un poco. Se mantiene con Ctrl o
+  con el clic izquierdo sostenido sobre el cristal, y gasta energía mientras está encendida.
 
 ## Audio
 
@@ -119,6 +120,10 @@ como override donde toca.
   salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
   Clic en cualquier lado vuelve al menú, el botón repite la noche. El mapa de profe a cámara está
   en `Extras.ORIGIN_CAMERAS` (la CAM 10 no tiene `vacia`: usa `cam10_salio`).
+- **Esquina del HUD:** el reloj, la noche y el contador de tickets van en un `VBoxContainer`
+  (`Hud/TopRight`) anclado arriba a la derecha, no en posiciones fijas: se apilan solos y no se
+  pueden encimar entre ellos aunque les cambie el texto. La columna arranca pasada la banda del
+  banner de avisos, que va centrado arriba.
 - **Pantallas de carga:** entre el menú, las noches y los periódicos. Negro con estática leve y una
   frase del lore al azar de `data/loading_lines.gd`. Se entra con `LoadingScreen.go_to(árbol, ruta)`.
 - **Fin de noche:** 6 AM → recorte de periódico → el recibo, si esa noche lo da → lo siguiente.
@@ -207,14 +212,18 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
 
-**Destellos en el cristal** (Ureña, Juan.exe y Armando, en `glass_stalker.gd`): hay que **apuntarles
-el cono**, no solo tener la linterna encendida. Un destello cuenta cuando el cono le da **a ese
-profe** 0.2 s seguidos; para que cuente el siguiente hay que quitárselo de encima y volver a
-ponerlo, así que dejar la linterna fija cuenta uno y no cuatro. No hay tope por arriba: alumbrar
-para ver quién es también cuenta. Cada profe lleva su cuenta aparte, así que alumbrar a uno no
-ahuyenta al de al lado. Al cuarto se va, con su aviso y el sonido `se_aleja`. Mientras el cono le
-está dando a alguien sale un contador discreto debajo del haz con su nombre y los destellos que
-van (2/4). Si no se completan en 10 s, entra y es game over.
+**Susto en el cristal** (Ureña, Juan.exe y Armando, en `glass_stalker.gd`): cada uno lleva un
+"susto" de 0 a 1 que **no se ve**. Con la linterna encendida sube, y al apagarla baja, pero mucho
+más despacio, así que da igual mantenerla puesta o darle parpadeos rápidos: lo que cuenta es la luz
+acumulada, no acertar ningún ritmo. Al llenarse se va, con su aviso y el sonido `se_aleja`. Como la
+linterna no se apunta, les sube a todos los que estén en el cristal a la vez. Si no se llena antes
+de que se le acabe la paciencia, entra y es game over.
+
+Los tiempos están en `autoload/night_config.gd` para poder ajustarlos sin tocar la mecánica:
+`FLASH_FILL_TIME` (1.75 s de luz para ahuyentarlo), `FLASH_DECAY_TIME` (5 s en bajar de lleno a
+cero) y lo que aguanta en el cristal, que se interpola entre `GLASS_TIME_FIRST_NIGHT` (9 s) y
+`GLASS_TIME_LAST_NIGHT` (5.5 s). Eso deja unos **7.25 s de margen de reacción en la noche 1 y 3.75 s
+en la 6**; `NightConfig.glass_margin(noche)` lo calcula y el panel de pruebas lo enseña.
 - **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
 - **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
 
@@ -253,7 +262,7 @@ La galería de Jumpscares de Extras reproduce estas mismas imágenes.
 
 Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en la sala de servidores, dejando la oficina sin vigilar. La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
 
-**Tickets durante la noche:** las tareas no están todas desde las 12. Llegan como tickets repartidos en la noche (el primero al inicio y los demás espaciados hasta las 5 AM, con algo de azar), con un aviso sonoro y un contador en la oficina. Cada ticket tiene un plazo (más corto en noches altas); si vence, se pierde 5 % de energía y Mamador sube +3 su nivel durante una hora de juego. Un ticket vencido no cuenta para el pago.
+**Tickets durante la noche:** las tareas no están todas desde las 12. Llegan como tickets repartidos en la noche (el primero al inicio y los demás espaciados hasta las 5 AM, con algo de azar), con un aviso sonoro y un contador en la oficina. **Los tickets no vencen**: una vez que llega uno se queda en la lista hasta que el jugador lo termina, y se paga por cada tarea completada. Lo único que corre es el reloj de la noche.
 
 **Pasos con espera:** casi todas las tareas tienen al menos un paso que tarda (copiar un respaldo, reiniciar un servicio, esperar respuestas de ping, propagar una configuración), con barra de progreso. La barra solo avanza mientras la PC está abierta; al bajarla se pausa. Ese es el dilema central: quedarse en la PC o vigilar. La duración de las esperas crece por noche.
 

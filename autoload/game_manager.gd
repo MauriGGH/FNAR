@@ -8,9 +8,9 @@ signal hour_changed(hour: int)  # 0 = 12 AM ... 6 = 6 AM
 signal night_won(night: int)
 signal game_over(cause: String)
 signal task_completed(task_id: String)
-## Llegó un ticket nuevo (índice en night_tasks) o se venció uno.
+## Llegó un ticket nuevo (índice en night_tasks). Los tickets ya no vencen: se
+## quedan en la lista hasta que el jugador los termina.
 signal ticket_arrived(index: int)
-signal ticket_expired(index: int)
 signal ai_window_changed(is_open: bool)
 
 ## El nombre del guardia. Por ahora es una constante; la pantalla para
@@ -37,8 +37,7 @@ var _completed_tasks: Dictionary = {}
 # Las tareas de la noche se sortean una sola vez, al empezar.
 var _night_tasks: Array = []
 ## Estado de cada ticket, en el mismo orden que _night_tasks:
-## {"at": hora en que llega, "deadline": hora en que vence,
-##  "arrived": bool, "expired": bool}
+## {"at": hora en que llega, "arrived": bool}
 var _tickets: Array[Dictionary] = []
 ## Subidas temporales de nivel de IA: clave del profe -> horas que le quedan.
 var _ai_boosts: Dictionary = {}
@@ -148,10 +147,9 @@ func trigger_game_over(cause: String) -> void:
 func _build_tickets() -> void:
 	_tickets.clear()
 	var times: PackedFloat32Array = Nights.ticket_times(current_night, _night_tasks.size())
-	var deadline: float = Nights.ticket_deadline_hours(current_night)
 	for i: int in _night_tasks.size():
 		var at: float = times[i] if i < times.size() else Nights.LAST_TICKET_AT
-		_tickets.append({"at": at, "deadline": at + deadline, "arrived": false, "expired": false})
+		_tickets.append({"at": at, "arrived": false})
 
 
 ## true si ese ticket ya llegó. Las tareas que no han llegado no se pueden
@@ -160,12 +158,6 @@ func is_ticket_arrived(index: int) -> bool:
 	if index < 0 or index >= _tickets.size():
 		return false
 	return bool(_tickets[index]["arrived"])
-
-
-func is_ticket_expired(index: int) -> bool:
-	if index < 0 or index >= _tickets.size():
-		return false
-	return bool(_tickets[index]["expired"])
 
 
 ## Cuántos tickets han llegado ya, para el contador de la oficina.
@@ -177,41 +169,17 @@ func arrived_ticket_count() -> int:
 	return count
 
 
-## Lo que le queda al ticket más urgente sin terminar, en segundos reales, o
-## -1 si no hay ninguno corriendo.
-func next_ticket_seconds_left() -> float:
-	var soonest: float = -1.0
-	for i: int in _tickets.size():
-		var ticket: Dictionary = _tickets[i]
-		if not bool(ticket["arrived"]) or bool(ticket["expired"]):
-			continue
-		if is_task_completed(str(_night_tasks[i].get("id", ""))):
-			continue
-		var left: float = (float(ticket["deadline"]) - night_progress()) * NightConfig.hour_duration()
-		if left < 0.0:
-			continue
-		if soonest < 0.0 or left < soonest:
-			soonest = left
-	return soonest
-
-
-## Los tickets que llegan y los que vencen, según el reloj de la noche.
+## Los tickets que van llegando, según el reloj de la noche. No vencen: una vez
+## que llega uno se queda en la lista hasta que el jugador lo termina.
 func _process_tickets() -> void:
 	var now: float = night_progress()
 	for i: int in _tickets.size():
 		var ticket: Dictionary = _tickets[i]
-		if not bool(ticket["arrived"]):
-			if now >= float(ticket["at"]):
-				ticket["arrived"] = true
-				ticket_arrived.emit(i)
+		if bool(ticket["arrived"]):
 			continue
-		if bool(ticket["expired"]):
-			continue
-		if is_task_completed(str(_night_tasks[i].get("id", ""))):
-			continue
-		if now >= float(ticket["deadline"]):
-			ticket["expired"] = true
-			ticket_expired.emit(i)
+		if now >= float(ticket["at"]):
+			ticket["arrived"] = true
+			ticket_arrived.emit(i)
 
 
 # --- Subidas temporales de nivel ----------------------------------------------
@@ -263,11 +231,11 @@ func completed_task_count() -> int:
 ## Lo que le pagan al guardia por las tareas que terminó.
 ## Cuántas tareas cuentan para el pago: terminadas y sin que se venciera su
 ## ticket. Una que se terminó después del plazo no se paga.
+## Se paga por cada tarea terminada. Antes los tickets vencidos no contaban;
+## ahora no vencen, así que cuenta todo lo que se haya completado.
 func paid_task_count() -> int:
 	var count: int = 0
 	for i: int in _night_tasks.size():
-		if is_ticket_expired(i):
-			continue
 		if is_task_completed(str(_night_tasks[i].get("id", ""))):
 			count += 1
 	return count
@@ -356,18 +324,7 @@ func debug_arrive_next_ticket() -> bool:
 	return false
 
 
-## Vence el primer ticket que esté corriendo.
-func debug_expire_next_ticket() -> bool:
-	for i: int in _tickets.size():
-		var ticket: Dictionary = _tickets[i]
-		if not bool(ticket["arrived"]) or bool(ticket["expired"]):
-			continue
-		if is_task_completed(str(_night_tasks[i].get("id", ""))):
-			continue
-		ticket["expired"] = true
-		ticket_expired.emit(i)
-		return true
-	return false
+
 
 
 func _process(delta: float) -> void:

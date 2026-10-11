@@ -87,7 +87,6 @@ func _ready() -> void:
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.task_completed.connect(_on_any_task_completed)
 	GameManager.ticket_arrived.connect(func(_index: int) -> void: _refresh_task_list())
-	GameManager.ticket_expired.connect(func(_index: int) -> void: _refresh_task_list())
 	_solve_mode = SolveMode.NONE
 
 	_build_icons()
@@ -226,19 +225,14 @@ func _refresh_task_list() -> void:
 		var task: Dictionary = tasks[i]
 		var done: bool = GameManager.is_task_completed(str(task.get("id", "")))
 		var arrived: bool = GameManager.is_ticket_arrived(i)
-		var expired: bool = GameManager.is_ticket_expired(i)
 		var state: String = "pendiente"
 		if done:
 			state = "terminada"
-		elif expired:
-			state = "VENCIDA"
 		elif not arrived:
 			state = "sin llegar"
 		var mark: String = "[ ]"
 		if done:
 			mark = "[X]"
-		elif expired:
-			mark = "[!]"
 		elif not arrived:
 			mark = "[ · ]"
 		var button: Button = buttons[i] as Button
