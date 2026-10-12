@@ -30,6 +30,11 @@ uniform float base_brightness : hint_range(0.0, 1.0) = 1.0;
 // Desenfoque de fuera del cono, en fracción del ancho. Lo usan las siluetas
 // tras el cristal: sin luz se ven como un bulto, y con luz, nítidas.
 uniform float outside_blur : hint_range(0.0, 0.05) = 0.0;
+// Desenfoque horizontal del giro de cabeza, en fracción del ancho. Lo sube y
+// lo baja el script durante el barrido, y va para todo: la foto iluminada, los
+// profes, las siluetas y la cortina. Manda sobre el de fuera del cono, porque
+// mientras la cabeza gira no se distingue nada de todas formas.
+uniform float motion_blur : hint_range(0.0, 0.2) = 0.0;
 
 void fragment() {
 	// Distancia al borde del rectángulo: 0 dentro, y crece hacia afuera.
@@ -52,6 +57,15 @@ void fragment() {
 		}
 		source /= 25.0;
 	}
+	// El del giro va encima de todo: si está puesto, manda él.
+	if (motion_blur > 0.0001) {
+		source = vec4(0.0);
+		for (int i = -3; i <= 3; i++) {
+			source += texture(TEXTURE, UV + vec2(float(i) / 3.0 * motion_blur, 0.0));
+		}
+		source /= 7.0;
+	}
+
 	float alpha = mix(base_alpha, 1.0, inside);
 	float brightness = mix(base_brightness, 1.0, inside);
 	COLOR = vec4(source.rgb * brightness, source.a * alpha);

@@ -29,6 +29,9 @@ var _pinned: PackedStringArray = PackedStringArray()
 var _cache: Dictionary = {}
 ## slug -> el material de su recorte, para moverle el haz sin rearmar nada.
 var _materials: Dictionary = {}
+## Los materiales de las siluetas, aparte: su desenfoque se mide en píxeles y
+## hay que recalcularlo cada vez que cambia el tamaño de la vista.
+var _silhouette_materials: Array[ShaderMaterial] = []
 
 var _beam_center: Vector2 = Vector2(0.5, 0.5)
 var _beam_half: Vector2 = Vector2(0.3, 0.3)
@@ -83,6 +86,7 @@ func _rebuild() -> void:
 		remove_child(child)
 		child.queue_free()
 	_materials.clear()
+	_silhouette_materials.clear()
 	# Primero lo que ya está puesto en la escena, debajo de los profes.
 	for file_name: String in _pinned:
 		_add_picture(_texture_named(file_name), "", false)
@@ -122,11 +126,13 @@ func _make_material(lit_only: bool, slug: String, silhouette: bool) -> ShaderMat
 		return null
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = load(REVEAL_SHADER)
-	# Una silueta se ve siempre, pero fuera del cono va apagada y desenfocada.
+	# Una silueta se ve siempre; fuera del cono va un poco apagada y con un
+	# desenfoque muy leve, que se calcula en _apply_beam porque depende de lo
+	# ancha que sea la vista.
 	if silhouette:
 		material.set_shader_parameter("base_alpha", 1.0)
-		material.set_shader_parameter("base_brightness", OfficeLayers.DIM_BRIGHTNESS)
-		material.set_shader_parameter("outside_blur", OfficeLayers.SILHOUETTE_BLUR)
+		material.set_shader_parameter("base_brightness", OfficeLayers.SILHOUETTE_BRIGHTNESS)
+		_silhouette_materials.append(material)
 		return material
 	var always: bool = not lit_only and OfficeLayers.is_always_visible(slug)
 	material.set_shader_parameter("base_alpha", 1.0 if always else 0.0)
@@ -136,6 +142,11 @@ func _make_material(lit_only: bool, slug: String, silhouette: bool) -> ShaderMat
 
 
 func _apply_beam() -> void:
+	# El desenfoque de las siluetas se pide en píxeles, así que hay que pasarlo
+	# a fracción del ancho con el tamaño que tenga la vista ahora.
+	var blur: float = OfficeLayers.SILHOUETTE_BLUR_PIXELS / OfficeLayers.REFERENCE_WIDTH
+	for material: ShaderMaterial in _silhouette_materials:
+		material.set_shader_parameter("outside_blur", blur)
 	for slug: Variant in _materials:
 		var material: ShaderMaterial = _materials[slug] as ShaderMaterial
 		material.set_shader_parameter("beam_center", _beam_center)

@@ -105,7 +105,7 @@ const PAN_SMOOTHING: float = 7.0
 const SWEEP_TIME: float = 0.35
 ## Lo que se corre como mucho el desenfoque del giro, en píxeles de pantalla.
 ## Crece hasta la mitad del barrido y se apaga al llegar.
-const MAX_SWEEP_BLUR_PIXELS: float = 24.0
+const MAX_SWEEP_BLUR_PIXELS: float = 70.0
 ## Y el del parallax, que es solo un roce cuando el mouse va rápido.
 const MAX_PAN_BLUR_PIXELS: float = 5.0
 ## A qué velocidad del parallax (píxeles por segundo) ya está al máximo.
@@ -590,14 +590,53 @@ func _on_sweep_finished(target: int) -> void:
 	_state = ViewState.PANNING
 
 
-## El desenfoque se pide en píxeles de pantalla; el shader lo quiere en
+## El desenfoque se pide en píxeles de pantalla; los shaders lo quieren en
 ## fracción del ancho de la imagen, que es la vista entera a VIEW_SCALE.
+##
+## Va para **todo lo que se ve**, no solo para el fondo: la foto iluminada, los
+## recortes de los profes, las siluetas y la cortina. Cada uno tiene su propio
+## material, así que se recorre la vista entera y se le pone el parámetro al
+## que lo tenga (los que no, lo ignoran).
 func _set_blur(pixels: float) -> void:
-	var amount: float = pixels / maxf(size.x * VIEW_SCALE, 1.0)
-	for image: TextureRect in [left_image, center_image, right_image]:
-		var material: ShaderMaterial = image.material as ShaderMaterial
+	# Los píxeles se cuentan sobre una pantalla de 1920 de ancho, no sobre el
+	# tamaño interno de la vista: así se ve igual en cualquier resolución.
+	var amount: float = pixels / (OfficeLayers.REFERENCE_WIDTH * VIEW_SCALE)
+	for content: Control in _content_nodes:
+		_blur_subtree(content, amount)
+
+
+func _blur_subtree(node: Node, amount: float) -> void:
+	var item: CanvasItem = node as CanvasItem
+	if item != null:
+		var material: ShaderMaterial = item.material as ShaderMaterial
 		if material != null:
+			# El fondo usa office_view y el resto flashlight_reveal: cada uno
+			# se queda con el suyo y descarta el otro.
 			material.set_shader_parameter("blur_amount", amount)
+			material.set_shader_parameter("motion_blur", amount)
+	for child: Node in node.get_children():
+		_blur_subtree(child, amount)
+
+
+## Para las capturas: deja el giro clavado a la mitad (o donde se le diga) en
+## vez de dejarlo correr, para poder fotografiarlo siempre igual.
+func debug_hold_sweep(progress: float = 0.5, direction: int = 1) -> void:
+	if _state != ViewState.PANNING:
+		return
+	var target: int = _current_view + direction
+	if target < 0 or target >= _view_nodes.size():
+		target = _current_view - direction
+	if target < 0 or target >= _view_nodes.size():
+		return
+	_state = ViewState.SWEEPING
+	_apply_content_position(target)
+	_sweep_direction = signi(target - _current_view)
+	_sweep_from = _view_nodes[_current_view]
+	_sweep_to = _view_nodes[target]
+	_sweep_to.visible = true
+	if _view_tween != null and _view_tween.is_valid():
+		_view_tween.kill()
+	_apply_sweep(clampf(progress, 0.0, 1.0))
 
 
 ## Cuando el Come Trabas se levanta, la silla del cubículo 3 queda vacía. Las

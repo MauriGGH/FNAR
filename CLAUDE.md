@@ -55,12 +55,15 @@ res://
     aunque lo dejes pegado al borde.
   - **A y D (o las flechas) cambian de vista.** Un toque y la cabeza gira a la de al lado con un
     barrido de 0.35 s. No hay que mantener nada.
-  - **Desenfoque de movimiento** (`scenes/office/office_view.gdshader`): durante el barrido la
-    imagen se corre en horizontal, creciendo hasta la mitad del giro y apagándose al llegar
-    (`MAX_SWEEP_BLUR_PIXELS`, 24 px). El parallax del mouse lleva el mismo desenfoque pero
-    **mucho más leve** (`MAX_PAN_BLUR_PIXELS`, 5 px) y solo cuando se mueve rápido: a
-    `PAN_BLUR_FULL_SPEED` (900 px/s) ya está al tope. Se pide en píxeles de pantalla; el shader lo
-    pasa a fracción del ancho de la vista.
+  - **Desenfoque de movimiento:** durante el barrido la imagen se corre en horizontal, creciendo
+    hasta la mitad del giro y apagándose al llegar (`MAX_SWEEP_BLUR_PIXELS`, **70 px**). Va para
+    **todo lo que se ve**, no solo para el fondo: `office.gd` recorre la vista entera y le pone el
+    parámetro a cada material, así que se desenfocan también la foto iluminada, los recortes de los
+    profes, las siluetas y la cortina (`blur_amount` en `office_view.gdshader` y `motion_blur` en
+    `flashlight_reveal.gdshader`). El parallax del mouse lleva el mismo desenfoque pero **mucho más
+    leve** (`MAX_PAN_BLUR_PIXELS`, 5 px) y solo cuando se mueve rápido: a `PAN_BLUR_FULL_SPEED`
+    (900 px/s) ya está al tope. Los píxeles se cuentan siempre sobre una pantalla de 1920 de ancho
+    (`OfficeLayers.REFERENCE_WIDTH`), para que se vea igual en cualquier resolución.
   Todo lo que se ve en una vista (zonas de clic, recortes de profes, siluetas, cortina, luz de la
   linterna) cuelga de su nodo `Content`, así que se mueve con la imagen sin tocarlo aparte y los
   clics siguen cayendo en su objeto. Mientras la cabeza gira o la vista se acerca a la PC o al
@@ -302,11 +305,21 @@ su propia estética.
   foto con texto encima (ver **Pantallas que son una imagen**).
 
 **Capturas de todas las pantallas:** el panel de pruebas (F1 → Pantallas → **"Capturar todas"**)
-recorre las 27 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
+recorre las 32 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
 guarda un PNG de cada una con `scripts/ui/screen_capture.gd`. Van a `user://capturas/`, que en
 Linux es `~/.local/share/godot/app_userdata/Five Nights at Rocha\'s/capturas/`. La herramienta se
 cuelga de la raíz del árbol, no de una escena, porque va cambiando de escena. Ojo: pasar por las
 pantallas de documentos y periódicos los deja marcados como vistos en `save.cfg`.
+
+**Despausa el árbol antes de cada pantalla**: la pausa de la noche y el propio panel lo dejan
+pausado y cambiar de escena no lo despausa, así que sin eso todo lo que viniera después salía en
+blanco (los fundidos de entrada del recibo y de los documentos no corren con el árbol parado).
+
+Dos capturas son de comprobación y no de catálogo: **`18a_siluetas_en_el_pasillo`** mete a dos
+profes en `pasillo_sur` **por su propia ruta** (no pinta las siluetas a mano: usa `move_to_step()`,
+y de ahí en adelante manda el juego) para ver que la cadena entera funciona, y
+**`18b_giro_a_la_mitad`** deja el barrido clavado al 50 % con `office.debug_hold_sweep()`, para
+poder mirar el desenfoque siempre en el mismo punto.
 
 ## Transiciones y pantallas
 
@@ -418,8 +431,11 @@ material, porque en la vista central cada uno se comporta distinto frente al con
 - **El ojo de Armando:** si está en el cristal y el cono no le da, lo único que se ve de él es un
   punto naranja tenue que parpadea de vez en cuando donde tiene el ojo.
 - **Siluetas tras el cristal:** si un profe está en la recepción o en el tramo de `pasillo_sur` que
-  se ve desde la oficina, se dibuja al fondo con `layers/silueta_<id>.png`: fuera del cono, al 35 %
-  de brillo y un poco desenfocada; dentro, nítida y a todo brillo. Hay cinco (Barcosa, Mamador,
+  se ve desde la oficina, se dibuja al fondo con `layers/silueta_<id>.png`: fuera del cono, al
+  **80 %** de brillo (`OfficeLayers.SILHOUETTE_BRIGHTNESS`) y con **2 px** de desenfoque
+  (`SILHOUETTE_BLUR_PIXELS`, medidos sobre 1920 de ancho); dentro, nítida y a todo brillo. El arte
+  ya viene oscuro de por sí (ronda los 47 de 255), así que a ese 80 % se leen como bultos
+  reconocibles y no como figuras iluminadas. Hay cinco (Barcosa, Mamador,
   Ureña, Juan.exe y Armando) y **pueden verse varias a la vez**: cada una tiene su sitio y ninguna
   se encima con otra, comprobado con `tools/measure_office_layers.py`. Si falta el archivo de
   alguien, no se dibuja nada.
