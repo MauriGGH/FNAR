@@ -40,6 +40,8 @@ const ALARM: String = "despertador"
 const SCHOOL_BELL: String = "campana_escuela"
 const FOOTSTEPS: String = "pasos_acercandose"
 const LOW_HIT: String = "golpe_grave"
+## El mismo golpe grave, más bajito, para el tic del menú.
+const MENU_TIC: String = "golpe_grave_menu"
 ## Cuando uno de los del cristal se va con el cuarto destello.
 const GLASS_REPEL: String = "se_aleja"
 ## Ambiente, en bucle toda la noche.
@@ -148,6 +150,10 @@ const CATALOG: Dictionary = {
 	"golpe_grave": {
 		"file": "golpe_grave.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "low_hit",
+	},
+	"golpe_grave_menu": {
+		"file": "golpe_grave.ogg", "bus": "Efectos",
+		"volume_db": -10.0, "generator": "low_hit",
 	},
 	"ambiente_oficina": {
 		"file": "ambiente_oficina.ogg", "bus": "Ambiente",

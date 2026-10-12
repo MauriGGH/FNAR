@@ -478,11 +478,27 @@ func _build_screens_section() -> void:
 		stars.append([str(count), func() -> void: _show_menu_with_stars(count)])
 	_add_row(body, stars)
 
+	_add_label(body, "Tic del menú (abre el menú y lo suelta):")
+	_add_row(body, [
+		["Rochis", func() -> void: _show_menu_tic("rochis")],
+		["Ureña", func() -> void: _show_menu_tic("urena")],
+		["Mamador", func() -> void: _show_menu_tic("mamador")],
+		["Ultra", func() -> void: _show_menu_tic(MenuBackdrop.ULTRA_ID)],
+	])
+
 	_add_label(body, "Capturas de pantalla:")
 	_add_button(body, "Capturar todas", _capture_all)
 
 	_add_button(body, "Extras con todo desbloqueado", _unlock_everything)
 	_add_button(body, "Extras con todo bloqueado", _lock_everything)
+
+
+## Abre el menú principal con un tic ya pedido. El fondo lo suelta en cuanto
+## se monta: el panel vive en la noche y el fondo en los menús, así que se le
+## deja apuntado en vez de llamarlo directo.
+func _show_menu_tic(tic_id: String) -> void:
+	MenuBackdrop.pending_tic = tic_id
+	_go_to(Screens.MAIN_MENU)
 
 
 ## Recorre todas las pantallas del juego y guarda una captura de cada una. La

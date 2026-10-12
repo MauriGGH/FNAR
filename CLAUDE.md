@@ -91,7 +91,7 @@ buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (34 ids). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (37 ids). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -114,6 +114,7 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `se_aleja` | `se_aleja.ogg` | Efectos | −3 | no | uno del cristal se va con el cuarto destello |
 | `pasos_acercandose` | `pasos_acercandose.ogg` | Efectos | −2 | no | los tres pasos del apagón |
 | `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | no | el cuadro de una alucinación |
+| `golpe_grave_menu` | `golpe_grave.ogg` | Efectos | −10 | sí | el tic del fondo de los menús (mismo archivo) |
 | `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
 | `despertador` | `despertador.ogg` | Efectos | −8 | sí | el rodillo de las 6 AM |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
@@ -579,9 +580,30 @@ confirmar se borra `save.cfg`.
 Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
 `scenes/ui/locked_art.gdshader`) y un "???" encima.
 
-**Fondo de los menús:** `assets/art/menu/menu_fondo_0..3.png`. Normalmente se ve el 0; cada 4 a 9 s
-al azar aparece el 1, el 2 o el 3 durante 0.1 a 0.25 s con un golpe de estática, como el Freddy del
-menú de los juegos originales. Encima, líneas de escaneo suaves y un parpadeo leve.
+**Fondo de los menús (`scripts/ui/menu_backdrop.gd`):** de fondo va siempre
+`assets/art/menu/menu_fondo_0.png`, con líneas de escaneo suaves y un poco de estática. Encima, el
+**"tic"**, al estilo del menú de Sister Location: cada **5 a 10 s** al azar la imagen se desgarra y
+aparece un profe por un instante.
+
+Los cuadros del tic son `menu_tic_rochis.png`, `menu_tic_urena.png` y `menu_tic_mamador.png`, que
+están **alineados con `menu_fondo_0`** —solo cambia el profe, así que el cambio se nota únicamente
+en él—, más `menu_tic_ultra.png`, con los tres y los ojos negros. Sustituyen al golpe de
+`menu_fondo_1..3`, que ya no se usa.
+
+El tic dura unos **0.35 s** y va en cuatro tramos:
+
+| Tramo | Qué se ve |
+| --- | --- |
+| 0.07 s | Todavía `menu_fondo_0`, pero desgarrado de arriba abajo: las franjas corridas de 10 a 40 px a los lados y los colores separados |
+| 0.10 s | Entra el cuadro del profe y el desgarro se vuelve una banda que **baja** de arriba abajo; ahí suena el golpe (`golpe_grave_menu`, el mismo `golpe_grave.ogg` a −10 dB) |
+| 0.15 s | **Congelado**: el profe quieto y sin desgarro, que es lo que asusta |
+| 0.05 s | Uno o dos cuadros de estática a 0.5 de opacidad, que tapan la vuelta a `menu_fondo_0` |
+
+**No repite el profe anterior**, y **uno de cada ocho** tics sale el ultra, con la misma secuencia
+un 35 % más larga (medio segundo). El desgarro, la separación de color y el congelado los hace
+`scenes/ui/menu_glitch.gdshader` sobre la propia imagen (franjas sorteadas con una semilla, ventana
+de mordida con centro y alto): **no hay cuadros extra dibujados**. El panel de pruebas los fuerza
+desde F1 → Pantallas, que deja el tic apuntado en `MenuBackdrop.pending_tic` y abre el menú.
 
 **Estrellas del menú principal:** debajo del título, tres. Una al pasar la noche 5, otra al pasar la
 6 y otra al ganar una Custom Night con los ocho profes en 20. Se dibujan por código (`StarRow`) y el
