@@ -29,6 +29,7 @@ res://
   scenes/tasks/    una escena por tarea (minijuego)
   scripts/characters/  animatronic.gd (clase base) y un script por profe
   data/            rooms.gd (grafo de habitaciones), nights.gd (niveles por noche)
+  tools/           programas de medir (capas de la oficina, caras de los expedientes) y de generar voces
   scenes/ui/           pantalla de carga, los cuadros de estática y los shaders compartidos (scanlines, blanco y negro, bloqueado)
   scripts/ui/          ayudantes: fonts.gd, menu_style.gd, menu_list.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd, options_panel.gd, screen_capture.gd
   scripts/audio/       tone_builder.gd, los sonidos provisionales generados por código
@@ -531,11 +532,29 @@ Las tareas imitan herramientas reales de un coordinador de sistemas, con diseño
 
 La mecánica de Claudio de Armando solo se activa desde la noche 4.
 
-Custom Night: cada nivel de 0 a 20.
+**Custom Night** (`scenes/extras/custom_night.gd`): cada nivel de 0 a 20, con **el retrato de cada
+profe**, como en los juegos originales. Rejilla de 4 por 2: la cara arriba, el nombre en VT323
+debajo y el nivel entre sus flechas, `<  12  >`. Sin panel, sin borde y sin sombra. Los siete que
+no están elegidos se ven **en blanco y negro y oscurecidos** (el shader
+`scenes/ui/greyscale.gdshader`, con `amount` en 1 y `darken` en 0.55); el elegido, **a color y a
+todo brillo**, con sus flechas encendidas.
 
-**Retos de Custom Night** (`data/custom_challenges.gd`): botones que dejan los ocho niveles ya
-puestos. Ganar uno se guarda y el botón queda con una palomita. Tocar un nivel a mano deja de
-contar como reto.
+**De dónde sale la cara:** del expediente del profe, que trae pegada una foto tipo polaroid en
+blanco y negro. Dónde cae esa foto **no se adivina**: lo mide
+`tools/measure_dossier_faces.py` (busca el bloque de píxeles grises de la hoja) y vive en
+`data/custom_night_faces.gd`; el retrato es el **cuadrado de arriba** de esa foto, que es donde
+está la cabeza. Si a alguien le faltara el expediente, se cae a su jumpscare, que ya es un primer
+plano y no necesita recorte.
+
+**Cómo se mueve:** el cursor está en los retratos o en la lista de abajo. Arriba y abajo lo
+mueven (pasado el último retrato se baja a la lista, y subiendo desde el primer renglón se vuelve
+a los retratos); **izquierda y derecha siempre cambian el nivel** del profe elegido, que es lo que
+dicen sus flechas. Con el mouse: pasar por encima elige, y picar una flecha mueve ese nivel aunque
+el profe no esté elegido.
+
+**Retos de Custom Night** (`data/custom_challenges.gd`): renglones de texto debajo de los retratos
+que dejan los ocho niveles ya puestos, con su gracia escrita al lado. Ganar uno se guarda y el
+renglón queda con una palomita. Tocar un nivel a mano deja de contar como reto.
 
 | Reto | Niveles | Gracia |
 | --- | --- | --- |

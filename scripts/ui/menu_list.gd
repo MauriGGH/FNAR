@@ -14,6 +14,10 @@ extends Control
 ##   - **valor**: se cambia con izquierda y derecha, y se enseña como barra de
 ##     bloques (los volúmenes) o como número (los niveles de la Custom Night).
 
+## Cambió el renglón elegido. Lo escuchan las pantallas que tienen algo más
+## además de la lista (la Custom Night, con su rejilla de retratos).
+signal selection_changed(index: int)
+
 enum Kind { ACTION, VALUE }
 
 ## Una barra de bloques: "■■■■■□□□□□".
@@ -123,6 +127,8 @@ func build() -> void:
 		_values.append(value)
 
 	_selected = _first_enabled()
+	if _marker != null:
+		_marker.visible = not _rows.is_empty()
 	refresh()
 	layout()
 
@@ -158,7 +164,6 @@ func layout() -> void:
 func _place_marker() -> void:
 	if _marker == null or _selected < 0 or _selected >= _rows.size():
 		return
-	_marker.visible = _rows.size() > 0
 	_marker.position = Vector2(size.x * left_margin, _rows[_selected].position.y)
 
 
@@ -206,8 +211,16 @@ func select(index: int, quiet: bool = true) -> void:
 		return
 	_selected = index
 	_place_marker()
+	selection_changed.emit(index)
 	if not quiet:
 		MenuStyle.blip()
+
+
+## Enciende o apaga la lista. Apagada, el ">>" no se ve: lo usan las pantallas
+## donde el cursor puede estar en otra cosa.
+func set_active(active: bool) -> void:
+	if _marker != null:
+		_marker.visible = active and not _rows.is_empty()
 
 
 ## Se mueve saltándose lo apagado, y da la vuelta al llegar al final.
