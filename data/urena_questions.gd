@@ -34,9 +34,10 @@ const NAME_TAG: String = "[NOMBRE]"
 const TASKS_TAG: String = "[N]"
 
 const GREETING: String = "¡Quihubo, [NOMBRE]! Ya llevas [N] tareas... qué aplicadito."
-## Lo mismo pero sin el nombre, que es lo que se dice en voz: el nombre del
-## jugador no se puede grabar, así que solo va escrito en el subtítulo.
-const GREETING_SPOKEN: String = "¡Quihubo! Ya llevas [N] tareas... qué aplicadito."
+## Lo mismo pero sin el nombre **y sin el número**, que es lo que se dice en
+## voz: ni el nombre del jugador ni la cuenta de tareas se pueden grabar, así
+## que los dos se quedan solo en el subtítulo, que es lo que se lee.
+const GREETING_SPOKEN: String = "¡Quihubo! Ya vi que andas muy trabajador... qué aplicadito."
 
 
 const BANK: Array[Dictionary] = [

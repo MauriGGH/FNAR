@@ -279,7 +279,8 @@ El profe las pide con la señal `said_line(id)` de `Animatronic`; el `night.gd` 
 
 **El nombre del jugador no se dice nunca en voz**, porque no se puede grabar:
 
-- El saludo de Ureña se **lee** con el nombre y se **oye** sin él (`GREETING` y `GREETING_SPOKEN`).
+- El saludo de Ureña se **lee** con el nombre y la cuenta de tareas, y se **oye** sin ninguno de
+  los dos: la voz dice «ya vi que andas muy trabajador» (`GREETING` y `GREETING_SPOKEN`).
 - Rochis ya no lo pronuncia: al entrar, su nombre sale **escrito en rojo y grande sobre el
   jumpscare** (`Animatronic.jumpscare_caption()`, que solo él rellena).
 
@@ -721,15 +722,28 @@ La historia de fondo no se explica en el juego: se va descubriendo en recortes d
 lo que se muestra; los textos de `data/newspapers.gd` (título, fecha, cuerpo) se conservan para la
 plantilla dibujada, que solo se usa si falta una imagen.
 
-| Recorte | Se desbloquea | Contenido |
-| --- | --- | --- |
-| 0 | Al empezar la noche 1 | Anuncio: la Coordinación de Sistemas busca alumno para guardia nocturna. "Excelente oportunidad de servicio social." |
-| 1 | Al pasar la noche 1 | Desaparece Santi, alumno de Sistemas, durante el evento de bienvenida; la última vez lo vieron con la botarga de la mascota puesta. |
-| 2 | Al pasar la noche 2 | Alumnos reportan que la botarga, guardada en el cubículo 3, toca sola una cancioncita de cajita musical por las noches. |
-| 3 | Al pasar la noche 3 | Hallan velas, sal y un símbolo extraño en la sala de juntas; la universidad niega cualquier ritual. Nadie sabe quién convocó esa junta. |
-| 4 | Al pasar la noche 4 | Renuncia el personal de limpieza nocturno: "dentro de la botarga se oyen voces, muchas voces". (Pista de las Trabas.) |
-| 5 | Al pasar la noche 5 | Se filtra la lista de asistentes a la junta de esa noche: los nombres aparecen tachados. |
-| 6 | Al pasar la noche 6 | La universidad clausura la coordinación. "El responsable sigue sin ser identificado." (Gancho para la secuela.) |
+| Recorte | Fecha | Se desbloquea | Contenido |
+| --- | --- | --- | --- |
+| 0 | 12 de agosto | Al empezar la noche 1 | Anuncio: la Coordinación de Sistemas busca alumno para guardia nocturna. "Excelente oportunidad de servicio social." |
+| 1 | **16 de diciembre** | Al pasar la noche 1 | Encuentran un termo verde-limón con restos de tequila en la basura, tras la posada de la coordinación. Señalan a Santiago, que lo niega: "mi termo era verde-naranja". |
+| 2 | 19 de agosto | Al pasar la noche 2 | Desaparece Santi, alumno de Sistemas, durante el evento de bienvenida; lo vieron por última vez quitándose la botarga detrás del edificio. |
+| 3 | 26 de agosto | Al pasar la noche 3 | Escuchan una cajita musical sonando sola en la coordinación vacía, pasada la medianoche. |
+| 4 | 2 de septiembre | Al pasar la noche 4 | Hallan velas, sal y un símbolo dibujado en la mesa de la sala de juntas; la universidad habla de una broma. Nadie sabe quién convocó esa junta. |
+| 5 | 9 de septiembre | Al pasar la noche 5 | Se filtra la lista de la junta extraordinaria: los ocho nombres aparecen tachados con tinta roja. |
+| 6 | 16 de septiembre | Al pasar la noche 6 | La universidad clausura la coordinación. "El responsable sigue sin aparecer." (Gancho para la secuela.) |
+
+**El orden no es el cronológico:** el recorte 1 es de la posada de **diciembre**, de un semestre
+antes que todo lo demás, porque es el primer hilo del que se tira. Las fechas y los titulares son
+los que traen pintadas las imágenes; los textos de `data/newspapers.gd` solo se usan en la
+plantilla de respaldo, si faltara una imagen.
+
+**Se desbloquean por número de noche, no por contenido** (`index_for_cleared_night`), así que
+reordenar o reescribir los recortes **no rompe una partida guardada**: quien tenía desbloqueado el
+3 sigue teniéndolo, con el contenido que lleve ahora.
+
+El recorte de la renuncia del personal de limpieza ya no existe; su pista se quedó como rumor en
+las pantallas de carga (`data/loading_lines.gd`): *"Dicen que dentro de la botarga se oyen voces.
+Muchas voces."*
 
 **Menú principal:** el fondo (`menu_fondo_0..3.png`) tiene toda la mitad izquierda en negro, y ahí
 van el título y las opciones, **alineados a la izquierda y en VT323 blanco grande**. El título va

@@ -12,6 +12,9 @@ const LINES: Array[String] = [
 	"Nadie ha vuelto a pedir las llaves del cubículo 3.",
 	"El pararrayos se instaló después del incidente.",
 	"Las cámaras graban. Nadie revisa las grabaciones.",
+	# Esto era un recorte de periódico (la renuncia del personal de limpieza);
+	# se quedó aquí, como rumor, que es donde pega mejor.
+	"Dicen que dentro de la botarga se oyen voces. Muchas voces.",
 	"La coordinación cierra a las nueve. El edificio no.",
 	"Servicio social: cuatrocientas ochenta horas.",
 	"Si oyes pasos en el pasillo, cierra la puerta.",

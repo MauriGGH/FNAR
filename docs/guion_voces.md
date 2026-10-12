@@ -163,11 +163,10 @@ solo en el subtítulo, que es lo que se lee.
 | Qué | Texto | Archivo |
 | --- | --- | --- |
 | Lo que se **lee** | «¡Quihubo, [NOMBRE]! Ya llevas [N] tareas... qué aplicadito.» | — (lo escribe el juego) |
-| Lo que se **graba** | «¡Quihubo! Ya llevas [N] tareas... qué aplicadito.» | `voces/urena_saludo.ogg` |
+| Lo que se **graba** | «¡Quihubo! Ya vi que andas muy trabajador... qué aplicadito.» | `voces/urena_saludo.ogg` |
 
-> Queda pendiente el `[N]`: el número de tareas tampoco se puede grabar. Lo más
-> práctico es grabar «Ya llevas varias tareas» y dejar la cifra solo en el texto,
-> igual que con el nombre. Dime si lo cambio en `GREETING_SPOKEN`.
+El `[N]` se resolvió igual que el nombre: **tampoco se graba**. La voz dice «ya vi
+que andas muy trabajador» y la cifra se queda nada más en el subtítulo.
 
 ### Insinuaciones  **[FALTA ENGANCHAR]**
 
