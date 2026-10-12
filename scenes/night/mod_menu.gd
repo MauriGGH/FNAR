@@ -37,6 +37,8 @@ var _camera_states: Label = null
 var _sections: Dictionary = {}  # título -> VBoxContainer del cuerpo
 ## Los dos últimos golpes del tic que se probaron aquí, para no repetirlos.
 var _recent_menu_tics: Array[String] = []
+## Y el último golpe de alucinación que se probó.
+var _last_debug_hit: String = ""
 
 
 func _ready() -> void:
@@ -605,13 +607,32 @@ func _build_audio_section() -> void:
 		_recent_menu_tics.append(tic)
 		while _recent_menu_tics.size() > 2:
 			_recent_menu_tics.remove_at(0))
-	_add_button(body, "El del ultra (glitch largo + boom)", func() -> void:
+	_add_button(body, "El del ultra (glitch + boom + estática)", func() -> void:
 		AudioManager.play(Sounds.MENU_GLITCH_LONG)
-		AudioManager.play(Sounds.MENU_TIC_ULTRA))
+		AudioManager.play(Sounds.menu_boom())
+		AudioManager.play(Sounds.UNEASY_STATIC))
+
+	_add_label(body, "Golpe de alucinación (uno de tres, sin repetir):")
+	for id: String in Sounds.LOW_HITS:
+		var hit_id: String = id
+		_add_button(body, hit_id, func() -> void: AudioManager.play(hit_id))
+	_add_button(body, "Uno al azar, como en una alucinación", func() -> void:
+		_last_debug_hit = Sounds.low_hit(_last_debug_hit)
+		print("[audio] golpe de alucinación: %s" % _last_debug_hit)
+		AudioManager.play(_last_debug_hit))
+
+	_add_label(body, "Estática inquietante:")
+	_add_button(body, "La del tic ultra (−14 dB)", func() -> void:
+		AudioManager.play(Sounds.UNEASY_STATIC))
+	_add_button(body, "La del game over (−16 dB)", func() -> void:
+		AudioManager.play(Sounds.UNEASY_STATIC_GAME_OVER))
 
 	_add_label(body, "Sonidos lejanos:")
 	_add_button(body, "Uno ambiental al azar", func() -> void:
 		_night.distant.play_ambient())
+	for id: String in Sounds.FAR_AMBIENT:
+		var far_id: String = id
+		_add_button(body, far_id, func() -> void: AudioManager.play(far_id))
 	_add_button(body, "Quitar las esperas", func() -> void:
 		_night.distant.debug_clear_gaps())
 

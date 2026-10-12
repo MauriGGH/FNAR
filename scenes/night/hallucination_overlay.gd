@@ -13,6 +13,8 @@ var _roll_left: float = Hallucinations.ROLL_INTERVAL
 var _gap_left: float = 0.0
 var _visible_left: float = 0.0
 var _kind: String = ""
+## El último golpe que sonó, para no repetirlo en la siguiente alucinación.
+var _last_hit: String = ""
 var _dossier: Texture2D = null
 
 
@@ -62,7 +64,8 @@ func show_one(kind: String = "") -> void:
 	_visible_left = randf_range(Hallucinations.MIN_TIME, Hallucinations.MAX_TIME)
 	_gap_left = Hallucinations.MIN_GAP
 	visible = true
-	AudioManager.play(Sounds.LOW_HIT)
+	_last_hit = Sounds.low_hit(_last_hit)
+	AudioManager.play(_last_hit)
 	queue_redraw()
 	shown.emit(_kind)
 

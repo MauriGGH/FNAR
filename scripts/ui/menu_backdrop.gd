@@ -11,9 +11,9 @@ extends Control
 ## se nota únicamente en él. Y muy de vez en cuando sale `menu_tic_ultra`, con
 ## los tres a la vez y los ojos negros.
 ##
-## En cada tic suena **uno de los ocho golpes** de `assets/audio/menu/`, al azar
+## En cada tic suena **uno de los once golpes** de `assets/audio/menu/`, al azar
 ## y sin repetir los dos últimos, justo en el cuadro del desgarro. El "ultra"
-## lleva además su glitch largo.
+## lleva además su glitch largo y una estática de fondo.
 ##
 ## El desgarro, la separación de color y el congelado los hace
 ## `scenes/ui/menu_glitch.gdshader` sobre la propia imagen: no hay cuadros extra.
@@ -221,12 +221,16 @@ func _enter(phase: Phase) -> void:
 
 
 ## El golpe del tic, en el mismo cuadro en que la imagen se rompe. El "ultra"
-## suena con su glitch largo y el boom encima; los demás, con uno de los ocho
-## al azar.
+## lleva su glitch largo, uno de los tres booms y la estática inquietante
+## debajo; los demás, uno de los once al azar.
 func _play_tic_sound() -> void:
 	if _current == ULTRA_ID:
 		AudioManager.play(Sounds.MENU_GLITCH_LONG)
-		AudioManager.play(Sounds.MENU_TIC_ULTRA)
+		var boom: String = Sounds.menu_boom()
+		if not boom.is_empty():
+			AudioManager.play(boom)
+		# Y debajo, la estática que no se sabe de dónde sale.
+		AudioManager.play(Sounds.UNEASY_STATIC)
 		return
 	var tic: String = Sounds.menu_tic(_recent_tics)
 	if tic.is_empty():

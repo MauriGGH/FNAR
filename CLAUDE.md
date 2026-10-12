@@ -119,7 +119,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (90 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (99 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -128,7 +128,10 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
 | `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
-| `tic_boom`, `tic_golpe_metal`, `tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno al azar en cada uno |
+| `tic_boom_1..3`, `tic_golpe_metal`, `tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_piano`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno de los once al azar en cada uno |
+| `estatica_inquietante` | `estatica_inquietante.ogg` | Efectos | −14 | no | de fondo en el tic «ultra» del menú |
+| `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | Efectos | −16 | no | debajo de la estática del game over (mismo archivo) |
+| `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −6 | no | pasos recorriendo el pasillo, con los demás ambientales |
 | `menu_capa`, `menu_capa2` | `menu_capa.ogg`, `menu_capa2.ogg` | Música | −22 / −24 | sí | las dos capas de ambiente encima de la música del menú |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
@@ -147,7 +150,8 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `breaker_palanca` | `breaker_palanca.ogg` | Efectos | −6 | no | bajar el breaker |
 | `se_aleja` | `se_aleja.ogg` | Efectos | −3 | no | uno del cristal se va con el cuarto destello |
 | `pasos_acercandose` | `pasos_acercandose.ogg` | Efectos | −2 | no | los tres pasos del apagón |
-| `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | no | el cuadro de una alucinación |
+| `golpe_grave_1..3` | `golpe_grave_N.ogg` | Efectos | 0 | no | el cuadro de una alucinación: uno de los tres, sin repetir |
+| `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | sí | el respaldo de los tres de arriba |
 | `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
 | `grito_<id>`, `grito_base_1`…`3` | `gritos/<id>.ogg` | Efectos | 0 | no | el grito de cada jumpscare y los tres de reserva |
 | `mamador_brecha` | `mamador_brecha.ogg` | Efectos | 0 | no | la irrupción del operativo, antes del WASTED |
@@ -358,8 +362,8 @@ aparecen en penumbra; **`18c_giro_a_la_mitad`** deja el barrido clavado al 50 % 
   y la pantalla acaba con él. Solo si no estuviera grabado el despertador se pide aparte el
   `ninos_yay`. El confeti son triangulitos de colores que caen durante 4 s (`scenes/win_screen/confetti_fall.gd`, dibujado por código). Al acabar, el recorte de
   esa noche.
-- **Game over:** un segundo de estática fuerte y, al aclararse, la cámara vacía del lugar de donde
-  salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
+- **Game over:** un segundo de estática fuerte —con `estatica_inquietante_gameover` sonando
+  debajo a −16 dB— y, al aclararse, la cámara vacía del lugar de donde salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
   Clic en cualquier lado vuelve al menú, el botón repite la noche. El mapa de profe a cámara está
   en `Extras.ORIGIN_CAMERAS` (la CAM 10 no tiene `vacia`: usa `cam10_salio`).
 - **El HUD va en VT323**, como todo lo que sale de una pantalla o un aparato, y con el reparto de
@@ -572,7 +576,8 @@ APÁGATE o al acabarse el tiempo. Si no, borra el progreso de la tarea actual y 
 ## Alucinaciones
 
 Desde la noche 2, de vez en cuando aparece **un solo cuadro durante 0.1 a 0.2 s** con un golpe
-grave, y se va. No hacen nada: ni matan, ni quitan energía, ni hay nada que contestar; están solo
+grave —uno de `golpe_grave_1..3` al azar, nunca el mismo dos veces seguidas
+(`Sounds.low_hit()`)—, y se va. No hacen nada: ni matan, ni quitan energía, ni hay nada que contestar; están solo
 para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las noches altas y
 **nunca sale una antes de 90 s** desde la anterior. Los números y los cuadros están en
 `data/hallucinations.gd`; la capa es `scenes/night/hallucination_overlay.gd`.
@@ -766,12 +771,13 @@ El tic dura unos **0.35 s** y va en cuatro tramos:
 | 0.15 s | **Congelado**: el profe quieto y sin desgarro, que es lo que asusta |
 | 0.05 s | Uno o dos cuadros de estática a 0.5 de opacidad, que tapan la vuelta a `menu_fondo_0` |
 
-**El golpe del tic es uno de ocho**, en `assets/audio/menu/`: `tic_boom`, `tic_golpe_metal`,
-`tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe` y `tic_estatica`,
-todos a −4 dB. Se sortea uno en cada tic **sin repetir ninguno de los dos últimos**
-(`Sounds.menu_tic()`), así que no se le agarra el ritmo. El del "ultra" es aparte:
-`menu_glitch_largo` **y** `tic_boom` juntos. Los ocho se prueban desde F1 → Audio, sueltos o
-sorteados como en el menú.
+**El golpe del tic es uno de once**, en `assets/audio/menu/`: `tic_boom_1..3`,
+`tic_golpe_metal`, `tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`,
+`tic_whoosh_golpe`, `tic_piano` y `tic_estatica`, todos a −4 dB. Se sortea uno en cada tic **sin
+repetir ninguno de los dos últimos** (`Sounds.menu_tic()`), así que no se le agarra el ritmo. El
+del "ultra" es aparte: `menu_glitch_largo`, **uno de los tres booms** (`Sounds.menu_boom()`) y
+`estatica_inquietante` de fondo a −14 dB. Todos se prueban desde F1 → Audio, sueltos o sorteados
+como en el menú.
 
 **No repite el profe anterior**, y **uno de cada ocho** tics sale el ultra, con la misma secuencia
 un 35 % más larga (medio segundo). El desgarro, la separación de color y el congelado los hace

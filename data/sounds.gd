@@ -54,15 +54,24 @@ const MENU_LAYERS: Array[String] = ["menu_capa", "menu_capa2"]
 ## Y la de Extras y la Custom Night, también en bucle.
 const EXTRAS_MUSIC: String = "extras_musica"
 const FOOTSTEPS: String = "pasos_acercandose"
+## El golpe de una alucinación. Hay tres tomas y se alternan sin repetir la
+## última; LOW_HIT es la de respaldo, la única con provisional por código.
 const LOW_HIT: String = "golpe_grave"
+const LOW_HITS: Array[String] = ["golpe_grave_1", "golpe_grave_2", "golpe_grave_3"]
 ## Los ocho golpes del tic del menú. En cada tic suena uno al azar, y no se
 ## repite ninguno de los dos últimos: así no se le agarra el ritmo.
 const MENU_TICS: Array[String] = [
-	"tic_boom", "tic_golpe_metal", "tic_vidrio", "tic_rechinido",
-	"tic_raspon", "tic_golpe_eco", "tic_whoosh_golpe", "tic_estatica",
+	"tic_boom_1", "tic_boom_2", "tic_boom_3", "tic_golpe_metal", "tic_vidrio",
+	"tic_rechinido", "tic_raspon", "tic_golpe_eco", "tic_whoosh_golpe",
+	"tic_piano", "tic_estatica",
 ]
-## El que acompaña al glitch largo en el tic "ultra", el de los tres profes.
-const MENU_TIC_ULTRA: String = "tic_boom"
+## Los tres booms, que son los gordos: uno de ellos acompaña al glitch largo
+## en el tic "ultra", el de los tres profes.
+const MENU_TIC_BOOMS: Array[String] = ["tic_boom_1", "tic_boom_2", "tic_boom_3"]
+## Y la estática que va de fondo en ese tic.
+const UNEASY_STATIC: String = "estatica_inquietante"
+## La misma, más bajita, debajo de la estática de la pantalla de game over.
+const UNEASY_STATIC_GAME_OVER: String = "estatica_inquietante_gameover"
 ## Cuando uno de los del cristal se va con el cuarto destello.
 const GLASS_REPEL: String = "se_aleja"
 ## Ambiente, en bucle toda la noche.
@@ -137,8 +146,10 @@ const FAR_CHAIR_DRAG: String = "lejos_silla"
 const FAR_UPSTAIRS: String = "lejos_pasos_arriba"
 const FAR_LAUGH: String = "lejos_risa"
 const FAR_DISHES: String = "lejos_platos"
+const FAR_PASSAGE: String = "lejos_pasos_pasillo"
 const FAR_AMBIENT: Array[String] = [
-	"lejos_portazo", "lejos_silla", "lejos_pasos_arriba", "lejos_risa", "lejos_platos",
+	"lejos_portazo", "lejos_silla", "lejos_pasos_arriba", "lejos_risa",
+	"lejos_platos", "lejos_pasos_pasillo",
 ]
 
 ## De qué lado viene cada sonido, de -1 (izquierda) a 1 (derecha). Izquierda
@@ -154,6 +165,29 @@ const IMPRESSIVE: String = "es_impresionante"
 ## Las llamadas grabadas con las que empieza cada noche. Tampoco llevan
 ## provisional: si no está el archivo, esa noche no hay llamada y ya.
 const NIGHT_CALL: String = "llamada_noche%d"
+
+
+## Uno de los tres booms, para el tic "ultra".
+static func menu_boom() -> String:
+	var pool: Array[String] = []
+	for id: String in MENU_TIC_BOOMS:
+		if AudioManager.has_real_file(id):
+			pool.append(id)
+	return pool[randi() % pool.size()] if not pool.is_empty() else ""
+
+
+## El golpe de una alucinación: una de las tres tomas, nunca la misma dos veces
+## seguidas. Sin ninguna grabada, el de siempre, que lleva provisional.
+static func low_hit(last: String = "") -> String:
+	var pool: Array[String] = []
+	for id: String in LOW_HITS:
+		if id != last and AudioManager.has_real_file(id):
+			pool.append(id)
+	if pool.is_empty():
+		for id: String in LOW_HITS:
+			if AudioManager.has_real_file(id):
+				pool.append(id)
+	return pool[randi() % pool.size()] if not pool.is_empty() else LOW_HIT
 
 
 ## El golpe que le toca a este tic del menú: uno de los ocho al azar, saltándose
@@ -327,10 +361,25 @@ const CATALOG: Dictionary = {
 		"volume_db": -4.0, "generator": "", "pan": PAN_CENTER,
 		"desc": "Un llavero colgando que tintinea al caminar. Suena con los pasos de Mamador.",
 	},
-	"tic_boom": {
-		"file": "menu/tic_boom.ogg", "bus": "Efectos",
+	"tic_boom_1": {
+		"file": "menu/tic_boom_1.ogg", "bus": "Efectos",
 		"volume_db": -4.0, "generator": "",
-		"desc": "Tic del menú: Un boom grave y largo, el más gordo de los ocho. Es el del tic «ultra».",
+		"desc": "Tic del menú: boom grave y largo, toma 1 de 3. Los booms son los que acompañan al tic «ultra».",
+	},
+	"tic_boom_2": {
+		"file": "menu/tic_boom_2.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: boom grave y largo, toma 2 de 3.",
+	},
+	"tic_boom_3": {
+		"file": "menu/tic_boom_3.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: boom grave y largo, toma 3 de 3.",
+	},
+	"tic_piano": {
+		"file": "menu/tic_piano.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: un acorde de piano golpeado, que se queda sonando.",
 	},
 	"tic_golpe_metal": {
 		"file": "menu/tic_golpe_metal.ogg", "bus": "Efectos",
@@ -367,6 +416,16 @@ const CATALOG: Dictionary = {
 		"volume_db": -4.0, "generator": "",
 		"desc": "Tic del menú: Un chasquido de estática, el más corto de todos.",
 	},
+	"estatica_inquietante": {
+		"file": "estatica_inquietante.ogg", "bus": "Efectos",
+		"volume_db": -14.0, "generator": "camera_static",
+		"desc": "Estática con algo dentro, de las que ponen nervioso. Va de fondo en el tic «ultra» del menú.",
+	},
+	"estatica_inquietante_gameover": {
+		"file": "estatica_inquietante.ogg", "bus": "Efectos",
+		"volume_db": -16.0, "generator": "camera_static",
+		"desc": "La misma estática, más bajita, debajo de la de la pantalla de game over (mismo archivo).",
+	},
 	"menu_musica": {
 		"file": "menu_musica.ogg", "bus": "Música",
 		"volume_db": -12.0, "generator": "menu_music",
@@ -391,6 +450,21 @@ const CATALOG: Dictionary = {
 		"file": "se_aleja.ogg", "bus": "Efectos",
 		"volume_db": -3.0, "generator": "glass_repel",
 		"desc": "Alguien que se despega del cristal y se va arrastrando los pies.",
+	},
+	"golpe_grave_1": {
+		"file": "golpe_grave_1.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "low_hit",
+		"desc": "El golpe de una alucinación, toma 1 de 3 (se alternan sin repetir).",
+	},
+	"golpe_grave_2": {
+		"file": "golpe_grave_2.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "low_hit",
+		"desc": "El golpe de una alucinación, toma 2 de 3.",
+	},
+	"golpe_grave_3": {
+		"file": "golpe_grave_3.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "low_hit",
+		"desc": "El golpe de una alucinación, toma 3 de 3.",
 	},
 	"golpe_grave": {
 		"file": "golpe_grave.ogg", "bus": "Efectos",
@@ -581,6 +655,11 @@ const CATALOG: Dictionary = {
 		"file": "lejos/lejos_silla.ogg", "bus": "Lejos",
 		"volume_db": -5.0, "generator": "far_chair", "pan": PAN_LEFT,
 		"desc": "Una silla arrastrada en otro cuarto.",
+	},
+	"lejos_pasos_pasillo": {
+		"file": "lejos/lejos_pasos_pasillo.ogg", "bus": "Lejos",
+		"volume_db": -6.0, "generator": "far_upstairs", "pan": PAN_CENTER,
+		"desc": "Pasos recorriendo el pasillo, lejos, sin prisa. Se oyen y se van.",
 	},
 	"lejos_pasos_arriba": {
 		"file": "lejos/lejos_pasos_arriba.ogg", "bus": "Lejos",
