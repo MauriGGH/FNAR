@@ -172,6 +172,9 @@ var photo_viewer: Control = null
 ## El puntito del ojo de Armando, solo en la vista central.
 var armando_eye: Control = null
 var _layers: Array[Control] = []
+## Las siluetas de los que andan al otro lado del cristal. Van en su propia
+## capa, debajo de la cortina, para que la lámina las tape al bajar.
+var _silhouettes: Control = null
 var _shake_left: float = 0.0
 
 var _view_nodes: Array[Control] = []
@@ -188,10 +191,12 @@ func _ready() -> void:
 	_build_zones(CENTER_ZONES_PATH, $Views/CenterView/Content/Zones, CENTER_CLICKABLE)
 	_build_zones(RIGHT_ZONES_PATH, $Views/RightView/Content/Zones, [])
 	_build_zones(LEFT_ZONES_PATH, $Views/LeftView/Content/Zones, [])
-	# El orden importa: la cortina va sobre la foto, después los recortes de
-	# los profes del cristal y al final las etiquetas de presencia, para que se
-	# lean con la cortina cerrada. La capa de oscuridad se crea después de todo
-	# eso, así que la cortina también se apaga cuando se va la luz.
+	# El orden importa, y es: fondo → siluetas → cortina → profes del cristal →
+	# etiquetas. Así, con la cortina abajo, tapa a quien esté al otro lado de la
+	# puerta (la silueta de Barcosa), pero no a los que están pegados al cristal.
+	# La capa de oscuridad se crea después de todo eso, así que la cortina y las
+	# siluetas también se apagan cuando se va la luz.
+	_build_silhouettes()
 	_build_door_shutter()
 	_build_layers()
 	_build_labels()
@@ -280,6 +285,8 @@ func _apply_beam() -> void:
 		material.set_shader_parameter("aspect", aspect)
 	for layer: Control in _layers:
 		layer.set_beam(_beam_center, _beam_half, BEAM_SOFTNESS, _beam_strength)
+	if _silhouettes != null:
+		_silhouettes.set_beam(_beam_center, _beam_half, BEAM_SOFTNESS, _beam_strength)
 	if door_shutter != null:
 		door_shutter.set_beam(_beam_center, _beam_half, BEAM_SOFTNESS, _beam_strength)
 	if armando_eye != null:
@@ -409,6 +416,9 @@ func _layout_flashlight() -> void:
 	# La foto iluminada va anclada al contenido en la escena, así que se estira
 	# sola: ponerle el tamaño a mano solo saca el aviso de Godot.
 	_update_beam_area()
+	if _silhouettes != null:
+		_silhouettes.position = Vector2.ZERO
+		_silhouettes.size = content_size
 	for layer: Control in _layers:
 		layer.position = Vector2.ZERO
 		layer.size = content_size
@@ -725,6 +735,29 @@ func _build_layers() -> void:
 		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_content_nodes[i].add_child(layer)
 		_layers.append(layer)
+
+
+## Las siluetas del otro lado del cristal, en su propia capa debajo de la
+## cortina. Es la vista central y nada más: en las otras no hay cristal.
+func _build_silhouettes() -> void:
+	_silhouettes = OFFICE_LAYERS.new()
+	_silhouettes.name = "Silhouettes"
+	_silhouettes.view_name = VIEW_LAYER_NAMES[View.CENTER]
+	_silhouettes.uses_flashlight = true
+	_silhouettes.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center_content.add_child(_silhouettes)
+
+
+## El night.gd le dice quién se ve de silueta. Cada entrada es {"slug"}.
+func set_silhouettes(present: Array[Dictionary]) -> void:
+	if _silhouettes != null:
+		_silhouettes.set_present(present)
+
+
+## Un golpe de Barcosa en la puerta: la lámina tiembla.
+func shake_curtain() -> void:
+	if door_shutter != null:
+		door_shutter.shake()
 
 
 ## El ojo de Armando, lo único que se ve de él con la linterna apagada.

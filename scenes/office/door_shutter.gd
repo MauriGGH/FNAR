@@ -50,11 +50,18 @@ var progress: float = 0.0:
 ## true mientras el fondo ya trae la cortina pintada: entonces esta capa sobra.
 var is_baked: bool = false
 
+## El temblor de cada golpe de Barcosa: no se ve a él, pero sí la lámina.
+const SHAKE_PIXELS: float = 2.5
+const SHAKE_TIME: float = 0.15
+
 var _texture: Texture2D = null
 var _tween: Tween = null
+var _shake_left: float = 0.0
+var _shake_offset: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	set_process(false)
 	_texture = GameAssets.load_texture(LAYER_PATH)
 	if _texture != null and ResourceLoader.exists(REVEAL_SHADER):
 		var material: ShaderMaterial = ShaderMaterial.new()
@@ -105,18 +112,44 @@ func _on_closed() -> void:
 	queue_redraw()
 
 
+## Un golpe desde el otro lado: la lámina tiembla un momento. Es lo único que
+## se ve de Barcosa aporreando, porque él queda detrás.
+func shake() -> void:
+	_shake_left = SHAKE_TIME
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	if _shake_left <= 0.0:
+		set_process(false)
+		_shake_offset = Vector2.ZERO
+		queue_redraw()
+		return
+	_shake_left = maxf(_shake_left - delta, 0.0)
+	var amount: float = _shake_left / SHAKE_TIME * SHAKE_PIXELS
+	_shake_offset = Vector2(randf_range(-amount, amount), randf_range(-amount, amount))
+	queue_redraw()
+
+
 ## true cuando la lámina está recogida del todo.
 func is_hidden_away() -> bool:
 	return progress <= 0.001
 
 
 func _draw() -> void:
-	# Con la cortina ya pintada en el fondo, esta capa estorba.
-	if is_baked or is_hidden_away() or size.x <= 0.0:
+	if size.x <= 0.0:
 		return
-	var area: Rect2 = Rect2(CURTAIN_RECT.position * size, CURTAIN_RECT.size * size)
-	var shown: Rect2 = Rect2(area.position,
-		Vector2(area.size.x, area.size.y * clampf(progress, 0.0, 1.0)))
+	# Con la cortina ya pintada en el fondo esta capa estorba, salvo mientras
+	# tiembla: ahí vuelve a dibujarse encima, corrida unos píxeles.
+	if is_baked and _shake_left <= 0.0:
+		return
+	if not is_baked and is_hidden_away():
+		return
+	var area: Rect2 = Rect2(CURTAIN_RECT.position * size + _shake_offset,
+		CURTAIN_RECT.size * size)
+	# Ya bajada del todo mientras tiembla, o lo que lleve revelado si está bajando.
+	var revealed: float = 1.0 if is_baked else clampf(progress, 0.0, 1.0)
+	var shown: Rect2 = Rect2(area.position, Vector2(area.size.x, area.size.y * revealed))
 	if shown.size.y <= 0.0:
 		return
 	if _texture == null:

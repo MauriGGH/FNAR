@@ -82,6 +82,8 @@ func _ready() -> void:
 	for animatronic: Animatronic in _animatronics:
 		animatronic.made_noise.connect(notice_banner.show_notice)
 		animatronic.said_line.connect(voice_line.say)
+		if animatronic is Barcosa:
+			(animatronic as Barcosa).door_knocked.connect(office.shake_curtain)
 		if animatronic is ComeTrabas:
 			_come_trabas = animatronic as ComeTrabas
 			# Al quedarse sin cuerda, la silla del cubículo 3 queda vacía y la
@@ -300,24 +302,30 @@ func _refresh_office_presence() -> void:
 
 
 ## Los que andan al otro lado del cristal (la recepción y el tramo de
-## pasillo_sur que se ve desde la oficina) se dibujan como silueta al fondo.
+## pasillo_sur que se ve desde la oficina) se dibujan como silueta al fondo, en
+## su propia capa debajo de la cortina. Pueden verse varios a la vez: cada
+## silueta tiene su sitio y no se encima con las demás.
 ## Si todavía no existe su `layers/silueta_<id>.png`, no se dibuja nada.
 func _add_glass_silhouettes(by_view: Dictionary) -> void:
 	var center: Array[Dictionary] = by_view[office.glass_view()]
+	var silhouettes: Array[Dictionary] = []
 	for animatronic: Animatronic in _animatronics:
 		if not animatronic.is_active:
 			continue
 		if not OfficeLayers.is_glass_room(animatronic.current_room):
 			continue
+		if not animatronic.shows_silhouette():
+			continue
 		var slug: String = animatronic.image_slug()
 		if slug.is_empty():
 			continue
-		# Si ya se está dibujando entero en alguna zona, la silueta sobra.
+		# Si ya se está dibujando entero pegado al cristal, la silueta sobra.
 		var already: bool = center.any(func(entry: Dictionary) -> bool:
 			return str(entry.get("slug", "")) == slug)
 		if already:
 			continue
-		center.append({"slug": slug, "lit_only": false, "silhouette": true})
+		silhouettes.append({"slug": slug, "lit_only": false, "silhouette": true})
+	office.set_silhouettes(silhouettes)
 
 
 ## Cada cuadro: la linterna alumbra el pasillo entero, así que a todos los que

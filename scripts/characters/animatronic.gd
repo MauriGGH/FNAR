@@ -122,6 +122,13 @@ func others_in_room() -> int:
 
 ## Gancho: el nombre de su imagen de jumpscare. Casi siempre es el mismo id
 ## que usa en las cámaras; la botarga es la excepción.
+## true si ahora mismo se le puede ver la silueta al otro lado del cristal.
+## Casi todos sí; Barcosa no mientras aporrea la puerta, porque ahí está
+## detrás de la cortina.
+func shows_silhouette() -> bool:
+	return true
+
+
 ## Lo que se escribe encima de su jumpscare. Vacío en casi todos; Rochis pone
 ## ahí el nombre del jugador.
 func jumpscare_caption() -> String:

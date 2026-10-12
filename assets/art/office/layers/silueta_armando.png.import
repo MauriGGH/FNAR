@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dyxf8ps0bawxw"
-path="res://.godot/imported/oficina_centro_cortina.png-4818ee26e275943f9c94e0ab5a803e2f.ctex"
+uid="uid://dnhj7btcl5c0a"
+path="res://.godot/imported/silueta_armando.png-5bbcc3d6484347fb73566620be97c7ac.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/office/oficina_centro_cortina.png"
-dest_files=["res://.godot/imported/oficina_centro_cortina.png-4818ee26e275943f9c94e0ab5a803e2f.ctex"]
+source_file="res://assets/art/office/layers/silueta_armando.png"
+dest_files=["res://.godot/imported/silueta_armando.png-5bbcc3d6484347fb73566620be97c7ac.ctex"]
 
 [params]
 

@@ -232,12 +232,18 @@ material, porque en la vista central cada uno se comporta distinto frente al con
 - **El ojo de Armando:** si está en el cristal y el cono no le da, lo único que se ve de él es un
   punto naranja tenue que parpadea de vez en cuando donde tiene el ojo.
 - **Siluetas tras el cristal:** si un profe está en la recepción o en el tramo de `pasillo_sur` que
-  se ve desde la oficina y existe `layers/silueta_<id>.png`, se dibuja al fondo: fuera del cono, al
-  35 % de brillo y un poco desenfocada; dentro, nítida y a todo brillo. **Si el archivo no existe no
-  se dibuja nada**, que es lo que pasa hoy: el arte llega después.
-- **Capas desactivadas:** `derecha_rochis.png` es de la vista derecha vieja y no cuadra con la
-  nueva, así que está en `OfficeLayers.DISABLED` y no se carga. Cuando llegue la nueva, se quita de
-  esa lista.
+  se ve desde la oficina, se dibuja al fondo con `layers/silueta_<id>.png`: fuera del cono, al 35 %
+  de brillo y un poco desenfocada; dentro, nítida y a todo brillo. Hay cinco (Barcosa, Mamador,
+  Ureña, Juan.exe y Armando) y **pueden verse varias a la vez**: cada una tiene su sitio y ninguna
+  se encima con otra, comprobado con `tools/measure_office_layers.py`. Si falta el archivo de
+  alguien, no se dibuja nada.
+- **Capas desactivadas** (`OfficeLayers.DISABLED`): `derecha_rochis.png`, que es de la vista derecha
+  vieja; y `centro_barcosa.png`, que solo salía cuando Barcosa aporreaba la puerta y ahora eso no se
+  dibuja (está detrás de la cortina), además de estar colocada para la oficina vieja.
+
+**Orden de dibujo de la vista central:** fondo → **siluetas** → **cortina** → profes pegados al
+cristal → etiquetas de presencia. Las siluetas van debajo de la cortina a propósito: con la lámina
+abajo, Barcosa al otro lado de la puerta queda tapado; los que están pegados al cristal, no.
 
 Dónde cae cada profe dentro de su recorte, y dónde tiene Armando el ojo, está en
 `data/office_layers.gd`. No se adivina: lo mide `tools/measure_office_layers.py` sobre los propios
@@ -266,6 +272,10 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 ## Personajes
 
 - **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B. Si revisas CAM 10 seguido, se queda; si lo descuidas, se asoma, sale y corre por CAM 1 hasta la puerta. Solo se detiene cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
+  En la oficina se le ve **de silueta mientras corre por `pasillo_sur`** hacia la puerta. Cuando ya
+  está aporreando con la chapa cerrada **no se dibuja nada**: está detrás de la cortina. Lo único
+  que se nota es que **la lámina tiembla 2.5 px durante 0.15 s con cada golpe** (señal
+  `door_knocked` → `office.shake_curtain()`), y lo que grita (ver **Líneas sueltas de profe**).
 - **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
 - **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna (ver **Destellos en el cristal**).
   - **Llamada de Ureña (comedia):** cada noche que Ureña está activo, puede llamar entre las 2 y las 4 AM (60 %; en noches 5 y 6 hasta dos llamadas). La llamada no bloquea el juego: Ureña habla en altavoz y sus textos salen en un recuadro pequeño en una esquina, mientras el jugador sigue usando cámaras, puerta y linterna. Saluda con el nombre del jugador, lo felicita por sus tareas y le hace 1 o 2 insinuaciones (banco en `data/urena_questions.gd`). Cada una tiene 3 respuestas barajadas, elegibles con las teclas 1, 2 y 3 o con clic, y 6 s para elegir: la correcta esquiva con educación (no pasa nada); `sigue_el_juego` quita 5 % de energía y deja la foto en el escritorio; `grosera` quita 5 % sin foto; sin respuesta cuenta como `sigue_el_juego`. Se puede colgar en cualquier momento (o no contestar), pero Ureña se ofende: deja la foto y su nivel sube +5 durante una hora de juego. Ya no hay game over por no contestar. Se despide según cómo le fue. Los demás profes siguen moviéndose.

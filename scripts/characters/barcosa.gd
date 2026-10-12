@@ -7,6 +7,10 @@ extends Animatronic
 ## etapa 2 sale corriendo por el pasillo hasta la puerta, y solo lo detiene
 ## encontrarla cerrada.
 
+## Golpeó la puerta: la cortina tiembla. Va aparte de made_noise porque no es
+## un aviso de texto, es una sacudida.
+signal door_knocked()
+
 enum State {
 	STALKING,  # En el salón B, avanzando de etapa
 	RUNNING,   # Corriendo por el pasillo
@@ -213,6 +217,7 @@ func _process_banging(delta: float) -> void:
 	if _knock_timer <= 0.0:
 		_knock_timer = KNOCK_INTERVAL
 		AudioManager.play(Sounds.DOOR_BANGS)
+		door_knocked.emit()
 		PowerManager.drain(KNOCK_POWER_COST)
 
 
@@ -234,6 +239,12 @@ func _catch_player() -> void:
 
 
 ## Se ve en la puerta mientras la golpea.
+## Aporreando no se le ve: está al otro lado de la cortina. Lo único que se
+## nota es el temblor de la lámina con cada golpe.
+func shows_silhouette() -> bool:
+	return _state != State.BANGING
+
+
 func is_in_zone(zone_id: String) -> bool:
 	return zone_id == "entrance_door" and _state == State.BANGING
 

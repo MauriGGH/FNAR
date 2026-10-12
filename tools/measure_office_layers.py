@@ -24,6 +24,11 @@ LAYERS = [
     "centro_mamador", "centro_barcosa", "centro_audel",
     "centro_urena", "centro_juan", "centro_armando",
 ]
+# Las siluetas de los que se ven al otro lado del cristal.
+SILHOUETTES = [
+    "silueta_barcosa", "silueta_mamador", "silueta_urena",
+    "silueta_juan", "silueta_armando",
+]
 # Un píxel cuenta como parte del profe a partir de esta opacidad.
 ALPHA_FLOOR = 24
 # Para el ojo: qué tan naranja tiene que ser (rojo por encima de verde y azul).
@@ -86,6 +91,37 @@ def main():
             continue
         print('  "%s": Rect2(%.4f, %.4f, %.4f, %.4f),   # %dx%d'
               % (name, box[0], box[1], box[2], box[3], size[0], size[1]))
+
+    print()
+    print("## Siluetas tras el cristal (x, y, ancho, alto normalizados)")
+    boxes = {}
+    for name in SILHOUETTES:
+        path = LAYERS_DIR / f"{name}.png"
+        if not path.is_file():
+            print(f'  # falta {name}.png')
+            continue
+        with Image.open(path) as handle:
+            image = handle.convert("RGBA")
+            box = opaque_box(image)
+            size = image.size
+        if box is None:
+            print(f'  # {name}: la capa está vacía')
+            continue
+        boxes[name] = box
+        print('  "%s": Rect2(%.4f, %.4f, %.4f, %.4f),   # %dx%d'
+              % (name, box[0], box[1], box[2], box[3], size[0], size[1]))
+
+    # Ninguna debería encimarse con otra: cada profe tiene su sitio.
+    names = list(boxes)
+    clashes = []
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            a, b = boxes[names[i]], boxes[names[j]]
+            wide = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
+            tall = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
+            if wide > 0 and tall > 0:
+                clashes.append(f"{names[i]} con {names[j]}")
+    print("  # se enciman: " + (", ".join(clashes) if clashes else "ninguna"))
 
     print()
     print("## El ojo de Armando")
