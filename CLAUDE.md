@@ -606,20 +606,63 @@ para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las
 | `botarga` | La botarga sentada en la silla de la oficina: su propio jumpscare muy oscurecido, para que se adivine la silueta. |
 | `expediente` | Un expediente cualquiera con el nombre del jugador escrito donde va el del profe. El valor del campo NOMBRE empieza en x 0.072, y 0.253 y llega a x 0.296, con alto 0.033, sobre una hoja girada −2.5°: el parche (color del papel #d6c49e) y el nombre se giran ese mismo ángulo apoyados en esa esquina. El nombre va en Special Elite a 30 px en 1080p, color #282019. |
 
-## Pendiente: el rescate de Sergio
+## Pendiente: Sergio y el tótem
 
-Todavía **no está programado**; esto es el diseño, para cuando toque. Los sonidos ya están
-registrados en el catálogo (`rosa_suspenso`, `rosa_aire` y `aura`), así que solo hay que pedirlos.
+Todavía **no está programado**: esto es el diseño completo, para cuando toque. Ya están el arte y
+el audio, así que no hay que pedir nada nuevo.
 
-En su rescate, la secuencia es:
+**Lo que ya existe.** En `assets/art/extras/sergio/`: `centro_sergio.png` (1375x768, la capa de la
+vista central, ya colocada, con su silueta negra detrás del cristal), `sergio_silueta.png`
+(176x297), `totem_virgen.png` (401x622) y `totem_virgen_icono.png` (100x155). Y en el catálogo de
+sonidos, `rosa_suspenso`, `rosa_aire` y `aura` (`assets/audio/extras/`).
 
-1. El susto se **congela** a media animación y suena `rosa_suspenso`.
-2. Desde arriba **baja un haz de luz blanca** con `rosa_aire`, y dentro del haz **desciende
-   flotando la silueta de Sergio**.
-3. Sergio **deja el tótem** —con el efecto del tótem de Minecraft: el objeto girando y el
-   destello—, suena `aura` y se va.
+### Cómo se consigue el tótem
 
-`aura` suena también al **ganar el tótem en el minijuego**, que es la otra manera de conseguirlo.
+Dos caminos, y **solo se puede tener uno a la vez**:
+
+- **Al azar:** en las noches **4 a 6**, cuando vas a morir hay un **25 %** de que Sergio te
+  rescate aunque no tengas tótem.
+- **El minijuego:** desde la noche 1, **1 de cada 15 veces** que abres la PC aparece **1 s** un
+  ícono de "maquinita" escondido en el escritorio. Si le das clic antes de que se vaya, se abre un
+  minijuego **pixel art de 30 s**: atrapar con una canasta **10 velitas** que caen, esquivando
+  calaveras. Si lo ganas, te llevas el tótem (suena `aura`) y su ícono `totem_virgen_icono.png` se
+  queda en una esquina del HUD.
+
+### El rescate, en la vista central de la oficina
+
+Con tótem —o si te tocó el 25 %— y a punto de morir **por cualquier jumpscare menos el de
+Mamador** (el suyo es la pantalla de WASTED y no se interrumpe):
+
+1. En el **primer cuadro** del susto, la imagen **se congela en blanco y negro** y suena
+   `rosa_suspenso`, 3 s.
+2. Un **haz de luz blanca baja desde arriba** sobre la recepción con `rosa_aire`, y aparece
+   **Sergio** (`centro_sergio.png`) entrando con un fundido desde el haz, como si bajara dentro de
+   él.
+3. Se activa el tótem.
+
+### La activación del tótem, como en Minecraft
+
+Con `aura` sonando y **filtro nearest** en todo, para que se vea pixel art de verdad:
+
+1. `totem_virgen.png` aparece **chiquito al centro** y **crece rápido** hasta un **45 % del alto**
+   de la pantalla, con un rebote al llegar.
+2. **Tiembla levemente 1.2 s.**
+3. **Gira sobre su eje vertical** (la escala X va de 1 a −1 y de vuelta, **dos veces**) mientras se
+   **encoge y sale volando hacia arriba**.
+4. Durante todo el efecto, **partículas cuadradas pixeladas verdes y amarillas** que salen del
+   centro y caen.
+
+### Qué queda después
+
+- Sergio **se desvanece**.
+- El profe que iba a matarte **vuelve a su punto de inicio**.
+- **Pierdes el tótem** (el ícono se va del HUD).
+- **Recuperas 10 % de energía.**
+- **Sergio no vuelve esa noche**, ni con el 25 % ni con otro tótem.
+
+### En el panel de pruebas
+
+Tres botones: **"Dar tótem"**, **"Probar rescate de Sergio"** y **"Abrir minijuego"**.
 
 ## Jumpscares
 
