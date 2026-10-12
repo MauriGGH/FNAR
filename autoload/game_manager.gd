@@ -31,6 +31,13 @@ var last_game_over_slug: String = ""
 ## La ventana del Asistente IA sigue abierta aunque el jugador baje la PC:
 ## es justo lo que delata al guardia ante Mamador.
 var is_ai_window_open: bool = false
+## El tótem de Sergio: se gana en el minijuego de la maquinita y se gasta en un
+## rescate. **Solo uno a la vez y solo por esta noche.**
+var has_totem: bool = false
+## true mientras corre el rescate: nadie más puede matar en ese rato.
+var is_rescuing: bool = false
+## Sergio entra una sola vez por noche, con tótem o con suerte.
+var _sergio_used: bool = false
 
 var _hour_elapsed: float = 0.0
 # Quién tiene reservado el pasillo ahora mismo, o null si está libre.
@@ -131,6 +138,10 @@ func start_night(night: int = current_night) -> void:
 	patch_panel.reset_for_night()
 	is_in_server_room = false
 	is_ai_window_open = false
+	has_totem = false
+	is_rescuing = false
+	_sergio_used = false
+	totem_changed.emit(false)
 	is_night_active = true
 	PowerManager.reset(start_power)
 	PowerManager.set_draining(true)
@@ -138,9 +149,21 @@ func start_night(night: int = current_night) -> void:
 	hour_changed.emit(current_hour)
 
 
+## Sergio rescató al guardia: la noche sigue. Lo escucha el night.gd para
+## montar toda la escena (el susto congelado, el haz, el tótem).
+signal sergio_rescued(cause: String)
+## Cambió si el guardia trae el tótem encima. Lo escucha el HUD, que enseña su
+## ícono en la esquina.
+signal totem_changed(has_it: bool)
+
 ## Termina la noche con una causa de muerte, por ejemplo "Te quedaste sin energía".
+## Antes de matar se le pregunta a Sergio: si él entra, aquí no pasa nada.
 func trigger_game_over(cause: String) -> void:
 	if not is_night_active:
+		return
+	if is_rescuing:
+		return  # Ya hay un rescate corriendo: nadie más mata mientras tanto.
+	if _try_sergio_rescue(cause):
 		return
 	is_night_active = false
 	PowerManager.set_draining(false)
@@ -218,6 +241,39 @@ func _process_ai_boosts(delta: float) -> void:
 		_ai_boosts[key]["left"] = float(_ai_boosts[key]["left"]) - hours
 		if float(_ai_boosts[key]["left"]) <= 0.0:
 			_ai_boosts.erase(key)
+
+
+# --- Sergio y el tótem --------------------------------------------------------
+
+## ¿Puede Sergio parar esta muerte? Con tótem siempre; sin él, solo en las
+## noches altas y con suerte. Mamador no se interrumpe: su final no es un
+## jumpscare, es la pantalla de WASTED.
+func _try_sergio_rescue(cause: String) -> bool:
+	if _sergio_used or cause == Mamador.GAME_OVER_CAUSE:
+		return false
+	var lucky: bool = current_night >= Sergio.RANDOM_FROM_NIGHT \
+		and randi_range(1, 100) <= Sergio.RANDOM_CHANCE
+	if not has_totem and not lucky:
+		return false
+	_sergio_used = true
+	has_totem = false
+	is_rescuing = true
+	totem_changed.emit(false)
+	sergio_rescued.emit(cause)
+	return true
+
+
+## Terminó la escena del rescate: se vuelve a poder morir.
+func end_rescue() -> void:
+	is_rescuing = false
+
+
+## Ganó el minijuego: se queda con el tótem. Solo uno.
+func give_totem() -> void:
+	if has_totem:
+		return
+	has_totem = true
+	totem_changed.emit(true)
 
 
 func night_tasks() -> Array:

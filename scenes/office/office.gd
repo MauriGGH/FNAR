@@ -48,6 +48,7 @@ const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay
 const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
 const TICKET_ENVELOPE: GDScript = preload("res://scenes/office/ticket_envelope.gd")
+const SERGIO_ARRIVAL: GDScript = preload("res://scenes/office/sergio_arrival.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
 const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
@@ -199,6 +200,7 @@ var _urena_photos: int = 0
 var flashlight_overlay: Control = null
 var phone_light: Control = null
 var ticket_envelope: Control = null
+var sergio: SergioArrival = null
 ## true mientras haya que ignorar el botón del mouse que viene apretado de
 ## otra pantalla, hasta que se suelte.
 var _swallow_click: bool = false
@@ -233,6 +235,7 @@ func _ready() -> void:
 	# siluetas también se apagan cuando se va la luz.
 	_build_silhouettes()
 	_build_door_shutter()
+	_build_sergio()
 	_build_layers()
 	_build_labels()
 	_build_ticket_envelope()
@@ -490,7 +493,18 @@ func _layout_flashlight() -> void:
 	if ticket_envelope != null:
 		ticket_envelope.position = Vector2.ZERO
 		ticket_envelope.size = content_size
+	if sergio != null:
+		sergio.position = Vector2.ZERO
+		sergio.size = content_size
 		ticket_envelope.set_target(zone_rect("monitor_screen"))
+
+
+## La llegada de Sergio: encima de la cortina y debajo de los profes del
+## cristal, porque él está al otro lado, en la recepción.
+func _build_sergio() -> void:
+	sergio = SERGIO_ARRIVAL.new()
+	sergio.name = "SergioArrival"
+	center_content.add_child(sergio)
 
 
 ## El sobrecito del ticket, encima de la pantalla del monitor. Va en el
@@ -957,6 +971,20 @@ func set_view_present(view: int, present: Array[Dictionary]) -> void:
 ## meter ahí las siluetas sin tener que saberse el nombre de la zona.
 func glass_view() -> int:
 	return view_of_zone(GLASS_ZONE)
+
+
+## Deja la vista central puesta de golpe, sin barrido. Lo usa el rescate de
+## Sergio: su escena pasa ahí y da igual para dónde estuviera mirando.
+func show_center_view() -> void:
+	if _view_tween != null and _view_tween.is_valid():
+		_view_tween.kill()
+	_state = ViewState.PANNING
+	_current_view = View.CENTER
+	for i: int in _view_nodes.size():
+		_view_nodes[i].visible = i == _current_view
+		_view_nodes[i].position = Vector2.ZERO
+	_apply_content_position(_current_view)
+	_set_blur(0.0)
 
 
 ## En qué vista vive una zona, como índice de View.

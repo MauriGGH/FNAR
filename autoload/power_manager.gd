@@ -113,6 +113,12 @@ func usage_level() -> int:
 
 ## Quita energía de golpe: los golpes de Barcosa, el cortaso de Audel o una
 ## respuesta mala en la llamada de Ureña.
+## Recupera energía (el tótem de Sergio devuelve un 10 %). No pasa del tope.
+func restore(amount: float) -> void:
+	power = clampf(power + amount, 0.0, NightConfig.MAX_POWER)
+	power_changed.emit(power)
+
+
 func drain(amount: float) -> void:
 	if not is_draining or amount <= 0.0:
 		return

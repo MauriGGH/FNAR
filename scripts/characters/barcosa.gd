@@ -268,6 +268,13 @@ func _go_home() -> void:
 	_set_stage(STAGE_HIDDEN)
 
 
+## El rescate lo manda a su sala de servicio y suelta el pasillo.
+func go_home() -> void:
+	AudioManager.stop(Sounds.FAR_BARCOSA_RUN)
+	_go_home()
+	_unwatched = 0.0
+
+
 func _catch_player() -> void:
 	AudioManager.stop(Sounds.FAR_BARCOSA_RUN)
 	stop()

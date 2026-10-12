@@ -385,8 +385,12 @@ aparecen en penumbra; **`18c_giro_a_la_mitad`** deja el barrido clavado al 50 % 
   en `Extras.ORIGIN_CAMERAS` (la CAM 10 no tiene `vacia`: usa `cam10_salio`).
 - **El HUD va en VT323**, como todo lo que sale de una pantalla o un aparato, y con el reparto de
   los juegos originales: **la hora grande arriba a la derecha** (86 px), "NOCHE N" debajo y más
-  chica (34 px), el contador de tickets debajo (24 px) y la **energía abajo a la izquierda**
-  (40 px). Los tamaños están en `night.tscn`; la fuente la pone `night.gd` en `_style_hud()`.
+  chica (34 px), y la **energía abajo a la izquierda** (40 px). Los tamaños están en `night.tscn`;
+  la fuente la pone `night.gd` en `_style_hud()`.
+- **En las pantallas acercadas el HUD se achica a la mitad** (`_set_hud_compact()`): con la PC, el
+  tablero del breaker o la sala de servidores abiertos, el reloj baja a 43 px y la noche a 17, y la
+  energía a 20, para no taparles nada —el reloj grande se comía la hoja de etiquetado del rack y el
+  marco del monitor—. Al volver a la oficina vuelven a su tamaño.
 - **Esquina del HUD:** el reloj, la noche y el contador de tickets van en un `VBoxContainer`
   (`Hud/TopRight`) anclado arriba a la derecha, no en posiciones fijas: se apilan solos y no se
   pueden encimar entre ellos aunque les cambie el texto. La columna arranca pasada la banda del
@@ -606,63 +610,60 @@ para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las
 | `botarga` | La botarga sentada en la silla de la oficina: su propio jumpscare muy oscurecido, para que se adivine la silueta. |
 | `expediente` | Un expediente cualquiera con el nombre del jugador escrito donde va el del profe. El valor del campo NOMBRE empieza en x 0.072, y 0.253 y llega a x 0.296, con alto 0.033, sobre una hoja girada −2.5°: el parche (color del papel #d6c49e) y el nombre se giran ese mismo ángulo apoyados en esa esquina. El nombre va en Special Elite a 30 px en 1080p, color #282019. |
 
-## Pendiente: Sergio y el tótem
+## Sergio y el tótem
 
-Todavía **no está programado**: esto es el diseño completo, para cuando toque. Ya están el arte y
-el audio, así que no hay que pedir nada nuevo.
+El rescate: si te van a matar y traes el tótem —o si tienes suerte en las noches altas—, Sergio
+baja y te salva. **Ya está programado.** Los números de diseño están todos en `data/sergio.gd`, y
+las medidas que salen del arte se midieron sobre los propios PNG, no se adivinaron.
 
-**Lo que ya existe.** En `assets/art/extras/sergio/`: `centro_sergio.png` (1375x768, la capa de la
-vista central, ya colocada, con su silueta negra detrás del cristal), `sergio_silueta.png`
-(176x297), `totem_virgen.png` (401x622) y `totem_virgen_icono.png` (100x155). Y en el catálogo de
-sonidos, `rosa_suspenso`, `rosa_aire` y `aura` (`assets/audio/extras/`).
+**El arte** está en `assets/art/extras/sergio/`: `centro_sergio.png` (1375x768, la capa de la vista
+central), `sergio_silueta.png` (176x297), `totem_virgen.png` (401x622) y
+`totem_virgen_icono.png` (100x155). Su figura mide **170x291 px en las dos imágenes**, y de ahí
+sale que la silueta pueda bajar a la misma escala y encajar al píxel.
 
 ### Cómo se consigue el tótem
 
-Dos caminos, y **solo se puede tener uno a la vez**:
+**Solo se puede tener uno, y dura esa noche** (al empezar una noche nueva no se arrastra):
 
 - **Al azar:** en las noches **4 a 6**, cuando vas a morir hay un **25 %** de que Sergio te
-  rescate aunque no tengas tótem.
+  rescate aunque no traigas nada (`Sergio.RANDOM_FROM_NIGHT`, `RANDOM_CHANCE`).
 - **El minijuego:** desde la noche 1, **1 de cada 15 veces** que abres la PC aparece **1 s** un
-  ícono de "maquinita" escondido en el escritorio. Si le das clic antes de que se vaya, se abre un
-  minijuego **pixel art de 30 s**: atrapar con una canasta **10 velitas** que caen, esquivando
-  calaveras. Si lo ganas, te llevas el tótem (suena `aura`) y su ícono `totem_virgen_icono.png` se
-  queda en una esquina del HUD.
+  ícono de maquinita en un sitio al azar del escritorio. Si le das clic, se abre
+  `scenes/minigames/candle_catch.gd`: **30 s** para atrapar **10 velitas** con la canasta, que
+  sigue al mouse. Está dibujado por código en cuadros grandes con filtro nearest, sin arte que
+  cargar. Una **calavera no mata: resta una velita** (nunca baja de cero), así esquivar importa sin
+  que un roce te mande al principio. Si ganas, el tótem, suena `aura` y su ícono se queda en la
+  esquina del HUD. Con el tótem puesto la maquinita ya no sale.
 
-### El rescate, en la vista central de la oficina
+### El rescate, paso por paso
 
-Con tótem —o si te tocó el 25 %— y a punto de morir **por cualquier jumpscare menos el de
-Mamador** (el suyo es la pantalla de WASTED y no se interrumpe):
+El choque está en `GameManager.trigger_game_over()`: **antes de matar** se le pregunta a Sergio, y
+si entra, no hay game over y la noche sigue. Vale para cualquier profe **menos Mamador**, cuyo
+final es la pantalla de WASTED y no se interrumpe. Mientras corre, `is_rescuing` evita que otro
+profe mate, el reloj se detiene y los profes se quedan quietos.
 
-1. En el **primer cuadro** del susto, la imagen **se congela en blanco y negro** y suena
-   `rosa_suspenso`, 3 s.
-2. Un **haz de luz blanca baja desde arriba** sobre la recepción con `rosa_aire`, y aparece
-   **Sergio** (`centro_sergio.png`) entrando con un fundido desde el haz, como si bajara dentro de
-   él.
-3. Se activa el tótem.
-
-### La activación del tótem, como en Minecraft
-
-Con `aura` sonando y **filtro nearest** en todo, para que se vea pixel art de verdad:
-
-1. `totem_virgen.png` aparece **chiquito al centro** y **crece rápido** hasta un **45 % del alto**
-   de la pantalla, con un rebote al llegar.
-2. **Tiembla levemente 1.2 s.**
-3. **Gira sobre su eje vertical** (la escala X va de 1 a −1 y de vuelta, **dos veces**) mientras se
-   **encoge y sale volando hacia arriba**.
-4. Durante todo el efecto, **partículas cuadradas pixeladas verdes y amarillas** que salen del
-   centro y caen.
-
-### Qué queda después
-
-- Sergio **se desvanece**.
-- El profe que iba a matarte **vuelve a su punto de inicio**.
-- **Pierdes el tótem** (el ícono se va del HUD).
-- **Recuperas 10 % de energía.**
-- **Sergio no vuelve esa noche**, ni con el 25 % ni con otro tótem.
+1. **El susto congelado** (`scenes/night/sergio_rescue.gd`): el **primer cuadro** del jumpscare que
+   iba a matarte —su variante `_a`— quieto y en blanco y negro, **3 s**, con `rosa_suspenso`.
+2. **La bajada** (`scenes/office/sergio_arrival.gd`, en la vista central, que se fuerza): el susto
+   se desvanece, suena `rosa_aire` y un **haz de luz blanca** baja sobre la recepción (44 tiras con
+   su degradado, para que no se vean escalones). Dentro del haz, `sergio_silueta.png` aparece por
+   encima del borde y **desciende flotando 1.5 s** con un vaivén que se va calmando, hasta el sitio
+   exacto donde está Sergio en la capa; al llegar, **se funde en 0.3 s** con `centro_sergio.png`,
+   que se queda mientras corre el tótem.
+3. **El tótem**, como el de Minecraft y con filtro nearest: aparece chiquito al centro, **crece con
+   un rebote** hasta el **45 % del alto** (0.35 s), **tiembla 1.2 s**, y **gira sobre su eje
+   vertical** (la escala X de 1 a −1 y de vuelta, **dos veces**) mientras se encoge y sale volando
+   hacia arriba (0.9 s). Todo el rato suelta **70 partículas cuadradas** verdes y amarillas que
+   salen del centro y caen. Suena `aura`.
+4. **Lo que queda:** Sergio se desvanece (0.6 s), el profe que iba a matarte **vuelve al principio
+   de su ruta** (`Animatronic.go_home()`, que Barcosa y los del cristal sobrescriben para soltar el
+   pasillo y poner su susto a cero), **pierdes el tótem**, **recuperas 10 % de energía** y
+   **Sergio no vuelve esa noche**.
 
 ### En el panel de pruebas
 
-Tres botones: **"Dar tótem"**, **"Probar rescate de Sergio"** y **"Abrir minijuego"**.
+F1 → Eventos: **"Dar tótem"**, **"Probar rescate de Sergio"** (monta la escena con el primer profe
+que pueda matar) y **"Abrir minijuego"**.
 
 ## Jumpscares
 

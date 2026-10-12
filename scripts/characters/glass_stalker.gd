@@ -207,6 +207,14 @@ func _repel() -> void:
 	advance()
 
 
+## El rescate lo devuelve al principio de su ruta, con el susto a cero.
+func go_home() -> void:
+	fear = 0.0
+	_glass_elapsed = 0.0
+	_state = State.WALKING
+	super()
+
+
 func _catch_player() -> void:
 	stop()
 	GameManager.trigger_game_over(game_over_cause())

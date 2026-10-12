@@ -77,6 +77,19 @@ const DISTANT_WITH_MOVE: Dictionary = {
 	"mamador": "llavero",
 }
 const BARCOSA_HOME: String = "salon_b"
+const SERGIO_RESCUE: GDScript = preload("res://scenes/night/sergio_rescue.gd")
+## Lo que mide el ícono del tótem en la esquina del HUD.
+const TOTEM_ICON_SIZE: Vector2 = Vector2(52.0, 80.0)
+
+## El HUD reducido de las pantallas acercadas: la mitad de grande. Los tamaños
+## normales son los de la escena y se repiten aquí para poder volver a ellos.
+const HUD_COMPACT_FACTOR: float = 0.5
+const HUD_SIZES: Array[Array] = [
+	["Hud/TopRight/ClockLabel", 86], ["Hud/TopRight/NightLabel", 34],
+	["Hud/PowerLabel", 40],
+]
+const HUD_COLUMN_LEFT: float = -380.0
+const HUD_COLUMN_BOTTOM: float = 210.0
 
 var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
@@ -90,6 +103,10 @@ var _nightly_call_left: float = 0.0
 ## A qué hora le toca la llamada rara de esta noche, y cuál es. En −1 es que
 ## ya pasó y no vuelve: es una por noche.
 var _mencho_call_at: float = -1.0
+## De quién te salvó Sergio, para mandarlo a su sitio al acabar.
+var _rescued_from: String = ""
+var sergio_rescue: SergioRescue = null
+var totem_icon: TextureRect = null
 var _random_call_id: String = ""
 ## Las horas a las que va a llamar esta noche, de la más temprana a la última.
 var _urena_calls_at: PackedFloat32Array = PackedFloat32Array()
@@ -108,6 +125,7 @@ func _ready() -> void:
 	# despertador de las 6 AM). Su propio ambiente lo pone ella enseguida.
 	AudioManager.stop_all()
 	_style_hud()
+	_build_sergio_rescue()
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
 		# Los ruidos de los profes son apaños de audio, no avisos: no se leen.
@@ -137,6 +155,7 @@ func _ready() -> void:
 	office.notice_requested.connect(notice_banner.show_notice)
 	office.sound_noticed.connect(notice_banner.show_sound)
 	office.breaker_requested.connect(breaker_panel.open)
+	office.breaker_requested.connect(_set_hud_compact.bind(true))
 	office.phone_requested.connect(phone_call.answer)
 	office.flashlight_changed.connect(_on_flashlight_changed)
 	office.flashlight_failed.connect(_on_flashlight_failed)
@@ -154,9 +173,13 @@ func _ready() -> void:
 	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
 	server_room.closed.connect(_leave_server_room)
+	# En las pantallas acercadas el HUD se achica, que si no el reloj se come
+	# la hoja de etiquetado y el marco del monitor.
+	server_room.closed.connect(_set_hud_compact.bind(false))
 	server_room.cameras_requested.connect(_on_server_cameras_requested)
 	server_room.notice_requested.connect(notice_banner.show_notice)
 	breaker_panel.closed.connect(office.zoom_out)
+	breaker_panel.closed.connect(_set_hud_compact.bind(false))
 	breaker_panel.lever_pulled.connect(_on_breaker_pulled)
 	PowerManager.blackout_changed.connect(_on_blackout_changed)
 	PowerManager.power_depleted.connect(_on_power_depleted)
@@ -176,12 +199,16 @@ func _ready() -> void:
 	camera_system.opened.connect(pc_screen.close)
 	# Al bajar la PC, la vista de la oficina regresa de su acercamiento.
 	pc_screen.closed.connect(office.zoom_out)
+	pc_screen.opened.connect(_set_hud_compact.bind(true))
+	pc_screen.closed.connect(_set_hud_compact.bind(false))
 	pc_screen.armando_won.connect(_on_armando_won)
 
 	GameManager.ticket_arrived.connect(_on_ticket_arrived)
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
 	GameManager.night_won.connect(_on_night_won)
+	GameManager.sergio_rescued.connect(_on_sergio_rescued)
+	GameManager.totem_changed.connect(_on_totem_changed)
 	GameManager.game_over.connect(_on_game_over)
 	PowerManager.power_changed.connect(_on_power_changed)
 
@@ -280,6 +307,53 @@ func debug_mencho_call(call_id: String = "") -> void:
 
 
 ## Los profes son hijos del nodo Animatronics, así se agregan sin tocar código.
+## La capa del rescate (el susto congelado y el tótem) y el ícono del tótem en
+## la esquina. Se arman por código para no llenar la escena de nodos que casi
+## nunca se ven.
+func _build_sergio_rescue() -> void:
+	var hud: CanvasLayer = $Hud
+	sergio_rescue = SERGIO_RESCUE.new()
+	sergio_rescue.name = "SergioRescue"
+	hud.add_child(sergio_rescue)
+	sergio_rescue.sergio_requested.connect(_on_sergio_requested)
+	sergio_rescue.finished.connect(_on_totem_finished)
+	office.sergio.arrived.connect(sergio_rescue.start_totem)
+	office.sergio.finished.connect(_on_sergio_left)
+
+	totem_icon = TextureRect.new()
+	totem_icon.name = "TotemIcon"
+	totem_icon.texture = Sergio.texture(Sergio.TOTEM_ICON)
+	totem_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	totem_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	totem_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	totem_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	totem_icon.visible = false
+	totem_icon.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	totem_icon.offset_left = -TOTEM_ICON_SIZE.x - 28.0
+	totem_icon.offset_top = -TOTEM_ICON_SIZE.y - 28.0
+	totem_icon.offset_right = -28.0
+	totem_icon.offset_bottom = -28.0
+	hud.add_child(totem_icon)
+
+
+## El HUD, reducido o normal. En la oficina va grande, como en los juegos
+## originales; en las pantallas acercadas (la PC, el tablero, la sala) se queda
+## **a la mitad**, para no taparles nada: el reloj y la noche arriba a la
+## derecha, la energía abajo a la izquierda.
+func _set_hud_compact(compact: bool) -> void:
+	var factor: float = HUD_COMPACT_FACTOR if compact else 1.0
+	for entry: Array in HUD_SIZES:
+		var label: Label = get_node_or_null(str(entry[0])) as Label
+		if label != null:
+			label.add_theme_font_size_override("font_size",
+				maxi(10, roundi(float(entry[1]) * factor)))
+	var column: Control = get_node_or_null("Hud/TopRight") as Control
+	if column != null:
+		# La columna se angosta con la letra, para que no quede un hueco.
+		column.offset_left = HUD_COLUMN_LEFT * factor
+		column.offset_bottom = HUD_COLUMN_BOTTOM * factor
+
+
 ## El HUD va en VT323, como todo lo que sale de una pantalla o un aparato: el
 ## reloj grande arriba a la derecha, la noche debajo y la energía abajo a la
 ## izquierda. Los tamaños están en la escena; aquí solo se pone la fuente.
@@ -699,6 +773,7 @@ func _enter_server_room() -> void:
 	office.visible = false
 	# La barra de cámaras se esconde: allá no sirve de nada y confunde.
 	camera_bar.visible = false
+	_set_hud_compact(true)
 	server_room.open()
 
 
@@ -750,6 +825,80 @@ func _on_cortaso_started() -> void:
 
 
 ## Se acabó la energía: la noche sigue a oscuras y el Mago viene a cobrar.
+# --- El rescate de Sergio -----------------------------------------------------
+
+## Sergio paró una muerte. Mientras dura la escena, el reloj se detiene y los
+## profes se quedan quietos; al acabar, el que atacaba vuelve a su sitio, la
+## energía sube un 10 % y la noche sigue donde estaba.
+func _on_sergio_rescued(cause: String) -> void:
+	_rescued_from = cause
+	GameManager.set_clock_held(true)
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_process(false)
+	var jumpscare_id: String = ""
+	for animatronic: Animatronic in _animatronics:
+		if animatronic.game_over_cause() == cause:
+			jumpscare_id = animatronic.jumpscare_id()
+			break
+	sergio_rescue.play(jumpscare_id)
+
+
+## Se acabó el congelado: que baje Sergio en su haz de luz, en la oficina.
+func _on_sergio_requested() -> void:
+	office.show_center_view()
+	office.sergio.play()
+
+
+## El tótem terminó de girar: Sergio se desvanece.
+func _on_totem_finished() -> void:
+	office.sergio.fade_out()
+
+
+## Y con Sergio ya ido, se reparte lo que deja: el profe a su sitio, energía de
+## vuelta y la noche otra vez en marcha.
+func _on_sergio_left() -> void:
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_process(true)
+		if animatronic.game_over_cause() == _rescued_from:
+			animatronic.go_home()
+	_rescued_from = ""
+	PowerManager.restore(Sergio.POWER_BACK)
+	GameManager.set_clock_held(false)
+	GameManager.end_rescue()
+
+
+## El ícono del tótem en la esquina del HUD: solo cuando se trae encima.
+func _on_totem_changed(has_it: bool) -> void:
+	if totem_icon != null:
+		totem_icon.visible = has_it
+
+
+## Para el panel de pruebas: monta el rescate con el primer profe activo que
+## pueda matar, sin esperar a que te atrape de verdad.
+func debug_sergio_rescue() -> void:
+	if GameManager.is_rescuing:
+		return
+	var cause: String = ""
+	for animatronic: Animatronic in _animatronics:
+		var their_cause: String = animatronic.game_over_cause()
+		if their_cause.is_empty() or their_cause == Mamador.GAME_OVER_CAUSE:
+			continue
+		cause = their_cause
+		if animatronic.is_active:
+			break
+	if cause.is_empty():
+		return
+	GameManager.give_totem()
+	GameManager.trigger_game_over(cause)
+
+
+## Y el minijuego, abriendo la PC si hace falta.
+func debug_open_minigame() -> void:
+	if not pc_screen.is_open:
+		pc_screen.open()
+	pc_screen.open_minigame()
+
+
 func _on_power_depleted() -> void:
 	if not GameManager.is_night_active:
 		return

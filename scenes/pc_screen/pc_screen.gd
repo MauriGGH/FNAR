@@ -36,6 +36,10 @@ const TOAST_FADE: float = 0.4
 const TOAST_FILL: Color = Color(0.13, 0.15, 0.19, 0.96)
 const TOAST_EDGE: Color = Color(0.56, 0.86, 0.95)
 
+## El ícono de la maquinita: lo que mide y cuánto se aparta de los bordes.
+const ARCADE_SIZE: Vector2 = Vector2(40.0, 40.0)
+const ARCADE_MARGIN: float = 24.0
+
 const ICON_LEFT: float = 20.0
 const ICON_TOP: float = 48.0
 const ICON_GAP: float = 6.0
@@ -62,6 +66,10 @@ var _bar_tickets: Label = null
 var _toast: Panel = null
 var _toast_tween: Tween = null
 var _exit_hint: ExitHint = null
+## La maquinita escondida y su minijuego.
+var _arcade: Button = null
+var _arcade_tween: Tween = null
+var _minigame: CandleCatch = null
 
 @onready var bezel: Control = $Bezel
 @onready var screen: Control = $Screen
@@ -116,6 +124,7 @@ func _ready() -> void:
 	_build_icons()
 	_build_bar()
 	_build_toast()
+	_build_arcade()
 	_exit_hint = ExitHint.build(self)
 	# _fit_screen() ya corrió más arriba, cuando la pista todavía no existía:
 	# hay que volver a colocar para que se entere de su recuadro.
@@ -244,6 +253,7 @@ func open() -> void:
 	visible = true
 	PowerManager.set_pc_open(true)
 	_refresh_bar()
+	_roll_arcade()
 	# La primera vez de la noche se recuerda cómo se sale.
 	if _exit_hint != null:
 		_exit_hint.show_once("pc")
@@ -289,6 +299,75 @@ func _input(event: InputEvent) -> void:
 			and not active_rect().has_point(click.position):
 		close()
 		get_viewport().set_input_as_handled()
+
+
+# --- La maquinita escondida ---------------------------------------------------
+
+## El ícono de la maquinita: aparece **1 de cada 15 veces** que se abre la PC,
+## en un sitio al azar del escritorio, y se queda **1 s**. Si se le alcanza a
+## dar clic, se abre el minijuego de las velitas; si no, se va como si nada.
+## Es el otro camino para conseguir el tótem de Sergio.
+func _build_arcade() -> void:
+	_arcade = Button.new()
+	_arcade.name = "ArcadeIcon"
+	_arcade.text = "🕹"
+	_arcade.focus_mode = Control.FOCUS_NONE
+	_arcade.flat = true
+	_arcade.size = ARCADE_SIZE
+	_arcade.add_theme_font_size_override("font_size", 26)
+	_arcade.add_theme_color_override("font_color", Color(0.75, 0.95, 0.85, 0.9))
+	_arcade.visible = false
+	_arcade.pressed.connect(_on_arcade_pressed)
+	screen.add_child(_arcade)
+
+	_minigame = CandleCatch.new()
+	_minigame.name = "CandleCatch"
+	_minigame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_minigame.finished.connect(_on_minigame_finished)
+	screen.add_child(_minigame)
+
+
+## El dado de la maquinita, al abrir la PC. Con el tótem puesto no sale: solo
+## se puede tener uno.
+func _roll_arcade() -> void:
+	if _arcade == null or GameManager.has_totem or _minigame.is_playing:
+		return
+	if randi() % Sergio.ARCADE_ONE_IN != 0:
+		return
+	show_arcade_icon()
+
+
+## Enseña el ícono en un sitio al azar. Lo usa el dado y el panel de pruebas.
+func show_arcade_icon() -> void:
+	if _arcade == null:
+		return
+	_arcade.size = ARCADE_SIZE
+	_arcade.position = Vector2(
+		randf_range(ARCADE_MARGIN, maxf(screen.size.x - ARCADE_SIZE.x - ARCADE_MARGIN,
+			ARCADE_MARGIN)),
+		randf_range(ARCADE_MARGIN, maxf(screen.size.y - ARCADE_SIZE.y - BAR_HEIGHT
+			- ARCADE_MARGIN, ARCADE_MARGIN)))
+	_arcade.visible = true
+	if _arcade_tween != null and _arcade_tween.is_valid():
+		_arcade_tween.kill()
+	_arcade_tween = create_tween()
+	_arcade_tween.tween_interval(Sergio.ARCADE_ICON_TIME)
+	_arcade_tween.tween_callback(func() -> void: _arcade.visible = false)
+
+
+func _on_arcade_pressed() -> void:
+	_arcade.visible = false
+	open_minigame()
+
+
+## Abre el minijuego. También lo abre el panel de pruebas.
+func open_minigame() -> void:
+	if _minigame != null:
+		_minigame.play()
+
+
+func _on_minigame_finished(_won: bool) -> void:
+	pass
 
 
 # --- Escritorio ---------------------------------------------------------------

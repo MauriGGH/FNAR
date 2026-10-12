@@ -420,6 +420,15 @@ func _build_events_section() -> void:
 		close()
 		_night.camera_system.play_glimpse(AmbientEvents.glimpse_state()))
 
+	_add_label(body, "Sergio y el tótem:")
+	_add_button(body, "Dar tótem", func() -> void: GameManager.give_totem())
+	_add_button(body, "Probar rescate de Sergio", func() -> void:
+		close()
+		_night.debug_sergio_rescue())
+	_add_button(body, "Abrir minijuego", func() -> void:
+		close()
+		_night.debug_open_minigame())
+
 	_add_label(body, "Tickets:")
 	_add_button(body, "Que llegue uno nuevo",
 		func() -> void: GameManager.debug_arrive_next_ticket())

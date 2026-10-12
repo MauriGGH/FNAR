@@ -50,6 +50,17 @@ func stop() -> void:
 	is_active = false
 
 
+## De vuelta al principio de su ruta. Lo usa el rescate de Sergio: al profe que
+## iba a matarte se lo llevan a su sitio y vuelve a empezar desde cero. Quien
+## tenga estados propios (Barcosa corriendo, los del cristal) lo sobrescribe.
+func go_home() -> void:
+	if route.is_empty():
+		return
+	_elapsed = 0.0
+	is_stalking = false
+	move_to_step(0)
+
+
 func set_watched_camera(camera: int) -> void:
 	watched_camera = camera
 
