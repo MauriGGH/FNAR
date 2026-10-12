@@ -24,6 +24,11 @@ var _players: Dictionary = {}      # id -> AudioStreamPlayer
 var _streams: Dictionary = {}      # id -> AudioStream
 var _warned: Dictionary = {}       # id -> true, para avisar una sola vez
 var _fades: Dictionary = {}        # id -> Tween del fundido que esté corriendo
+## Los bucles que se pidieron y todavía no se han parado. Se lleva aparte de
+## _players porque un bucle que se queda colgado de una escena a la siguiente
+## es lo que arruina el ambiente: hay que poder callarlos todos de golpe sin
+## cortar los sonidos de una sola vez (un grito, un golpe) que estén en el aire.
+var _loops: Dictionary = {}        # id -> true mientras ese bucle esté puesto
 
 
 func _ready() -> void:
@@ -84,10 +89,13 @@ func _end_fade(id: String) -> void:
 
 
 ## Suena en bucle. Si ya estaba sonando, lo deja seguir para que no se reinicie
-## a cada rato.
+## a cada rato. Queda apuntado en el registro hasta que alguien lo pare.
 func play_loop(id: String) -> void:
 	var player: AudioStreamPlayer = _player_for(id)
-	if player == null or player.playing:
+	if player == null:
+		return
+	_loops[id] = true
+	if player.playing:
 		return
 	_apply_pan(id)
 	player.play()
@@ -112,6 +120,7 @@ func _apply_pan(id: String) -> void:
 
 func stop(id: String) -> void:
 	_stop_fade(id)
+	_loops.erase(id)
 	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
 	if player == null:
 		return
@@ -140,6 +149,29 @@ func is_playing(id: String) -> bool:
 func stop_all() -> void:
 	for id: Variant in _players:
 		stop(str(id))
+
+
+## Calla **solo los bucles**: el ambiente, la estática, la cajita, los lejanos
+## de sitio, el glitch de Armando, la carrera de Barcosa, la música del menú...
+## Lo llama cada pantalla al montarse, porque un bucle colgado de la pantalla
+## anterior es lo que traba el ambiente y se oye encima del nuevo. Los sonidos
+## de una sola vez no se tocan: un grito o un golpe en el aire se acaban solos.
+func stop_all_loops() -> void:
+	for id: Variant in _loops.keys():
+		stop(str(id))
+	_loops.clear()
+
+
+## Los ids que están sonando ahora mismo, en orden, para los registros del
+## panel de pruebas. Marca con * los que son bucles.
+func active_ids() -> PackedStringArray:
+	var ids: PackedStringArray = PackedStringArray()
+	for id: Variant in _players:
+		var player: AudioStreamPlayer = _players[id] as AudioStreamPlayer
+		if player != null and player.playing:
+			ids.append("%s%s" % [str(id), "*" if _loops.has(id) else ""])
+	ids.sort()
+	return ids
 
 
 ## true si el archivo de verdad ya está en assets/audio/. Lo pregunta quien

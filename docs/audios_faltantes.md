@@ -11,7 +11,7 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **24 de 99**. Generado desde el catálogo.
+Faltan **16 de 104**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 
@@ -33,16 +33,8 @@ Faltan **24 de 99**. Generado desde el catálogo.
 | `ninos_yay` | `ninos_yay.ogg` | Efectos | Niños gritando «yeeey», contentos, 1 o 2 s. Entra al acabarse el despertador. |
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | Zumbido de lámparas y ventilador de oficina, en bucle sin corte. |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | Aire de pasillo vacío de noche, en bucle sin corte, muy tenue. |
-| `breaker_palanca` | `breaker_palanca.ogg` | Efectos | Palanca de tablero eléctrico bajando: dos clacs pesados. |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | Estática de televisión vieja, en bucle sin corte, suave. |
 | `menu_blip` | `menu_blip.ogg` | Efectos | Pitido corto y seco de moverse por un menú de consola vieja. |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | Golpe de una tecla de máquina de escribir. Respaldo de las tres de abajo. |
 | `urena_banos` | `lejos/urena_banos.ogg` | Lejos | Agua de lavabo corriendo, lejos, en bucle. |
-| `juan_teclado` | `lejos/juan_teclado.ogg` | Lejos | Tecleo de teclado mecánico, lejos, en bucle. |
 | `armando_modem` | `lejos/armando_modem.ogg` | Lejos | Módem de 56k negociando, distorsionado y lejos. |
-| `audel_chispa` | `lejos/audel_chispa.ogg` | Lejos | Zumbido eléctrico con algún trueno, lejos, en bucle. |
-| `rochis_silla` | `lejos/rochis_silla.ogg` | Lejos | Rechinido de una silla de oficina al moverse. |
-| `lejos_portazo` | `lejos/lejos_portazo.ogg` | Lejos | Un portazo en otra parte del edificio. |
-| `lejos_silla` | `lejos/lejos_silla.ogg` | Lejos | Una silla arrastrada en otro cuarto. |
-| `lejos_risa` | `lejos/lejos_risa.ogg` | Lejos | Una risa corta, muy lejos, imposible de ubicar. |
-| `lejos_platos` | `lejos/lejos_platos.ogg` | Lejos | Platos y cubiertos en la cafetería vacía. |

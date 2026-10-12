@@ -41,6 +41,9 @@ var _static_strength: float = STATIC_HEAVY:
 
 
 func _ready() -> void:
+	# Los bucles de la noche se cortan, pero el grito del jumpscare se deja
+	# acabar: su cola encima de la estática es parte del golpe.
+	AudioManager.stop_all_loops()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build_picture()
 	_style_texts()
@@ -123,6 +126,12 @@ func _play_intro() -> void:
 	tween.tween_property(_list, "modulate:a", 1.0, TEXT_FADE)
 	tween.parallel().tween_property(_hint, "modulate:a", 1.0, TEXT_FADE)
 	tween.tween_callback(_allow_leaving)
+
+
+## Al salir del game over no se arrastra nada: ni la estática inquietante ni
+## la cola del grito.
+func _exit_tree() -> void:
+	AudioManager.stop_all()
 
 
 func _allow_leaving() -> void:

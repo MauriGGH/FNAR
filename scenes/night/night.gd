@@ -89,9 +89,10 @@ var _rochis: Rochis = null
 
 # Teléfono: la llamada de la noche y la de Ureña.
 var _nightly_call_left: float = 0.0
-## A qué hora le toca sonar al Mencho esta noche, y si ya sonó. En −1 es que
+## A qué hora le toca la llamada rara de esta noche, y cuál es. En −1 es que
 ## ya pasó y no vuelve: es una por noche.
 var _mencho_call_at: float = -1.0
+var _random_call_id: String = ""
 ## Las horas a las que va a llamar esta noche, de la más temprana a la última.
 var _urena_calls_at: PackedFloat32Array = PackedFloat32Array()
 var _ticket_elapsed: float = 0.0
@@ -104,6 +105,10 @@ var _open_cameras_on_return: bool = false
 
 
 func _ready() -> void:
+	# La noche arranca **en silencio**: no solo los bucles, también lo que haya
+	# quedado colgando de la pantalla anterior (el grito del game over, el
+	# despertador de las 6 AM). Su propio ambiente lo pone ella enseguida.
+	AudioManager.stop_all()
 	_style_hud()
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
@@ -256,15 +261,20 @@ func _on_recording_started(night: int) -> void:
 	call_subtitles.play(night)
 
 
-## Contestaron al Mencho: su audio con su único renglón de subtítulo.
+## Contestaron la llamada rara: su audio con su único renglón de subtítulo.
 func _on_mencho_started() -> void:
-	call_subtitles.play_call(Sounds.MENCHO_CALL, NightCalls.MENCHO_SUBTITLES)
+	call_subtitles.play_call(_random_call_id, NightCalls.MENCHO_SUBTITLES)
 
 
-## Para el panel de pruebas: que llame ahora mismo.
-func debug_mencho_call() -> void:
+## Para el panel de pruebas: que llame ahora mismo. Con un id se pide una en
+## concreto; sin él, la que le tocó a esta noche.
+func debug_mencho_call(call_id: String = "") -> void:
 	if phone_call.is_ringing or phone_call.is_open:
 		return
+	if not call_id.is_empty():
+		_random_call_id = call_id
+	if _random_call_id.is_empty():
+		_random_call_id = Sounds.MENCHO_CALL
 	_mencho_call_at = -1.0
 	phone_call.queue_mencho(NightCalls.MENCHO_RING_TIME)
 
@@ -548,8 +558,10 @@ func _on_flashlight_failed() -> void:
 func _schedule_calls(night: int) -> void:
 	# Si esa noche no tiene guion, el teléfono no suena.
 	_nightly_call_left = NightCalls.CALL_DELAY if NightCalls.has_call(night) else -1.0
-	# El Mencho llama todas las noches, una sola vez, entre la 1 y las 5 AM.
-	_mencho_call_at = NightCalls.mencho_hour()
+	# La llamada rara entra todas las noches, una sola vez, entre la 1 y las
+	# 5 AM. La noche 1 es siempre la del Mencho; desde la 2 se sortea.
+	_random_call_id = NightCalls.random_call(night)
+	_mencho_call_at = NightCalls.mencho_hour() if not _random_call_id.is_empty() else -1.0
 	_urena_calls_at.clear()
 	phone_call.reset_urena_lines()
 	if _urena == null or not _urena.is_active:

@@ -24,11 +24,15 @@ extends RefCounted
 ## Lo que tarda en sonar desde que empieza la noche.
 const CALL_DELAY: float = 3.0
 
-## La llamada del Mencho: un número equivocado que entra **una vez por noche**,
-## a una hora al azar entre la 1 y las 5 AM. No es la llamada de la noche y no
-## cuenta como tal: no hay nada que contestar ni que elegir, solo se oye. El
-## audio ya trae su efecto de teléfono, así que el juego solo pone el timbre.
-## Si a las 5 AM todavía no ha sonado, entra ahí a la fuerza.
+## La **llamada rara** de cada noche: un número equivocado que entra **una vez
+## por noche**, a una hora al azar entre la 1 y las 5 AM. No es la llamada de la
+## noche y no cuenta como tal: no hay nada que contestar ni que elegir, solo se
+## oye. El audio ya trae su efecto de teléfono, así que el juego solo pone el
+## timbre. Si a las 5 AM todavía no ha sonado, entra ahí a la fuerza.
+##
+## La noche 1 es siempre la del Mencho, para que todos la oigan; desde la 2 se
+## sortea entre las que haya, evitando la de la noche anterior.
+const RANDOM_CALL_FIRST_NIGHT: int = 1
 const MENCHO_FROM_HOUR: float = 1.0
 const MENCHO_TO_HOUR: float = 5.0
 const MENCHO_RING_TIME: float = 10.0
@@ -39,6 +43,30 @@ const MENCHO_SUBTITLES: Array[Dictionary] = [{"at": 0.0, "text": "¿Bueno? ..."}
 ## A qué hora de la noche le toca sonar esta vez.
 static func mencho_hour() -> float:
 	return randf_range(MENCHO_FROM_HOUR, MENCHO_TO_HOUR)
+
+
+## La que sonó la noche pasada, para no repetirla si se puede.
+static var _last_random_call: String = ""
+
+
+## Qué llamada rara le toca a esta noche.
+static func random_call(night: int) -> String:
+	if night <= RANDOM_CALL_FIRST_NIGHT:
+		_last_random_call = Sounds.MENCHO_CALL
+		return _last_random_call
+	var pool: Array[String] = []
+	for id: String in Sounds.RANDOM_CALLS:
+		if id != _last_random_call and AudioManager.has_real_file(id):
+			pool.append(id)
+	if pool.is_empty():
+		# Con una sola grabada se repite, que es mejor que no sonar.
+		for id: String in Sounds.RANDOM_CALLS:
+			if AudioManager.has_real_file(id):
+				pool.append(id)
+	if pool.is_empty():
+		return ""
+	_last_random_call = pool[randi() % pool.size()]
+	return _last_random_call
 ## Lo que suena antes de darse por perdida. No contestar no tiene castigo.
 const RING_TIME: float = 10.0
 

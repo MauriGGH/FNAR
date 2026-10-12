@@ -23,7 +23,8 @@ signal answer_given(kind: int)
 ## Contestaron la llamada grabada de la noche: que empiecen el audio y los
 ## subtítulos. De eso se encarga la barra de subtítulos, no esta ventanita.
 signal recording_started(night: int)
-## Lo mismo, pero con la del Mencho, que no es de ninguna noche en concreto.
+## Lo mismo, pero con la llamada rara de la noche (el Mencho o el juguete),
+## que no es de ninguna noche en concreto.
 signal mencho_started()
 
 enum Mode { NONE, RECORDING, URENA, MENCHO }
@@ -158,8 +159,8 @@ func queue_recording(night: int, seconds: float) -> void:
 	start_ringing(seconds, false)
 
 
-## La llamada del Mencho: igual que la grabada, pero sin noche. El teléfono
-## suena y, al contestar, se oye y ya.
+## La llamada rara de la noche: igual que la grabada, pero sin noche. El
+## teléfono suena y, al contestar, se oye y ya.
 func queue_mencho(seconds: float) -> void:
 	mode = Mode.MENCHO
 	start_ringing(seconds, false)

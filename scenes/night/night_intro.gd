@@ -44,6 +44,9 @@ var _night: Label = null
 
 
 func _ready() -> void:
+	# Los bucles de la pantalla anterior se cortan aquí: un ambiente colgado
+	# es lo que se oye encima del nuevo.
+	AudioManager.stop_all_loops()
 	_build()
 	# La estática va encima del texto, así que el texto se arma primero.
 	_static_layer = ScreenFx.add_static(self, STATIC_IDLE)

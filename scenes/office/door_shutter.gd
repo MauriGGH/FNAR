@@ -60,6 +60,8 @@ var _texture: Texture2D = null
 var _tween: Tween = null
 var _shake_left: float = 0.0
 var _shake_offset: Vector2 = Vector2.ZERO
+## Cómo está ahora, para no repetir el sonido si no se movió.
+var _is_closed: bool = false
 
 
 func _ready() -> void:
@@ -88,11 +90,16 @@ func set_beam(center: Vector2, half: Vector2, softness: float, strength: float) 
 	shader.set_shader_parameter("aspect", size.x / size.y if size.y > 0.0 else 1.78)
 
 
-## Baja o sube la cortina, con su sonido.
+## Baja o sube la cortina, con su sonido. Si ya estaba así (es lo que pasa al
+## montar la oficina, que la deja abierta) no suena nada: el clang es de la
+## lámina moviéndose, no de armar la escena.
 func set_closed(closed: bool) -> void:
+	var moved: bool = closed != _is_closed
+	_is_closed = closed
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
-	AudioManager.play(Sounds.DOOR_SHUTTER)
+	if moved:
+		AudioManager.play(Sounds.DOOR_SHUTTER)
 	if not closed:
 		# Al empezar a subir, el fondo vuelve a ser el de la puerta abierta y
 		# esta capa se encarga otra vez de la lámina.

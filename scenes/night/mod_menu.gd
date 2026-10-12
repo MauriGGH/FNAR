@@ -407,9 +407,15 @@ func _build_events_section() -> void:
 			_add_button(body, "CAM %02d · %s" % [camera, name], func() -> void:
 				_night.camera_system.debug_play_ambient(camera, index))
 
-	_add_button(body, "Que llame el Mencho", func() -> void:
+	_add_label(body, "Llamada rara de la noche:")
+	_add_button(body, "La que le tocó a esta noche", func() -> void:
 		close()
 		_night.debug_mencho_call())
+	for id: String in Sounds.RANDOM_CALLS:
+		var call_id: String = id
+		_add_button(body, call_id, func() -> void:
+			close()
+			_night.debug_mencho_call(call_id))
 	_add_button(body, "Vistazo de reojo en la cámara de ahora", func() -> void:
 		close()
 		_night.camera_system.play_glimpse(AmbientEvents.glimpse_state()))
@@ -594,6 +600,20 @@ func _build_audio_section() -> void:
 		print("[audio] faltan %d de %d; la lista quedó en %s" % [
 			MissingAudioReport.missing_ids().size(), Sounds.CATALOG.size(), path]))
 
+	_add_label(body, "Música del menú (se guarda en save.cfg):")
+	var music_label: Label = _add_label(body, _menu_music_text())
+	_add_row(body, [
+		["A", func() -> void:
+			SaveGame.set_menu_music_b(false)
+			music_label.text = _menu_music_text()
+			_play_menu_music()],
+		["B", func() -> void:
+			SaveGame.set_menu_music_b(true)
+			music_label.text = _menu_music_text()
+			_play_menu_music()],
+	])
+	_add_button(body, "Callar la música del menú", _stop_menu_music)
+
 	_add_label(body, "Golpes del tic del menú (uno por tic, sin repetir):")
 	for id: String in Sounds.MENU_TICS:
 		var tic_id: String = id
@@ -621,6 +641,18 @@ func _build_audio_section() -> void:
 		print("[audio] golpe de alucinación: %s" % _last_debug_hit)
 		AudioManager.play(_last_debug_hit))
 
+	_add_label(body, "El Mago Eléctrico:")
+	_add_button(body, "Descarga del pararrayos", func() -> void:
+		AudioManager.play(Sounds.LIGHTNING))
+	_add_button(body, "Cortaso", func() -> void:
+		AudioManager.play(Sounds.CORTASO))
+
+	_add_label(body, "Bucles y arrastres:")
+	_add_button(body, "Escribir los que están sonando", func() -> void:
+		print("[audio] sonando ahora: %s" % ", ".join(AudioManager.active_ids())))
+	_add_button(body, "Callar solo los bucles", func() -> void:
+		AudioManager.stop_all_loops())
+
 	_add_label(body, "Estática inquietante:")
 	_add_button(body, "La del tic ultra (−14 dB)", func() -> void:
 		AudioManager.play(Sounds.UNEASY_STATIC))
@@ -647,6 +679,28 @@ func _build_audio_section() -> void:
 				AudioManager.set_bus_volume(bus, AudioManager.bus_volume(bus) + 0.1)
 				value.text = "%s: %d %%" % [bus, roundi(AudioManager.bus_volume(bus) * 100.0)]],
 		])
+
+
+## Qué opción de música del menú está puesta ahora.
+func _menu_music_text() -> String:
+	return "Puesta: %s (%s)" % ["B" if SaveGame.menu_music_b else "A",
+		Sounds.menu_music()]
+
+
+## Suelta la música del menú aquí mismo, para poder comparar las dos sin salir
+## de la noche. Primero se calla la otra, que si no se enciman.
+func _play_menu_music() -> void:
+	_stop_menu_music()
+	AudioManager.play_loop(Sounds.menu_music())
+	for layer: String in Sounds.menu_layers():
+		AudioManager.play_loop(layer)
+
+
+func _stop_menu_music() -> void:
+	for id: String in [Sounds.MENU_MUSIC, Sounds.MENU_MUSIC_B]:
+		AudioManager.stop(id)
+	for layer: String in Sounds.MENU_LAYERS + Sounds.MENU_LAYERS_B:
+		AudioManager.stop(layer)
 
 
 # --- Retos de Custom Night ----------------------------------------------------

@@ -115,6 +115,7 @@ func cause_discharge() -> void:
 	if affected.is_empty():
 		return
 	made_noise.emit(DISCHARGE_NOTICE, NOTICE_TIME)
+	AudioManager.play(Sounds.LIGHTNING)
 	discharge_started.emit(affected)
 
 
@@ -175,6 +176,7 @@ func _do_cortaso() -> void:
 	_state = State.CORTASO
 	_cortaso_elapsed = 0.0
 	made_noise.emit(CORTASO_NOTICE, NOTICE_TIME)
+	AudioManager.play(Sounds.CORTASO)
 	PowerManager.apply_cortaso()
 	cortaso_started.emit()
 

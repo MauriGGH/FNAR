@@ -89,6 +89,15 @@ Todo el sonido pasa por el autoload **AudioManager**: nadie carga un archivo a m
 `AudioStreamPlayer` en una escena. Se le pide un sonido por su id del catálogo
 (`data/sounds.gd`), que dice el archivo que espera en `assets/audio/`, el bus y el volumen.
 
+**Nadie se arrastra de una pantalla a otra.** El AudioManager lleva un **registro de los bucles**
+puestos (`play_loop` los apunta, `stop` los borra) y expone `stop_all_loops()`, que los calla
+todos de golpe sin tocar los sonidos de una sola vez que estén en el aire. Cada pantalla lo llama
+al montarse; **la noche y el menú principal van más lejos y arrancan con `stop_all()`**, porque un
+grito o un despertador colgando se oye encima de su ambiente. Y cada pantalla calla lo suyo al
+salir (`_exit_tree`): el 6 AM su despertador, el game over su estática. `AudioManager.active_ids()`
+dice qué está sonando, con `*` en los bucles, y el panel de pruebas lo imprime (F1 → Audio →
+«Escribir los que están sonando»).
+
 **Si el archivo de verdad no está**, el AudioManager usa el provisional que genera
 `scripts/audio/tone_builder.gd` y lo avisa **una sola vez** en consola (`[audio] <id>: falta
 <archivo>, suena el provisional`). Para meter un sonido real basta con dejar el archivo con ese
@@ -119,7 +128,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (99 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (104 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -132,7 +141,9 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `estatica_inquietante` | `estatica_inquietante.ogg` | Efectos | −14 | no | de fondo en el tic «ultra» del menú |
 | `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | Efectos | −16 | no | debajo de la estática del game over (mismo archivo) |
 | `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −6 | no | pasos recorriendo el pasillo, con los demás ambientales |
-| `menu_capa`, `menu_capa2` | `menu_capa.ogg`, `menu_capa2.ogg` | Música | −22 / −24 | sí | las dos capas de ambiente encima de la música del menú |
+| `menu_musica_b` | `menu_musica_b.ogg` | Música | −12 | sí | la otra música del menú (opción B, la de fábrica) |
+| `menu_capa`, `menu_capa2` | `menu_capa.ogg`, `menu_capa2.ogg` | Música | −22 / −24 | sí | las capas de ambiente del menú (opción A) |
+| `menu_capa2_b` | `menu_capa2.ogg` | Música | −16 | sí | el mismo dron de voces, más arriba, para la opción B |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
@@ -161,6 +172,9 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `menu_glitch_largo` | `menu_glitch_largo.ogg` | Efectos | −4 | no | el tic «ultra» del menú, el de los tres |
 | `sonido_perturbador` | `extras/sonido_perturbador.ogg` | Efectos | −4 | no | el vistazo «de reojo» de las cámaras |
 | `llamada_mencho` | `llamadas/llamada_mencho.ogg` | Voces | 0 | no | la llamada del Mencho, una por noche |
+| `llamada_juguete` | `llamadas/llamada_juguete.ogg` | Voces | 0 | no | la otra llamada rara, desde la noche 2 |
+| `descarga_pararrayos` | `descarga_pararrayos.ogg` | Efectos | −3 | no | la descarga que tumba los patch cords |
+| `cortaso` | `cortaso.ogg` | Efectos | −2 | no | el Mago entrando a la oficina |
 | `rosa_suspenso`, `rosa_aire`, `aura` | `extras/<id>.ogg` | Música | −4 / −6 | no | el rescate de Sergio (todavía sin programar) |
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
@@ -197,10 +211,12 @@ corta en cualquier momento.
 La llamada de Ureña es otra cosa y sigue como estaba: conversación con respuestas, en la
 ventanita de la esquina y con síntesis de voz.
 
-**La llamada del Mencho:** un número equivocado que entra **todas las noches, una sola vez**, a
-una hora al azar entre la 1 y las 5 AM (`NightCalls.mencho_hour()`). El teléfono suena como
-siempre y, al contestar, se oye `llamadas/llamada_mencho.ogg` —que ya trae su efecto de teléfono—
-con un único subtítulo corto, «¿Bueno? ...». **No cuenta como la llamada de la noche** y no abre
+**La llamada rara de la noche:** un número equivocado que entra **todas las noches, una sola
+vez**, a una hora al azar entre la 1 y las 5 AM (`NightCalls.mencho_hour()`). La **noche 1 es
+siempre la del Mencho**, para que todos la oigan; **desde la noche 2 se sortea**
+(`NightCalls.random_call()`) entre `llamada_mencho` y `llamada_juguete`, evitando la de la noche
+anterior. El teléfono suena como siempre y, al contestar, se oye el audio —que ya trae su efecto
+de teléfono— con un único subtítulo corto, «¿Bueno? ...». **No cuenta como la llamada de la noche** y no abre
 la ventanita: se oye y ya. El teléfono es uno solo, así que si justo está sonando la de Ureña o la
 del Phone Guy, el Mencho espera a que acaben; si se le hicieron las 5 AM esperando, entra en
 cuanto el teléfono quede libre.
@@ -239,7 +255,7 @@ mientras el profe esté ahí.
 | `armando_modem` | Al cambiar de cuarto | Módem negociando, distorsionado |
 | `audel_chispa` | En bucle, mientras está en el techo | Zumbido eléctrico y un trueno |
 | `rochis_silla` | Al cambiar de etapa en la silla | Rechinido de silla |
-| `lejos_portazo`, `lejos_silla`, `lejos_pasos_arriba`, `lejos_risa`, `lejos_platos` | Uno al azar cada 40 a 120 s | Ambiente de un edificio vacío |
+| `lejos_portazo`, `lejos_silla`, `lejos_pasos_arriba`, `lejos_risa`, `lejos_platos`, `lejos_pasos_pasillo` | Uno al azar cada 40 a 120 s | Ambiente de un edificio vacío |
 
 Los archivos van en `assets/audio/lejos/<id>.ogg`. Mientras no estén, suenan los provisionales de
 `tone_builder.gd`.
@@ -552,7 +568,7 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
     secuencia, el jugador se salva** y todo se calla.
-  - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
+  - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
 
@@ -743,12 +759,21 @@ la Custom Night.
 Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
 `scenes/ui/locked_art.gdshader`) y un "???" encima.
 
-**Audio del menú principal:** tres pistas a la vez, todas en bucle por el bus Música: la
-principal, `menu_musica` (5:46, −12 dB), y encima dos capas de ambiente, `menu_capa` (−22 dB) y
-`menu_capa2` (−24 dB). Más un hilo de estática (`estatica_camara`, −30 dB). Todas se apagan solas
-al salir del menú (`_exit_tree`), para que no se cuelen en la noche.
+**Audio del menú principal:** tres pistas a la vez, todas en bucle por el bus Música, más un hilo
+de estática (`estatica_camara`, −30 dB). Hay **dos opciones de música para comparar**, y la que
+está puesta se guarda en `save.cfg` (`menu_music_b`); se cambia desde F1 → Audio y **de fábrica
+viene la B**:
 
-La pista principal es **«Halloween Atmosphere 2024» de Sascha Ende (ende.app), con licencia
+| Opción | Pista | Capas encima |
+| --- | --- | --- |
+| A | `menu_musica`, 5:46, −12 dB | `menu_capa` −22 dB y `menu_capa2` −24 dB |
+| **B** (la de fábrica) | `menu_musica_b`, 98 s, −12 dB | `menu_capa` −22 dB y `menu_capa2_b` **−16 dB** |
+
+La B es más corta y deja silencios, así que el **dron de voces va mucho más arriba** (es el mismo
+archivo que `menu_capa2`, con otro volumen) para que esos huecos nunca queden vacíos. Al salir del
+menú se callan las dos opciones y todas sus capas, no solo la que estaba puesta.
+
+La pista de la opción A es **«Halloween Atmosphere 2024» de Sascha Ende (ende.app), con licencia
 CC BY 4.0**, que pide nombrar al autor: el crédito sale escrito en la pantalla de **Extras**, y el
 texto vive en `Extras.MUSIC_CREDIT`.
 

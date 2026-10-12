@@ -49,6 +49,8 @@ var _wipe_held: float = 0.0
 
 
 func _ready() -> void:
+	# El menú también arranca en silencio, y enseguida pone su música.
+	AudioManager.stop_all()
 	MenuBackdrop.build(self)
 	_build_title()
 	_build_stars()
@@ -63,16 +65,19 @@ func _ready() -> void:
 	resized.connect(_layout)
 	# El menú tiene su propio ambiente: la pista principal, sus dos capas de
 	# ambiente encima (las tres a la vez) y un hilo de estática.
-	AudioManager.play_loop(Sounds.MENU_MUSIC)
-	for layer: String in Sounds.MENU_LAYERS:
+	AudioManager.play_loop(Sounds.menu_music())
+	for layer: String in Sounds.menu_layers():
 		AudioManager.play_loop(layer)
 	AudioManager.play_loop(Sounds.CAMERA_STATIC)
 
 
 ## Al salir del menú se lleva su audio con él, que si no se cuela en la noche.
+## Al salir se callan las dos opciones y sus capas, no solo la que estaba
+## puesta: si se cambió de opción sin salir del menú, la otra podría seguir.
 func _exit_tree() -> void:
-	AudioManager.stop(Sounds.MENU_MUSIC)
-	for layer: String in Sounds.MENU_LAYERS:
+	for id: String in [Sounds.MENU_MUSIC, Sounds.MENU_MUSIC_B]:
+		AudioManager.stop(id)
+	for layer: String in Sounds.MENU_LAYERS + Sounds.MENU_LAYERS_B:
 		AudioManager.stop(layer)
 	AudioManager.stop(Sounds.CAMERA_STATIC)
 

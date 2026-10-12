@@ -167,4 +167,13 @@ func _cheer() -> void:
 
 func _done() -> void:
 	visible = false
+	# El despertador son 10 s: si no se corta aquí, se cuela en el periódico,
+	# en el recibo y hasta en la noche siguiente, encima del ambiente.
+	AudioManager.stop(Sounds.ALARM)
 	finished.emit()
+
+
+## Y si la pantalla se va antes de tiempo, lo mismo.
+func _exit_tree() -> void:
+	AudioManager.stop(Sounds.ALARM)
+	AudioManager.stop(Sounds.CHILDREN_CHEER)

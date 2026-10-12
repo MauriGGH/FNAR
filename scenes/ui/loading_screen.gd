@@ -27,6 +27,8 @@ static func go_to(tree: SceneTree, scene_path: String) -> void:
 
 
 func _ready() -> void:
+	# Lo que dejó sonando la pantalla anterior se corta aquí.
+	AudioManager.stop_all_loops()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var backdrop: ColorRect = ColorRect.new()
 	backdrop.color = Color(0.0, 0.0, 0.0)

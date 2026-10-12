@@ -38,6 +38,9 @@ var _hint: Label = null
 
 
 func _ready() -> void:
+	# Los bucles de la pantalla anterior se cortan aquí: un ambiente colgado
+	# es lo que se oye encima del nuevo.
+	AudioManager.stop_all_loops()
 	_load_key_sounds()
 	_build()
 	_layout()

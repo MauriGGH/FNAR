@@ -60,6 +60,9 @@ var _list: MenuList = null
 
 
 func _ready() -> void:
+	# Los bucles de la pantalla anterior se cortan aquí: un ambiente colgado
+	# es lo que se oye encima del nuevo.
+	AudioManager.stop_all_loops()
 	MenuBackdrop.build(self)
 	AudioManager.play_loop(Sounds.EXTRAS_MUSIC)
 	# El contenido va primero para que la lista y el título queden encima: los

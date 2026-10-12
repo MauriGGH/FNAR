@@ -8,6 +8,9 @@ extends Control
 
 
 func _ready() -> void:
+	# Los bucles de la pantalla anterior se cortan aquí: un ambiente colgado
+	# es lo que se oye encima del nuevo.
+	AudioManager.stop_all_loops()
 	six_am_roll.finished.connect(_on_roll_finished)
 
 

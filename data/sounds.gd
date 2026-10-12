@@ -47,10 +47,26 @@ const ALARM: String = "despertador"
 const SCHOOL_BELL: String = "campana_escuela"
 ## Los niños gritando "¡yeeey!" al acabarse las campanadas de las 6 AM.
 const CHILDREN_CHEER: String = "ninos_yay"
-## La música del menú principal: una pista larga en bucle y, encima, dos capas
-## de ambiente más bajas. Las tres suenan a la vez.
+## La música del menú principal: una pista en bucle y, encima, dos capas de
+## ambiente más bajas. Las tres suenan a la vez.
+##
+## Hay **dos opciones para comparar**, y la que está puesta se guarda en
+## save.cfg (`menu_music_b`). La **B es la que viene de fábrica**: su pista es
+## más corta y deja silencios, así que el dron de voces (`menu_capa2_b`) va
+## bastante más arriba para que esos huecos no queden vacíos.
 const MENU_MUSIC: String = "menu_musica"
+const MENU_MUSIC_B: String = "menu_musica_b"
 const MENU_LAYERS: Array[String] = ["menu_capa", "menu_capa2"]
+const MENU_LAYERS_B: Array[String] = ["menu_capa", "menu_capa2_b"]
+
+
+## La pista y las capas de la opción que esté puesta.
+static func menu_music() -> String:
+	return MENU_MUSIC_B if SaveGame.menu_music_b else MENU_MUSIC
+
+
+static func menu_layers() -> Array[String]:
+	return MENU_LAYERS_B if SaveGame.menu_music_b else MENU_LAYERS
 ## Y la de Extras y la Custom Night, también en bucle.
 const EXTRAS_MUSIC: String = "extras_musica"
 const FOOTSTEPS: String = "pasos_acercandose"
@@ -118,8 +134,15 @@ const BLACKOUT_LINE: String = "apagon_frase"
 const MENU_GLITCH_LONG: String = "menu_glitch_largo"
 ## El vistazo "de reojo" de las cámaras.
 const DISTURBING: String = "sonido_perturbador"
-## La llamada del Mencho: número equivocado, una vez por noche.
+## Las dos llamadas raras que pueden entrar a media noche, una por noche. La
+## noche 1 es siempre la del Mencho; desde la 2 se sortea entre las dos.
 const MENCHO_CALL: String = "llamada_mencho"
+const TOY_CALL: String = "llamada_juguete"
+const RANDOM_CALLS: Array[String] = ["llamada_mencho", "llamada_juguete"]
+## La descarga del pararrayos que desconecta los patch cords.
+const LIGHTNING: String = "descarga_pararrayos"
+## El cortaso: el Mago entrando a la oficina a dejarla sin linterna.
+const CORTASO: String = "cortaso"
 
 ## El rescate de Sergio, que todavía no está hecho: los ids quedan registrados
 ## para que el día que se programe solo haya que pedirlos.
@@ -439,7 +462,17 @@ const CATALOG: Dictionary = {
 	"menu_capa2": {
 		"file": "menu_capa2.ogg", "bus": "Música",
 		"volume_db": -24.0, "generator": "",
-		"desc": "Segunda capa de ambiente del menú, más baja todavía, en bucle sin corte.",
+		"desc": "El dron de voces del menú, muy bajito, en bucle sin corte. Es el de la opción A.",
+	},
+	"menu_capa2_b": {
+		"file": "menu_capa2.ogg", "bus": "Música",
+		"volume_db": -16.0, "generator": "",
+		"desc": "El mismo dron de voces, bastante más arriba: con la opción B tapa los silencios de la pista (mismo archivo).",
+	},
+	"menu_musica_b": {
+		"file": "menu_musica_b.ogg", "bus": "Música",
+		"volume_db": -12.0, "generator": "menu_music",
+		"desc": "La otra música del menú (opción B, la de fábrica): bucle de 98 s, con silencios que tapa el dron de voces.",
 	},
 	"pasos_acercandose": {
 		"file": "pasos_acercandose.ogg", "bus": "Efectos",
@@ -545,6 +578,21 @@ const CATALOG: Dictionary = {
 		"file": "extras/sonido_perturbador.ogg", "bus": "Efectos",
 		"volume_db": -4.0, "generator": "",
 		"desc": "El golpe del vistazo «de reojo»: medio segundo de algo que no debería estar ahí.",
+	},
+	"llamada_juguete": {
+		"file": "llamadas/llamada_juguete.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "La otra llamada rara, ya con efecto de teléfono. Se sortea con la del Mencho desde la noche 2.",
+	},
+	"descarga_pararrayos": {
+		"file": "descarga_pararrayos.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "far_spark",
+		"desc": "La descarga del pararrayos que tumba los patch cords: un trueno seco con chispazo eléctrico.",
+	},
+	"cortaso": {
+		"file": "cortaso.ogg", "bus": "Efectos",
+		"volume_db": -2.0, "generator": "breaker_lever",
+		"desc": "El cortaso del Mago Eléctrico al entrar a la oficina: cortocircuito y todo apagándose.",
 	},
 	"llamada_mencho": {
 		"file": "llamadas/llamada_mencho.ogg", "bus": "Voces",
