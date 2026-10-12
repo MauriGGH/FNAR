@@ -55,6 +55,7 @@ var _wasted: WastedScreen = null
 var _content: Control = null
 var _title: Label = null
 var _hint: Label = null
+var _credit: Label = null
 var _list: MenuList = null
 
 
@@ -70,6 +71,13 @@ func _ready() -> void:
 	_title = MenuStyle.title(self, TITLE)
 	_build_list()
 	_hint = MenuStyle.hint(self, HINT)
+	# El crédito de la música va encima del pie, chiquito y apagado.
+	_credit = MenuStyle.label(Extras.MUSIC_CREDIT, MenuStyle.DIM)
+	_credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_credit.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_credit.offset_top = -86.0
+	_credit.offset_bottom = -58.0
+	add_child(_credit)
 	# La galería reproduce de verdad: estas dos capas van encima de todo.
 	_jumpscare = JUMPSCARE_OVERLAY.new()
 	_jumpscare.name = "JumpscareOverlay"
@@ -106,6 +114,9 @@ func _build_list() -> void:
 func _layout() -> void:
 	MenuStyle.place_title(_title, size, 0.1)
 	MenuStyle.place_hint(_hint, size)
+	if _credit != null:
+		_credit.add_theme_font_size_override("font_size",
+			MenuStyle.font_size(MenuStyle.SMALL_SIZE * 0.8, size.y))
 	if _list != null:
 		_list.layout()
 

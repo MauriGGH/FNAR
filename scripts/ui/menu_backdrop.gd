@@ -11,6 +11,10 @@ extends Control
 ## se nota únicamente en él. Y muy de vez en cuando sale `menu_tic_ultra`, con
 ## los tres a la vez y los ojos negros.
 ##
+## En cada tic suena **uno de los ocho golpes** de `assets/audio/menu/`, al azar
+## y sin repetir los dos últimos, justo en el cuadro del desgarro. El "ultra"
+## lleva además su glitch largo.
+##
 ## El desgarro, la separación de color y el congelado los hace
 ## `scenes/ui/menu_glitch.gdshader` sobre la propia imagen: no hay cuadros extra.
 ##
@@ -75,6 +79,8 @@ var _next_tic: float = 0.0
 ## El tic que se está viendo y el anterior, que no se repite.
 var _current: String = ""
 var _last: String = ""
+## Los dos últimos golpes que sonaron, para no repetirlos.
+var _recent_tics: Array[String] = []
 ## Lo que dura este tic respecto a lo normal (el ultra dura más).
 var _scale: float = 1.0
 
@@ -192,9 +198,7 @@ func _enter(phase: Phase) -> void:
 			_phase_left = PRE_TEAR_TIME * _scale
 			_picture.texture = _base
 			_set_tear(PRE_TEAR_PIXELS, RGB_PIXELS, 0.5, 2.0)
-			# El de los tres lleva su propio glitch, más largo.
-			AudioManager.play(Sounds.MENU_GLITCH_LONG if _current == ULTRA_ID
-				else Sounds.MENU_TIC)
+			_play_tic_sound()
 		Phase.TIC_TEAR:
 			# Entra el profe y el desgarro se vuelve una banda que baja.
 			_phase_left = TIC_TEAR_TIME * _scale
@@ -214,6 +218,24 @@ func _enter(phase: Phase) -> void:
 			_set_tear(0.0, 0.0, 0.5, 2.0)
 			ScreenFx.set_static_strength(_static_layer, STATIC_IDLE)
 			_next_tic = randf_range(MIN_GAP, MAX_GAP)
+
+
+## El golpe del tic, en el mismo cuadro en que la imagen se rompe. El "ultra"
+## suena con su glitch largo y el boom encima; los demás, con uno de los ocho
+## al azar.
+func _play_tic_sound() -> void:
+	if _current == ULTRA_ID:
+		AudioManager.play(Sounds.MENU_GLITCH_LONG)
+		AudioManager.play(Sounds.MENU_TIC_ULTRA)
+		return
+	var tic: String = Sounds.menu_tic(_recent_tics)
+	if tic.is_empty():
+		return
+	AudioManager.play(tic)
+	_recent_tics.append(tic)
+	# Solo se recuerdan los dos últimos.
+	while _recent_tics.size() > 2:
+		_recent_tics.remove_at(0)
 
 
 func _advance(delta: float) -> void:

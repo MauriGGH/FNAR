@@ -11,7 +11,7 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **28 de 81**. Generado desde el catálogo.
+Faltan **24 de 90**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 
@@ -28,13 +28,9 @@ Faltan **28 de 81**. Generado desde el catálogo.
 | id | archivo que se espera | bus | cómo debe sonar |
 | --- | --- | --- | --- |
 | `ticket_nuevo` | `ticket_nuevo.ogg` | Efectos | Campanita corta de aviso de sistema, dos notas que suben. |
-| `grito` | `grito.ogg` | Efectos | Grito genérico de jumpscare, agudo y saturado. Es el último recurso. |
 | `tono_ocupado` | `tono_ocupado.ogg` | Efectos | Tono de ocupado de teléfono fijo, dos o tres pitidos. |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | Campana de escuela con aplausos de fondo. |
 | `ninos_yay` | `ninos_yay.ogg` | Efectos | Niños gritando «yeeey», contentos, 1 o 2 s. Entra al acabarse el despertador. |
-| `se_aleja` | `se_aleja.ogg` | Efectos | Alguien que se despega del cristal y se va arrastrando los pies. |
-| `golpe_grave` | `golpe_grave.ogg` | Efectos | Golpe grave y seco, de los que pegan un susto. Medio segundo. |
-| `golpe_grave_menu` | `golpe_grave.ogg` | Efectos | El mismo golpe, para el tic del menú (va aparte por su volumen). |
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | Zumbido de lámparas y ventilador de oficina, en bucle sin corte. |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | Aire de pasillo vacío de noche, en bucle sin corte, muy tenue. |
 | `breaker_palanca` | `breaker_palanca.ogg` | Efectos | Palanca de tablero eléctrico bajando: dos clacs pesados. |

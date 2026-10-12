@@ -119,7 +119,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (81 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (90 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -128,6 +128,8 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
 | `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
+| `tic_boom`, `tic_golpe_metal`, `tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno al azar en cada uno |
+| `menu_capa`, `menu_capa2` | `menu_capa.ogg`, `menu_capa2.ogg` | Música | −22 / −24 | sí | las dos capas de ambiente encima de la música del menú |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
@@ -146,7 +148,6 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `se_aleja` | `se_aleja.ogg` | Efectos | −3 | no | uno del cristal se va con el cuarto destello |
 | `pasos_acercandose` | `pasos_acercandose.ogg` | Efectos | −2 | no | los tres pasos del apagón |
 | `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | no | el cuadro de una alucinación |
-| `golpe_grave_menu` | `golpe_grave.ogg` | Efectos | −10 | sí | el tic del fondo de los menús (mismo archivo) |
 | `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
 | `grito_<id>`, `grito_base_1`…`3` | `gritos/<id>.ogg` | Efectos | 0 | no | el grito de cada jumpscare y los tres de reserva |
 | `mamador_brecha` | `mamador_brecha.ogg` | Efectos | 0 | no | la irrupción del operativo, antes del WASTED |
@@ -737,9 +738,14 @@ la Custom Night.
 Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
 `scenes/ui/locked_art.gdshader`) y un "???" encima.
 
-**Audio del menú principal:** música de fondo en bucle (`menu_musica`, bus Música, −14 dB) y un
-hilo de estática (`estatica_camara`, −30 dB). Las dos se apagan solas al salir del menú
-(`_exit_tree`), para que no se cuelen en la noche.
+**Audio del menú principal:** tres pistas a la vez, todas en bucle por el bus Música: la
+principal, `menu_musica` (5:46, −12 dB), y encima dos capas de ambiente, `menu_capa` (−22 dB) y
+`menu_capa2` (−24 dB). Más un hilo de estática (`estatica_camara`, −30 dB). Todas se apagan solas
+al salir del menú (`_exit_tree`), para que no se cuelen en la noche.
+
+La pista principal es **«Halloween Atmosphere 2024» de Sascha Ende (ende.app), con licencia
+CC BY 4.0**, que pide nombrar al autor: el crédito sale escrito en la pantalla de **Extras**, y el
+texto vive en `Extras.MUSIC_CREDIT`.
 
 **Fondo de los menús (`scripts/ui/menu_backdrop.gd`):** de fondo va siempre
 `assets/art/menu/menu_fondo_0.png`, con líneas de escaneo suaves y un poco de estática. Encima, el
@@ -755,10 +761,17 @@ El tic dura unos **0.35 s** y va en cuatro tramos:
 
 | Tramo | Qué se ve |
 | --- | --- |
-| 0.07 s | Todavía `menu_fondo_0`, pero desgarrado de arriba abajo: las franjas corridas de 10 a 40 px a los lados y los colores separados. **El golpe suena aquí** (`golpe_grave_menu`, el mismo `golpe_grave.ogg` a −4 dB), con el primer cuadro roto |
+| 0.07 s | Todavía `menu_fondo_0`, pero desgarrado de arriba abajo: las franjas corridas de 10 a 40 px a los lados y los colores separados. **El golpe suena aquí**, con el primer cuadro roto |
 | 0.10 s | Entra el cuadro del profe y el desgarro se vuelve una banda que **baja** de arriba abajo |
 | 0.15 s | **Congelado**: el profe quieto y sin desgarro, que es lo que asusta |
 | 0.05 s | Uno o dos cuadros de estática a 0.5 de opacidad, que tapan la vuelta a `menu_fondo_0` |
+
+**El golpe del tic es uno de ocho**, en `assets/audio/menu/`: `tic_boom`, `tic_golpe_metal`,
+`tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe` y `tic_estatica`,
+todos a −4 dB. Se sortea uno en cada tic **sin repetir ninguno de los dos últimos**
+(`Sounds.menu_tic()`), así que no se le agarra el ritmo. El del "ultra" es aparte:
+`menu_glitch_largo` **y** `tic_boom` juntos. Los ocho se prueban desde F1 → Audio, sueltos o
+sorteados como en el menú.
 
 **No repite el profe anterior**, y **uno de cada ocho** tics sale el ultra, con la misma secuencia
 un 35 % más larga (medio segundo). El desgarro, la separación de color y el congelado los hace

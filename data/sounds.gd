@@ -47,14 +47,22 @@ const ALARM: String = "despertador"
 const SCHOOL_BELL: String = "campana_escuela"
 ## Los niños gritando "¡yeeey!" al acabarse las campanadas de las 6 AM.
 const CHILDREN_CHEER: String = "ninos_yay"
-## La música del menú principal, en bucle.
+## La música del menú principal: una pista larga en bucle y, encima, dos capas
+## de ambiente más bajas. Las tres suenan a la vez.
 const MENU_MUSIC: String = "menu_musica"
+const MENU_LAYERS: Array[String] = ["menu_capa", "menu_capa2"]
 ## Y la de Extras y la Custom Night, también en bucle.
 const EXTRAS_MUSIC: String = "extras_musica"
 const FOOTSTEPS: String = "pasos_acercandose"
 const LOW_HIT: String = "golpe_grave"
-## El mismo golpe grave, más bajito, para el tic del menú.
-const MENU_TIC: String = "golpe_grave_menu"
+## Los ocho golpes del tic del menú. En cada tic suena uno al azar, y no se
+## repite ninguno de los dos últimos: así no se le agarra el ritmo.
+const MENU_TICS: Array[String] = [
+	"tic_boom", "tic_golpe_metal", "tic_vidrio", "tic_rechinido",
+	"tic_raspon", "tic_golpe_eco", "tic_whoosh_golpe", "tic_estatica",
+]
+## El que acompaña al glitch largo en el tic "ultra", el de los tres profes.
+const MENU_TIC_ULTRA: String = "tic_boom"
 ## Cuando uno de los del cristal se va con el cuarto destello.
 const GLASS_REPEL: String = "se_aleja"
 ## Ambiente, en bucle toda la noche.
@@ -146,6 +154,22 @@ const IMPRESSIVE: String = "es_impresionante"
 ## Las llamadas grabadas con las que empieza cada noche. Tampoco llevan
 ## provisional: si no está el archivo, esa noche no hay llamada y ya.
 const NIGHT_CALL: String = "llamada_noche%d"
+
+
+## El golpe que le toca a este tic del menú: uno de los ocho al azar, saltándose
+## los dos últimos que sonaron, para que no se le agarre el ritmo. Si no hay
+## ninguno grabado devuelve vacío, y entonces el tic va mudo.
+static func menu_tic(recent: Array[String]) -> String:
+	var pool: Array[String] = []
+	for id: String in MENU_TICS:
+		if not id in recent and AudioManager.has_real_file(id):
+			pool.append(id)
+	if pool.is_empty():
+		# Con dos o tres grabados hay que permitir repetir algo.
+		for id: String in MENU_TICS:
+			if AudioManager.has_real_file(id):
+				pool.append(id)
+	return pool[randi() % pool.size()] if not pool.is_empty() else ""
 
 
 ## El golpe de metal que le toca a este porrazo: uno de los tres al azar, pero
@@ -303,10 +327,60 @@ const CATALOG: Dictionary = {
 		"volume_db": -4.0, "generator": "", "pan": PAN_CENTER,
 		"desc": "Un llavero colgando que tintinea al caminar. Suena con los pasos de Mamador.",
 	},
+	"tic_boom": {
+		"file": "menu/tic_boom.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Un boom grave y largo, el más gordo de los ocho. Es el del tic «ultra».",
+	},
+	"tic_golpe_metal": {
+		"file": "menu/tic_golpe_metal.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Un golpe contra metal, con su resonancia.",
+	},
+	"tic_vidrio": {
+		"file": "menu/tic_vidrio.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Vidrio que se raja de golpe.",
+	},
+	"tic_rechinido": {
+		"file": "menu/tic_rechinido.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Un rechinido metálico, incómodo.",
+	},
+	"tic_raspon": {
+		"file": "menu/tic_raspon.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Algo que raspa, seco y corto.",
+	},
+	"tic_golpe_eco": {
+		"file": "menu/tic_golpe_eco.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Un golpe con mucho eco, como en un pasillo vacío.",
+	},
+	"tic_whoosh_golpe": {
+		"file": "menu/tic_whoosh_golpe.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Un barrido de aire que acaba en golpe.",
+	},
+	"tic_estatica": {
+		"file": "menu/tic_estatica.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Tic del menú: Un chasquido de estática, el más corto de todos.",
+	},
 	"menu_musica": {
 		"file": "menu_musica.ogg", "bus": "Música",
-		"volume_db": -14.0, "generator": "menu_music",
-		"desc": "Música del menú: zumbido grave y lento, inquietante, en bucle sin corte.",
+		"volume_db": -12.0, "generator": "menu_music",
+		"desc": "La pista principal del menú, en bucle (5:46). Es «Halloween Atmosphere 2024» de Sascha Ende, CC BY 4.0.",
+	},
+	"menu_capa": {
+		"file": "menu_capa.ogg", "bus": "Música",
+		"volume_db": -22.0, "generator": "",
+		"desc": "Primera capa de ambiente encima de la música del menú, en bucle sin corte.",
+	},
+	"menu_capa2": {
+		"file": "menu_capa2.ogg", "bus": "Música",
+		"volume_db": -24.0, "generator": "",
+		"desc": "Segunda capa de ambiente del menú, más baja todavía, en bucle sin corte.",
 	},
 	"pasos_acercandose": {
 		"file": "pasos_acercandose.ogg", "bus": "Efectos",
@@ -322,11 +396,6 @@ const CATALOG: Dictionary = {
 		"file": "golpe_grave.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "low_hit",
 		"desc": "Golpe grave y seco, de los que pegan un susto. Medio segundo.",
-	},
-	"golpe_grave_menu": {
-		"file": "golpe_grave.ogg", "bus": "Efectos",
-		"volume_db": -4.0, "generator": "low_hit",
-		"desc": "El mismo golpe, para el tic del menú (va aparte por su volumen).",
 	},
 	"ambiente_oficina": {
 		"file": "ambiente_oficina.ogg", "bus": "Ambiente",
@@ -600,6 +669,7 @@ const LOOPING: Array[String] = [
 	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
 	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
+	"menu_capa", "menu_capa2",
 	# El zumbido de Armando dura lo que dure su toma de pantalla.
 	"armando_glitch_bucle",
 	# Los pasos de Barcosa suenan toda su carrera, así que van en bucle.

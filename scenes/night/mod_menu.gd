@@ -35,6 +35,8 @@ var _column: VBoxContainer = null
 var _keep_running: CheckBox = null
 var _camera_states: Label = null
 var _sections: Dictionary = {}  # título -> VBoxContainer del cuerpo
+## Los dos últimos golpes del tic que se probaron aquí, para no repetirlos.
+var _recent_menu_tics: Array[String] = []
 
 
 func _ready() -> void:
@@ -589,6 +591,23 @@ func _build_audio_section() -> void:
 		var path: String = MissingAudioReport.write()
 		print("[audio] faltan %d de %d; la lista quedó en %s" % [
 			MissingAudioReport.missing_ids().size(), Sounds.CATALOG.size(), path]))
+
+	_add_label(body, "Golpes del tic del menú (uno por tic, sin repetir):")
+	for id: String in Sounds.MENU_TICS:
+		var tic_id: String = id
+		_add_button(body, tic_id, func() -> void: AudioManager.play(tic_id))
+	_add_button(body, "Uno al azar, como en el menú", func() -> void:
+		var tic: String = Sounds.menu_tic(_recent_menu_tics)
+		if tic.is_empty():
+			return
+		print("[audio] tic del menú: %s" % tic)
+		AudioManager.play(tic)
+		_recent_menu_tics.append(tic)
+		while _recent_menu_tics.size() > 2:
+			_recent_menu_tics.remove_at(0))
+	_add_button(body, "El del ultra (glitch largo + boom)", func() -> void:
+		AudioManager.play(Sounds.MENU_GLITCH_LONG)
+		AudioManager.play(Sounds.MENU_TIC_ULTRA))
 
 	_add_label(body, "Sonidos lejanos:")
 	_add_button(body, "Uno ambiental al azar", func() -> void:

@@ -61,14 +61,19 @@ func _ready() -> void:
 	_options_panel.closed.connect(_show_list)
 	_layout()
 	resized.connect(_layout)
-	# El menú tiene su propio ambiente: música de fondo y un hilo de estática.
+	# El menú tiene su propio ambiente: la pista principal, sus dos capas de
+	# ambiente encima (las tres a la vez) y un hilo de estática.
 	AudioManager.play_loop(Sounds.MENU_MUSIC)
+	for layer: String in Sounds.MENU_LAYERS:
+		AudioManager.play_loop(layer)
 	AudioManager.play_loop(Sounds.CAMERA_STATIC)
 
 
 ## Al salir del menú se lleva su audio con él, que si no se cuela en la noche.
 func _exit_tree() -> void:
 	AudioManager.stop(Sounds.MENU_MUSIC)
+	for layer: String in Sounds.MENU_LAYERS:
+		AudioManager.stop(layer)
 	AudioManager.stop(Sounds.CAMERA_STATIC)
 
 
