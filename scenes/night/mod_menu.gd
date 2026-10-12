@@ -415,6 +415,14 @@ func _build_screens_section() -> void:
 	body.visible = false
 	_add_button(body, "6 AM (pantalla de pago)", func() -> void: _go_to(Screens.WIN))
 
+	_add_button(body, "Pantalla WASTED (delito federal)", func() -> void:
+		close()
+		_night.wasted_screen.play(
+			JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text()))
+	_add_button(body, "Pantalla WASTED (ludopatía)", func() -> void:
+		close()
+		_night.wasted_screen.play(JumpscareOverlay.mamador_image(), "LUDOPATÍA"))
+
 	_add_label(body, "Game over con esta causa:")
 	var causes: OptionButton = OptionButton.new()
 	causes.focus_mode = Control.FOCUS_NONE

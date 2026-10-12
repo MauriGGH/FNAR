@@ -51,6 +51,7 @@ const FLASH_TIME: float = 0.28
 @onready var voice_line: Control = $Hud/VoiceLine
 @onready var distant: Node = $DistantSounds
 @onready var controls_card: Control = $Hud/ControlsCard
+@onready var wasted_screen: WastedScreen = $Hud/WastedScreen
 @onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
@@ -143,6 +144,7 @@ func _ready() -> void:
 	PowerManager.power_depleted.connect(_on_power_depleted)
 	blackout_death.strike.connect(_on_blackout_strike)
 	jumpscare.finished.connect(_on_jumpscare_finished)
+	wasted_screen.finished.connect(_on_jumpscare_finished)
 
 	camera_system.set_animatronics(_animatronics)
 	camera_system.opened.connect(_on_cameras_opened)
@@ -753,9 +755,9 @@ func _on_game_over(cause: String) -> void:
 		caption = animatronic.jumpscare_caption()
 		break
 	SaveGame.unlock_jumpscare(cause)
-	# Mamador no salta: su pantalla es la de los militares.
+	# Mamador no salta: su final es la pantalla de WASTED.
 	if cause == Mamador.GAME_OVER_CAUSE:
-		jumpscare.play_mamador()
+		wasted_screen.play(JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text())
 		return
 	if jumpscare_id.is_empty():
 		get_tree().change_scene_to_file(Screens.GAME_OVER)
@@ -780,6 +782,7 @@ func _end_night() -> void:
 	voice_line.stop()
 	distant.stop_all()
 	controls_card.close_card()
+	wasted_screen.stop()
 	AudioManager.stop_all()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

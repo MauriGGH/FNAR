@@ -40,7 +40,13 @@ const SHEETS: Dictionary = {
 	"come_trabas": ["Come Trabas", "rol Puppet", "La botarga con el alma de Santi, alumno de Sistemas. Solo la cuerda la mantiene quieta."],
 }
 
+const JUMPSCARE_OVERLAY: GDScript = preload("res://scenes/night/jumpscare_overlay.gd")
+
 var _section: Section = Section.DOSSIERS
+## Las dos capas con las que la galería reproduce: la del salto de siempre y
+## la de WASTED, que es la de Mamador.
+var _jumpscare: Control = null
+var _wasted: WastedScreen = null
 var _content: Control = null
 
 
@@ -54,6 +60,15 @@ func _ready() -> void:
 	add_child(_content)
 	_build_header()
 	_build_footer()
+	# La galería reproduce de verdad: estas dos capas van encima de todo.
+	_jumpscare = JUMPSCARE_OVERLAY.new()
+	_jumpscare.name = "JumpscareOverlay"
+	_jumpscare.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_jumpscare.visible = false
+	add_child(_jumpscare)
+	_wasted = WastedScreen.new()
+	_wasted.name = "WastedScreen"
+	add_child(_wasted)
 	_show_section(Section.DOSSIERS)
 
 
@@ -189,11 +204,27 @@ func _build_jumpscares() -> void:
 		var cause: String = str(sheet[0])
 		var seen: bool = SaveGame.has_jumpscare(cause)
 		# La galería usa las imágenes de jumpscare, no los expedientes.
-		grid.add_child(_make_card(
+		var card: Control = _make_card(
 			Extras.jumpscare_texture(character_id) if seen else null,
 			cause if seen else LOCKED_TEXT,
 			"visto" if seen else "",
-			"Te atrapó al menos una vez." if seen else ""))
+			"Clic para verlo otra vez." if seen else "")
+		if seen:
+			card.gui_input.connect(_on_jumpscare_input.bind(character_id))
+			card.mouse_filter = Control.MOUSE_FILTER_STOP
+		grid.add_child(card)
+
+
+## Clic en una ficha: se reproduce. El de Mamador no es un salto, es la
+## pantalla de WASTED, igual que en la noche.
+func _on_jumpscare_input(event: InputEvent, character_id: String) -> void:
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click == null or not click.pressed:
+		return
+	if character_id == "mamador":
+		_wasted.play(JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text())
+		return
+	_jumpscare.play(Extras.jumpscare_id(character_id))
 
 
 func _on_newspaper_input(event: InputEvent, index: int) -> void:

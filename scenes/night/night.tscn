@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
@@ -30,6 +30,7 @@
 [ext_resource type="Script" path="res://scenes/night/voice_line.gd" id="75_voice"]
 [ext_resource type="Script" path="res://scenes/night/distant_sounds.gd" id="76_far"]
 [ext_resource type="Script" path="res://scenes/night/controls_card.gd" id="77_cards"]
+[ext_resource type="Script" path="res://scenes/ui/wasted_screen.gd" id="78_wasted"]
 [ext_resource type="Script" path="res://scenes/night/mod_menu.gd" id="80_mod"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
@@ -334,6 +335,16 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 1)
+
+[node name="WastedScreen" type="Control" parent="Hud"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("78_wasted")
 
 [node name="ControlsCard" type="Control" parent="Hud"]
 layout_mode = 1

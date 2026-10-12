@@ -380,9 +380,24 @@ Las imágenes están en `assets/art/jumpscares/`: `jumpscare_<id>.png` y `jumpsc
 
 La animación de cada muerte es la misma: la variante `_a` durante 0.12 s, corte a la imagen final con un zoom de 1.0 a 1.15 en 0.5 s, temblor fuerte, un destello blanco de un cuadro y un grito provisional; después estática y la pantalla de game over con su causa.
 
-Mamador no salta: su game over muestra `mamador_militares` con un zoom lento, luces rojo y azul parpadeando encima y el texto "DELITO FEDERAL" grande al centro, y luego la causa.
+Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
+(`scenes/ui/wasted_screen.gd`). Ya no lleva luces de policía.
 
-La galería de Jumpscares de Extras reproduce estas mismas imágenes.
+| Cuándo | Qué pasa |
+| --- | --- |
+| 0.0 s | `jumpscare_mamador_militares` a pantalla completa, con un zoom de 1.0 a 1.08 que no para en toda la secuencia |
+| 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo; suena `wasted` |
+| 1.2 s | Entra una franja negra (alfa 0.55) de lado a lado, centrada, de alto 16 % de la pantalla, con fade de 0.3 s |
+| 1.2 s | Encima, "WASTED" en `assets/fonts/pricedown.otf`, rojo #C21E1E con contorno negro, escalando de 1.15 a 1.0 en 0.25 s |
+| 2.2 s | Debajo de la franja, el texto de abajo en la misma fuente, blanco con contorno, al 40 % del tamaño de WASTED |
+| 5.2 s | Pasa a la pantalla de game over normal, con su causa |
+
+**El texto de abajo es un parámetro**, así que la pantalla se reutiliza: el game over de Mamador
+pone "DELITO FEDERAL" y la tarea de la baraja pondrá "LUDOPATÍA". Si falta la fuente se cae a
+Oswald en negritas (`Fonts.display()`), y si falta `wasted.ogg`, a un provisional por código.
+
+La galería de Jumpscares de Extras **reproduce de verdad**: clic en una ficha y sale su salto, y
+la de Mamador lanza esta misma pantalla de WASTED.
 
 ## Reglas para que las mecánicas no choquen
 

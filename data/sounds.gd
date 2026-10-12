@@ -56,6 +56,8 @@ const BREAKER_LEVER: String = "breaker_palanca"
 const CAMERA_STATIC: String = "estatica_camara"
 ## El clac de colgar, al acabar o silenciar una llamada.
 const PHONE_HANG_UP: String = "telefono_colgar"
+## El golpe de la pantalla de WASTED.
+const WASTED: String = "wasted"
 
 # --- Lo que se oye de lejos --------------------------------------------------
 const FAR_BARCOSA_RUN: String = "barcosa_corre"
@@ -178,6 +180,10 @@ const CATALOG: Dictionary = {
 	"telefono_colgar": {
 		"file": "telefono_colgar.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "phone_hang_up",
+	},
+	"wasted": {
+		"file": "wasted.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "wasted_sting",
 	},
 	"estatica_camara": {
 		"file": "estatica_camara.ogg", "bus": "Ambiente",

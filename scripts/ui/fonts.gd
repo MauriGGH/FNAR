@@ -16,6 +16,9 @@ extends RefCounted
 const TERMINAL_PATH: String = "res://assets/fonts/VT323-Regular.ttf"
 const TYPEWRITER_PATH: String = "res://assets/fonts/SpecialElite-Regular.ttf"
 const MENU_PATH: String = "res://assets/fonts/Oswald-Variable.ttf"
+## La de los titulones tipo GTA (la pantalla de WASTED). Si no está, se cae a
+## Oswald en negritas, que es lo más parecido que hay en el proyecto.
+const DISPLAY_PATH: String = "res://assets/fonts/pricedown.otf"
 
 ## El peso de Oswald para los títulos. Es una fuente variable, así que el grosor
 ## se pide por eje en vez de cargar otro archivo.
@@ -32,6 +35,12 @@ static func terminal() -> Font:
 ## La de máquina de escribir.
 static func typewriter() -> Font:
 	return _load_font(TYPEWRITER_PATH)
+
+
+## La de los titulones. Si falta, Oswald en grueso.
+static func display() -> Font:
+	var font: Font = _load_font(DISPLAY_PATH)
+	return font if font != null else menu_bold()
 
 
 ## La de los menús.

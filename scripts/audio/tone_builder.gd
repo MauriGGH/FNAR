@@ -76,6 +76,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return far_laugh()
 		"far_dishes":
 			return far_dishes()
+		"wasted_sting":
+			return wasted_sting()
 	return null
 
 # --- Cajita musical ----------------------------------------------------------
@@ -708,6 +710,27 @@ static func far_dishes() -> AudioStreamWAV:
 		_add_bell(buffer, randf_range(0.0, 1.0), randf_range(1400.0, 2600.0),
 			[1.0, 2.6] as Array[float], [1.0, 0.45] as Array[float],
 			26.0, 0.35, randf_range(0.2, 0.4))
+	return _to_wav(buffer)
+
+
+# --- El golpe de WASTED ------------------------------------------------------
+## Un acorde grave que cae y se queda sonando: el "se acabó". Sin voz.
+const WASTED_LENGTH: float = 2.6
+## Tres notas de un acorde menor, bien abajo.
+const WASTED_HZ: Array[float] = [55.0, 65.4, 82.4]
+const WASTED_DECAY: float = 1.1
+const WASTED_AMPLITUDE: float = 0.55
+## El golpe seco del principio, antes del acorde.
+const WASTED_HIT_HZ: float = 44.0
+
+
+static func wasted_sting() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(WASTED_LENGTH)
+	_add_thud(buffer, 0.0, WASTED_HIT_HZ, 0.9, 0.9, 5.0, 0.25)
+	for hz: float in WASTED_HZ:
+		_add_bell(buffer, 0.02, hz, [1.0, 2.0, 3.0] as Array[float],
+			[1.0, 0.35, 0.15] as Array[float], WASTED_DECAY, WASTED_LENGTH,
+			WASTED_AMPLITUDE / float(WASTED_HZ.size()))
 	return _to_wav(buffer)
 
 

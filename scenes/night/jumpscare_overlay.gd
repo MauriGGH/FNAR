@@ -1,3 +1,4 @@
+class_name JumpscareOverlay
 extends Control
 
 ## El salto de cada muerte. Siempre igual: la variante _a un instante, corte
@@ -34,11 +35,9 @@ const SCARE_TIME: float = 0.5
 const SCARE_ID: String = "audel_susto"
 
 # La pantalla de Mamador.
+## El id de la imagen de Mamador. La secuencia la hace WastedScreen.
 const MAMADOR_ID: String = "mamador_militares"
-const MAMADOR_TIME: float = 3.2
-const MAMADOR_ZOOM_TO: float = 1.06
 const MAMADOR_TEXT: String = "DELITO FEDERAL"
-const MAMADOR_TEXT_SIZE: int = 74
 
 ## El cartel en rojo del jumpscare (el nombre del guardia, en el de Rochis).
 ## Medido a 1080p y escalado con el alto, como el resto de los textos grandes.
@@ -47,15 +46,12 @@ const CAPTION_SIZE_AT_1080: float = 110.0
 const CAPTION_REFERENCE_HEIGHT: float = 1080.0
 ## Dónde cae, en fracción de la pantalla: un poco por debajo del centro.
 const CAPTION_AT: Vector2 = Vector2(0.5, 0.78)
-const MAMADOR_LIGHT_TIME: float = 0.28
-const RED_LIGHT: Color = Color(1.0, 0.1, 0.15, 0.26)
-const BLUE_LIGHT: Color = Color(0.2, 0.35, 1.0, 0.26)
 
 const TEXT_COLOR: Color = Color(1.0, 0.96, 0.92)
 const OUTLINE_COLOR: Color = Color(0.0, 0.0, 0.0, 0.95)
 const OUTLINE_SIZE: int = 14
 
-enum Phase { NONE, FIRST, MAIN, STATIC, SCARE_BLACK, SCARE, MAMADOR }
+enum Phase { NONE, FIRST, MAIN, STATIC, SCARE_BLACK, SCARE }
 
 var is_playing: bool = false
 
@@ -70,13 +66,20 @@ var _first: Texture2D = null
 var _main: Texture2D = null
 var _cache: Dictionary = {}
 
-@onready var static_overlay: ColorRect = $StaticOverlay
+## La capa de estática del final. Normalmente viene en la escena; si este
+## overlay se usa suelto (la galería de Extras lo crea por código), se arma
+## aquí, para que la secuencia salga igual en los dos sitios.
+var static_overlay: ColorRect = null
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP  # Nada de clicar por debajo.
-	static_overlay.visible = false
+	static_overlay = get_node_or_null("StaticOverlay") as ColorRect
+	if static_overlay == null:
+		static_overlay = ScreenFx.add_static(self, 1.0)
+	if static_overlay != null:
+		static_overlay.visible = false
 
 
 ## Corta lo que esté puesto, sin avisar a nadie. Lo usa el panel de pruebas
@@ -108,18 +111,14 @@ func play(jumpscare_id: String, caption: String = "") -> void:
 	AudioManager.play(Sounds.SCREAM)
 
 
-## La pantalla de Mamador: no salta, pero igual es el final.
-func play_mamador() -> void:
-	if is_playing:
-		return
-	_first = null
-	_main = _texture(MAMADOR_ID)
-	is_playing = true
-	visible = true
-	_elapsed = 0.0
-	_zoom = ZOOM_FROM
-	_flash_left = 0
-	_set_phase(Phase.MAMADOR, MAMADOR_TIME)
+## Mamador no salta: su final es la pantalla de WASTED, que vive aparte. Aquí
+## solo quedan los datos de qué imagen y qué texto le tocan.
+static func mamador_image() -> String:
+	return MAMADOR_ID
+
+
+static func mamador_text() -> String:
+	return MAMADOR_TEXT
 
 
 ## El susto del cortaso: no mata, así que al acabar no avisa a nadie.
@@ -148,11 +147,12 @@ func _texture(name: String) -> Texture2D:
 func _set_phase(phase: Phase, seconds: float) -> void:
 	_phase = phase
 	_left = seconds
-	static_overlay.visible = phase == Phase.STATIC
-	if static_overlay.visible:
-		var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-		if material != null:
-			material.set_shader_parameter("strength", STATIC_STRENGTH)
+	if static_overlay != null:
+		static_overlay.visible = phase == Phase.STATIC
+		if static_overlay.visible:
+			var material: ShaderMaterial = static_overlay.material as ShaderMaterial
+			if material != null:
+				material.set_shader_parameter("strength", STATIC_STRENGTH)
 	queue_redraw()
 
 
@@ -165,8 +165,6 @@ func _process(delta: float) -> void:
 		_flash_left -= 1
 	if _phase == Phase.MAIN:
 		_zoom = lerpf(ZOOM_FROM, ZOOM_TO, clampf(1.0 - _left / ZOOM_TIME, 0.0, 1.0))
-	elif _phase == Phase.MAMADOR:
-		_zoom = lerpf(ZOOM_FROM, MAMADOR_ZOOM_TO, clampf(1.0 - _left / MAMADOR_TIME, 0.0, 1.0))
 	queue_redraw()
 	if _left > 0.0:
 		return
@@ -184,7 +182,8 @@ func _process(delta: float) -> void:
 func _stop(notify: bool) -> void:
 	is_playing = false
 	visible = false
-	static_overlay.visible = false
+	if static_overlay != null:
+		static_overlay.visible = false
 	_phase = Phase.NONE
 	if notify:
 		finished.emit()
@@ -205,10 +204,6 @@ func _draw() -> void:
 		Phase.SCARE:
 			_draw_image(_main if _main != null else _first, 1.0, _shake() * 0.5)
 			_draw_spark()
-		Phase.MAMADOR:
-			_draw_image(_main, _zoom, Vector2.ZERO)
-			_draw_police_lights()
-			_draw_centered(MAMADOR_TEXT, MAMADOR_TEXT_SIZE, size * 0.5)
 		Phase.STATIC:
 			pass  # La estática la pinta su propio nodo.
 	if _flash_left > 0:
@@ -238,13 +233,6 @@ func _draw_spark() -> void:
 
 
 ## Las luces de la patrulla: medio rojo y medio azul, alternando.
-func _draw_police_lights() -> void:
-	var red_first: bool = fmod(_elapsed, MAMADOR_LIGHT_TIME * 2.0) < MAMADOR_LIGHT_TIME
-	var half: Rect2 = Rect2(Vector2.ZERO, Vector2(size.x * 0.5, size.y))
-	draw_rect(half, RED_LIGHT if red_first else BLUE_LIGHT)
-	draw_rect(Rect2(Vector2(size.x * 0.5, 0.0), half.size), BLUE_LIGHT if red_first else RED_LIGHT)
-
-
 ## El cartel en rojo encima del salto. Tiembla con la imagen, para que parezca
 ## parte del golpe y no una etiqueta pegada.
 func _draw_caption() -> void:
