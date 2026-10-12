@@ -43,7 +43,18 @@ res://
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
-- **Oficina:** tres vistas que se mueven **solo con A y D o con las flechas**, nunca con el mouse. Mantener una desplaza la vista a ese lado a velocidad constante, con un arranque y un frenado cortos; al llegar al borde de la vista y seguir manteniendo, la cabeza gira a la de al lado con un barrido de 0.35 s. La vista nueva entra por el lado por el que vienes, para que el recorrido siga donde lo dejaste. Soltar el monitor te deja mirando donde estabas. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+- **Oficina:** tres vistas, con dos movimientos que no se pisan.
+  - **El mouse mueve la vista por dentro.** Cada vista se dibuja al **112 %** de la pantalla y se
+    desplaza hacia donde está el cursor: hasta **±6 % a lo ancho y ±2 % a lo alto**, suavizado y
+    con una zona muerta en el centro para que no tiemble. **El mouse nunca cambia de vista**,
+    aunque lo dejes pegado al borde.
+  - **A y D (o las flechas) cambian de vista.** Un toque y la cabeza gira a la de al lado con un
+    barrido de 0.35 s y su desenfoque. No hay que mantener nada.
+  Todo lo que se ve en una vista (zonas de clic, recortes de profes, siluetas, cortina, luz de la
+  linterna) cuelga de su nodo `Content`, así que se mueve con la imagen sin tocarlo aparte y los
+  clics siguen cayendo en su objeto. Mientras la cabeza gira o la vista se acerca a la PC o al
+  breaker manda el tween, no el parallax, para que no se peleen por la posición. Abrir y cerrar el
+  monitor no cambia de vista. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
   Las fotos son de **1375x768** y vienen con su color y su oscuridad finales: el código **no les
   pone ningún filtro, tinte ni modulate**; el shader de vista solo hace el desenfoque del giro.
   La vista central está **a oscuras**, como el pasillo de FNAF 2: de fondo va

@@ -26,7 +26,7 @@ const PAUSE_KEY: Key = KEY_ESCAPE
 static func lines() -> Array[Dictionary]:
 	var look: String = "%s  /  %s" % [keys_of(ACTION_TURN_LEFT), keys_of(ACTION_TURN_RIGHT)]
 	return [
-		{"keys": look, "what": "Mirar a los lados (mantener para girar)"},
+		{"keys": look, "what": "Cambiar de vista (el mouse mueve la que ves)"},
 		{"keys": keys_of(ACTION_CAMERAS), "what": "Abrir y cerrar el monitor"},
 		{"keys": "Clic", "what": "Cambiar de cámara: en el mapa del monitor"},
 		{"keys": key_name(FLASHLIGHT_KEY), "what": "Linterna: mantener (o clic en el cristal)"},
