@@ -29,11 +29,12 @@ res://
   scenes/tasks/    una escena por tarea (minijuego)
   scripts/characters/  animatronic.gd (clase base) y un script por profe
   data/            rooms.gd (grafo de habitaciones), nights.gd (niveles por noche)
-  scenes/ui/           pantalla de carga y shaders compartidos (estática, scanlines, blanco y negro, bloqueado)
+  scenes/ui/           pantalla de carga, los cuadros de estática y los shaders compartidos (scanlines, blanco y negro, bloqueado)
   scripts/ui/          ayudantes: fonts.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd, options_panel.gd
   scripts/audio/       tone_builder.gd, los sonidos provisionales generados por código
   assets/art/backgrounds, assets/art/characters, assets/audio
-  assets/fonts/        VT323, Special Elite, Oswald y game_theme.tres
+  assets/art/screens/  las pantallas que son una imagen (solicitud_empleo, pago_noche) y static/
+  assets/fonts/        VT323, Special Elite, Oswald, Share Tech Mono, DSEG14, Reenie Beanie y game_theme.tres
 ```
 
 ## Sistemas principales
@@ -98,6 +99,7 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | −14 | sí | toda la noche; se calla con el apagón |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
+| `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
 | `cajita_musical_apagon` | `cajita_musical.ogg` | Música | −4 | no | las chispas del apagón (mismo archivo) |
 | `telefono_timbre` | `telefono_timbre.ogg` | Efectos | −6 | sí | mientras el teléfono suena |
@@ -209,15 +211,19 @@ El profe las pide con la señal `said_line(id)` de `Animatronic`; el `night.gd` 
 
 ## Tipografías
 
-Tres familias en `assets/fonts/`, pedidas siempre por `Fonts` (`scripts/ui/fonts.gd`), que las
-cachea. El Theme global `assets/fonts/game_theme.tres` pone Oswald en todo; las otras dos van
-como override donde toca.
+Las familias viven en `assets/fonts/` y se piden siempre por `Fonts` (`scripts/ui/fonts.gd`), que
+las cachea. El Theme global `assets/fonts/game_theme.tres` pone Oswald en todo; las demás van como
+override donde toca. `Fonts.by_name()` resuelve la que pide un dato por su nombre, que es como la
+eligen los campos de `data/pantallas_campos.json`.
 
-| Fuente | Para qué | Licencia |
-| --- | --- | --- |
-| VT323 | lo que sale de una pantalla o un aparato: cámaras, PC, relojes, breaker, patch panel | OFL |
-| Special Elite | lo escrito a máquina: documentos, periódicos, causa del game over, intro de noche, 6 AM | Apache 2.0 |
-| Oswald (variable) | menús, botones y etiquetas | OFL |
+| Fuente | Cómo se pide | Para qué | Licencia |
+| --- | --- | --- | --- |
+| VT323 | `Fonts.terminal()` | lo que sale de una pantalla o un aparato: cámaras, PC, relojes, breaker, patch panel, y el título del menú | OFL |
+| Special Elite | `Fonts.typewriter()` | lo escrito a máquina: documentos, periódicos, causa del game over, los campos de la solicitud y del recibo | Apache 2.0 |
+| Oswald (variable) | `Fonts.menu()` | menús, botones y etiquetas | OFL |
+| Share Tech Mono | `Fonts.mono()` | el reloj de la intro de noche | OFL |
+| DSEG14 Classic Bold | `Fonts.digital()` | el display de segmentos del 6 AM | OFL |
+| Reenie Beanie | `Fonts.hand()` | lo escrito a mano: la firma de la solicitud y la nota del recibo | OFL |
 
 ## Tutorial de la noche 1
 
@@ -237,12 +243,18 @@ estaban a fuego en el código (`FLASHLIGHT_KEY`, `PAUSE_KEY`), que ahora `office
 
 ## Transiciones y pantallas
 
-- **Intro de noche:** negro con "12:00 AM" y "Noche N" a máquina, con un golpe de estática al
-  aparecer y otro al irse. Unos 2.5 s y entra sola a la noche.
-- **6 AM:** antes de la pantalla de pago, negro con "5 AM" grande; el 5 sube como un rodillo y
-  entra el 6 en 1.5 s, el texto pasa de blanco a dorado, suena el despertador y luego la campana
-  de la escuela con aplausos (provisionales por código, en `alarm_sound.gd` y `bell_sound.gd`).
-  3 s quieto y recién entonces se ve cuánto te pagan.
+- **Estática:** son los ocho cuadros de `assets/art/screens/static/estatica_0..7.png` (480x270),
+  escalados con filtro **nearest** y pasando a ~24 fps desde un cuadro al azar. No hay shader: lo
+  lleva `scenes/ui/static_frames.gd` (`StaticFrames`), que es un `TextureRect` con
+  `set_strength(0..1)` para su opacidad. Se pide con `ScreenFx.add_static(padre, fuerza)` y cada
+  sitio tiene la suya (la cámara en reposo apenas se nota, el jumpscare tapa todo).
+- **Intro de noche:** negro pelón con "12:00 AM" al centro y "1ª noche" (2ª, 3ª...) debajo, en
+  Share Tech Mono blanco. Un golpe de estática de 0.3 s al aparecer y otro al irse. Unos 2.5 s y
+  entra sola a la noche.
+- **6 AM:** negro con "5 AM" grande en la fuente de segmentos; el 5 sube como un rodillo y entra el
+  6 en 0.8 s, el texto pasa de blanco a dorado, suena el despertador y luego la campana de la
+  escuela con aplausos. Con la campana cae confeti de triangulitos de colores durante 4 s
+  (`scenes/win_screen/confetti_fall.gd`, dibujado por código). Al acabar, el recorte de esa noche.
 - **Game over:** un segundo de estática fuerte y, al aclararse, la cámara vacía del lugar de donde
   salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
   Clic en cualquier lado vuelve al menú, el botón repite la noche. El mapa de profe a cámara está
@@ -253,8 +265,33 @@ estaban a fuego en el código (`FLASHLIGHT_KEY`, `PAUSE_KEY`), que ahora `office
   banner de avisos, que va centrado arriba.
 - **Pantallas de carga:** entre el menú, las noches y los periódicos. Negro con estática leve y una
   frase del lore al azar de `data/loading_lines.gd`. Se entra con `LoadingScreen.go_to(árbol, ruta)`.
-- **Fin de noche:** 6 AM → recorte de periódico → el recibo, si esa noche lo da → lo siguiente.
-  Ganar una Custom Night no da recorte: da la carta de despido y vuelve a Extras.
+- **Fin de noche:** 6 AM → recorte de periódico → **recibo de pago** → la hoja que dé esa noche,
+  si da alguna → lo siguiente. Ganar una Custom Night no da recorte ni recibo: da la carta de
+  despido y vuelve a Extras.
+
+## Pantallas que son una imagen
+
+La solicitud de empleo y el recibo de pago son una foto de 1920x1080 en `assets/art/screens/`, y lo
+único que hace el código es escribir encima. **Dónde va cada texto no se adivina**: está medido
+sobre las propias imágenes y vive en `data/pantallas_campos.json`, normalizado sobre 1920x1080, que
+lee `data/screen_fields.gd` (`ScreenFields`). Cada campo trae su posición, su ancho, el tamaño de
+letra medido a 1080p (se escala con el alto), el color, la fuente y lo chueco que va. Si cambia el
+arte, se vuelven a medir los campos en el JSON y no se toca código.
+
+- **Solicitud de empleo** (`solicitud_empleo.png`, `scenes/main_menu/name_entry.gd`): al empezar
+  partida nueva. El nombre se escribe **directo sobre el renglón** de la hoja (campo
+  `solicitud_nombre`, Special Elite), con cursor que parpadea y un "clac" de máquina por tecla;
+  máximo 16 caracteres (`NightConfig.MAX_NAME_LENGTH`). **No hay cajas ni botones.** Con Enter
+  aparece la firma en `solicitud_firma`, el mismo nombre en Reenie Beanie y tinta azul #283a8c, que
+  entra en 0.4 s; 1 s después arranca la partida. Esc vuelve al menú. Abajo, chiquito: "Escribe tu
+  nombre · Enter para firmar · Esc para volver".
+- **Recibo de pago** (`pago_noche.png`, `scenes/win_screen/payment_screen.gd`): después del
+  recorte. Lleva el nombre (`pago_nombre`), la noche (`pago_noche`), las tareas ("X de Y",
+  `pago_tareas`) y el importe alineado a la derecha (`pago_importe`). La nota a mano
+  (`pago_nota_a_mano`, Reenie Beanie roja y chueca −6°) cambia según cómo le fue: todas las tareas
+  → "¡Buen trabajo!", algunas → "Mañana te esperamos", ninguna → "¿Viniste a dormir?". Abajo,
+  "clic para continuar". Los números se guardan con `PaymentScreen.setup()` **antes** de preparar
+  la noche siguiente, porque preparar la siguiente los borra.
 
 ## Documentos
 
@@ -484,7 +521,8 @@ plantilla dibujada, que solo se usa si falta una imagen.
 | 6 | Al pasar la noche 6 | La universidad clausura la coordinación. "El responsable sigue sin ser identificado." (Gancho para la secuela.) |
 
 **Menú principal:** el fondo (`menu_fondo_0..3.png`) tiene toda la mitad izquierda en negro, y ahí
-van el título y las opciones, **alineados a la izquierda y en VT323 blanco grande**. La opción
+van el título y las opciones, **alineados a la izquierda y en VT323 blanco grande**. El título va
+en **cuatro renglones**, como el logo de los juegos originales: "FIVE / NIGHTS / AT / ROCHA'S". La opción
 elegida lleva `>>` al lado; se mueve con las flechas (o W/S) y con el mouse, y las bloqueadas salen
 apagadas y el cursor se las salta. Debajo del título, las tres estrellas. Abajo a la izquierda, la
 versión (`application/config/version` de project.godot). Abajo al centro, "Mantén Supr para borrar

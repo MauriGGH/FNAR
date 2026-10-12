@@ -17,7 +17,7 @@ var _left: float = 0.0
 var _refresh_left: float = 0.0
 var _sparks: Array[PackedVector2Array] = []
 
-@onready var static_overlay: ColorRect = $StaticOverlay
+@onready var static_overlay: StaticFrames = $StaticOverlay
 
 
 func _ready() -> void:
@@ -29,9 +29,7 @@ func play() -> void:
 	_refresh_left = 0.0
 	visible = true
 	# La estática se pone fuerte ya, sin esperar al primer _process.
-	var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-	if material != null:
-		material.set_shader_parameter("strength", 0.75)
+	static_overlay.set_strength(0.75)
 	_make_sparks()
 	queue_redraw()
 
@@ -46,9 +44,7 @@ func _process(delta: float) -> void:
 
 	# La estática arranca fuerte y se va bajando con el resto.
 	var fade: float = clampf(_left / DURATION, 0.0, 1.0)
-	var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-	if material != null:
-		material.set_shader_parameter("strength", 0.75 * fade)
+	static_overlay.set_strength(0.75 * fade)
 
 	_refresh_left -= delta
 	if _refresh_left <= 0.0:

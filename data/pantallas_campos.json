@@ -1,0 +1,57 @@
+{
+ "solicitud_nombre": {
+  "x": 0.28125,
+  "y": 0.28888888888888886,
+  "ancho": 0.4375,
+  "alto_texto_px_1080": 44,
+  "color": "#1e1a16",
+  "fuente": "SpecialElite"
+ },
+ "solicitud_firma": {
+  "x": 0.5104166666666666,
+  "y": 0.7481481481481481,
+  "ancho": 0.21354166666666666,
+  "nota": "firma del jugador (su nombre en ReenieBeanie, tinta azul #283a8c) al presionar Enter"
+ },
+ "pago_nombre": {
+  "x": 0.34010416666666665,
+  "y": 0.29444444444444445,
+  "ancho": 0.41302083333333334,
+  "alto_texto_px_1080": 32,
+  "color": "#1e1a16",
+  "fuente": "SpecialElite"
+ },
+ "pago_noche": {
+  "x": 0.31354166666666666,
+  "y": 0.3611111111111111,
+  "ancho": 0.4395833333333333,
+  "alto_texto_px_1080": 32,
+  "color": "#1e1a16",
+  "fuente": "SpecialElite"
+ },
+ "pago_tareas": {
+  "x": 0.4197916666666667,
+  "y": 0.42777777777777776,
+  "ancho": 0.3333333333333333,
+  "alto_texto_px_1080": 32,
+  "color": "#1e1a16",
+  "fuente": "SpecialElite"
+ },
+ "pago_importe": {
+  "x": 0.75,
+  "y": 0.5296296296296297,
+  "alineado": "derecha",
+  "alto_texto_px_1080": 46,
+  "color": "#1e1a16",
+  "fuente": "Oswald"
+ },
+ "pago_nota_a_mano": {
+  "x": 0.5260416666666666,
+  "y": 0.6574074074074074,
+  "rotacion": -6,
+  "fuente": "ReenieBeanie",
+  "color": "#b3261e",
+  "alto_texto_px_1080": 64,
+  "texto_sugerido": "¡Buen trabajo! / Mañana te esperamos / (0 tareas) ¿Viniste a dormir?"
+ }
+}

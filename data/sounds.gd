@@ -54,6 +54,8 @@ const FLASHLIGHT_CLICK: String = "linterna_click"
 const BREAKER_LEVER: String = "breaker_palanca"
 ## El siseo de fondo mientras el monitor está abierto.
 const CAMERA_STATIC: String = "estatica_camara"
+## El golpe de una tecla de máquina de escribir, al escribir el nombre.
+const TYPEWRITER_KEY: String = "tecla_maquina"
 ## El clac de colgar, al acabar o silenciar una llamada.
 const PHONE_HANG_UP: String = "telefono_colgar"
 ## El golpe de la pantalla de WASTED.
@@ -187,7 +189,11 @@ const CATALOG: Dictionary = {
 	},
 	"estatica_camara": {
 		"file": "estatica_camara.ogg", "bus": "Ambiente",
-		"volume_db": -22.0, "generator": "camera_static",
+		"volume_db": -30.0, "generator": "camera_static",
+	},
+	"tecla_maquina": {
+		"file": "tecla_maquina.ogg", "bus": "Efectos",
+		"volume_db": -12.0, "generator": "typewriter_key",
 	},
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",

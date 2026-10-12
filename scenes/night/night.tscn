@@ -1,6 +1,7 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
+[ext_resource type="Script" path="res://scenes/ui/static_frames.gd" id="90_staticframes"]
 [ext_resource type="PackedScene" path="res://scenes/office/office.tscn" id="2_office"]
 [ext_resource type="PackedScene" path="res://scenes/camera_system/camera_system.tscn" id="3_cameras"]
 [ext_resource type="Script" path="res://scenes/night/usage_bars.gd" id="5_usage_bars"]
@@ -18,7 +19,6 @@
 [ext_resource type="Script" path="res://scenes/night/fade_overlay.gd" id="18_fade"]
 [ext_resource type="Script" path="res://scripts/characters/urena.gd" id="19_urena"]
 [ext_resource type="PackedScene" path="res://scenes/phone/phone_call.tscn" id="20_phone"]
-[ext_resource type="Shader" path="res://scenes/camera_system/camera_static.gdshader" id="16_static"]
 [ext_resource type="Script" path="res://scripts/characters/rochis.gd" id="22_rochis"]
 [ext_resource type="Script" path="res://scripts/characters/juan_exe.gd" id="23_juan"]
 [ext_resource type="Script" path="res://scripts/characters/armando_prompts.gd" id="24_armando"]
@@ -32,12 +32,6 @@
 [ext_resource type="Script" path="res://scenes/night/controls_card.gd" id="77_cards"]
 [ext_resource type="Script" path="res://scenes/ui/wasted_screen.gd" id="78_wasted"]
 [ext_resource type="Script" path="res://scenes/night/mod_menu.gd" id="80_mod"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_cortaso"]
-shader = ExtResource("16_static")
-shader_parameter/strength = 0.0
-shader_parameter/noise_cells = Vector2(300, 170)
-shader_parameter/noise_fps = 24.0
 
 [node name="Night" type="Control"]
 layout_mode = 3
@@ -225,8 +219,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("15_cortaso")
 
-[node name="StaticOverlay" type="ColorRect" parent="Hud/CortasoOverlay"]
-material = SubResource("ShaderMaterial_cortaso")
+[node name="StaticOverlay" type="TextureRect" parent="Hud/CortasoOverlay"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -234,7 +227,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 1)
+script = ExtResource("90_staticframes")
 
 [node name="FlashOverlay" type="ColorRect" parent="Hud"]
 visible = false
@@ -325,8 +318,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("70_jump")
 
-[node name="StaticOverlay" type="ColorRect" parent="Hud/JumpscareOverlay"]
-material = SubResource("ShaderMaterial_cortaso")
+[node name="StaticOverlay" type="TextureRect" parent="Hud/JumpscareOverlay"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -334,7 +326,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 1)
+script = ExtResource("90_staticframes")
 
 [node name="WastedScreen" type="Control" parent="Hud"]
 layout_mode = 1

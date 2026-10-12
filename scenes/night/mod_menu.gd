@@ -413,7 +413,10 @@ func _build_events_section() -> void:
 func _build_screens_section() -> void:
 	var body: VBoxContainer = _section("Pantallas")
 	body.visible = false
-	_add_button(body, "6 AM (pantalla de pago)", func() -> void: _go_to(Screens.WIN))
+	_add_button(body, "6 AM (reloj con confeti)", func() -> void: _go_to(Screens.WIN))
+	_add_button(body, "Solicitud de empleo (escribir el nombre)",
+		func() -> void: _go_to(Screens.NAME_ENTRY))
+	_add_button(body, "Recibo de pago de esta noche", _show_payment)
 
 	_add_button(body, "Pantalla WASTED (delito federal)", func() -> void:
 		close()
@@ -477,6 +480,17 @@ func _build_screens_section() -> void:
 
 	_add_button(body, "Extras con todo desbloqueado", _unlock_everything)
 	_add_button(body, "Extras con todo bloqueado", _lock_everything)
+
+
+## El recibo con los números de la noche que se está jugando, para verlo sin
+## tener que llegar a las 6 AM.
+func _show_payment() -> void:
+	close()
+	PaymentScreen.setup(GameManager.current_night, GameManager.completed_task_count(),
+		GameManager.night_tasks().size(), GameManager.payment())
+	PaymentScreen.pending_documents = []
+	PaymentScreen.next_scene = Screens.MAIN_MENU
+	get_tree().change_scene_to_file(Screens.PAYMENT)
 
 
 func _show_document(document_id: String) -> void:

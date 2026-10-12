@@ -29,7 +29,7 @@ const HINT_TEXT: String = "clic para volver al menú"
 @onready var retry_button: Button = $RetryButton
 
 var _picture: TextureRect = null
-var _static_layer: ColorRect = null
+var _static_layer: StaticFrames = null
 var _can_leave: bool = false
 var _static_strength: float = STATIC_HEAVY:
 	set(value):

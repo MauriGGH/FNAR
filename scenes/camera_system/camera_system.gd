@@ -88,7 +88,7 @@ var _ambient_camera: int = Rooms.NO_CAMERA
 @onready var feed_image: TextureRect = $FeedImage
 ## Recortes encimados sobre el video, como la cortina de la puerta.
 @onready var camera_overlay: Control = $CameraOverlay
-@onready var static_overlay: ColorRect = $StaticOverlay
+@onready var static_overlay: StaticFrames = $StaticOverlay
 @onready var camera_name_label: Label = $CameraNameLabel
 @onready var rec_dot: ColorRect = $RecDot
 @onready var no_signal_label: Label = $NoSignalLabel
@@ -184,9 +184,15 @@ func switch_to_camera(camera: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("toggle_cameras"):
-		toggle()
-		get_viewport().set_input_as_handled()
+	if not event.is_action_pressed("toggle_cameras"):
+		return
+	# Desde la sala de servidores no se abre el monitor: de salir primero se
+	# encarga la propia sala. Esto es un cinturón de seguridad, por si la
+	# tecla llegara igual.
+	if GameManager.is_in_server_room:
+		return
+	toggle()
+	get_viewport().set_input_as_handled()
 
 
 # --- Vista --------------------------------------------------------------------
@@ -560,17 +566,16 @@ func check_camera_change() -> void:
 ## Tapa la imagen con estática fuerte entre 0.5 y 1 s. Al aclararse, y solo
 ## entonces, se muestra el estado nuevo de la cámara.
 func _play_interference() -> void:
-	var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-	if material == null:
+	if static_overlay == null:
 		return
 	if _static_tween != null and _static_tween.is_valid():
 		_static_tween.kill()
 	_interference_active = true
-	material.set_shader_parameter("strength", STATIC_INTERFERENCE)
+	_set_static_strength(STATIC_INTERFERENCE)
 	var duration: float = randf_range(INTERFERENCE_MIN_TIME, INTERFERENCE_MAX_TIME)
 	_static_tween = create_tween()
 	_static_tween.tween_interval(duration * INTERFERENCE_HOLD_RATIO)
-	_static_tween.tween_property(material, "shader_parameter/strength", STATIC_IDLE,
+	_static_tween.tween_method(_set_static_strength, STATIC_INTERFERENCE, STATIC_IDLE,
 		duration * (1.0 - INTERFERENCE_HOLD_RATIO))
 	_static_tween.tween_callback(_on_interference_cleared)
 
@@ -602,22 +607,20 @@ func _blink_elapsed() -> float:
 
 
 func _set_static_strength(value: float) -> void:
-	var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-	if material != null:
-		material.set_shader_parameter("strength", value)
+	static_overlay.set_strength(value)
 
 
 ## Golpe de estática al cambiar de cámara: fuerte y se va bajando en 0.5 s.
 func _play_strong_static() -> void:
-	var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-	if material == null:
+	if static_overlay == null:
 		return
 	if _static_tween != null and _static_tween.is_valid():
 		_static_tween.kill()
 	_interference_active = false
-	material.set_shader_parameter("strength", STATIC_STRONG)
+	_set_static_strength(STATIC_STRONG)
 	_static_tween = create_tween()
-	_static_tween.tween_property(material, "shader_parameter/strength", STATIC_IDLE, STRONG_STATIC_TIME)
+	_static_tween.tween_method(_set_static_strength, STATIC_STRONG, STATIC_IDLE,
+		STRONG_STATIC_TIME)
 
 
 ## El punto rojo de "grabando" parpadea sin parar.

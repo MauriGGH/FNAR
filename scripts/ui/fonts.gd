@@ -6,9 +6,11 @@ extends RefCounted
 ## ponen como override donde toca.
 ##
 ## - VT323: lo que sale de una pantalla o un aparato (cámaras, PC, relojes).
-## - Special Elite: lo escrito a máquina (documentos, causa de game over,
-##   intro de noche).
+## - Special Elite: lo escrito a máquina (documentos, hojas, formularios).
 ## - Oswald: menús y botones.
+## - Share Tech Mono: el reloj de la intro de noche.
+## - DSEG14 Classic: el display de siete segmentos del 6 AM.
+## - Reenie Beanie: lo escrito a mano (la firma y la nota del recibo).
 ##
 ## Las fuentes se cargan una vez y se quedan en caché, porque varias pantallas
 ## piden la misma.
@@ -19,6 +21,12 @@ const MENU_PATH: String = "res://assets/fonts/Oswald-Variable.ttf"
 ## La de los titulones tipo GTA (la pantalla de WASTED). Si no está, se cae a
 ## Oswald en negritas, que es lo más parecido que hay en el proyecto.
 const DISPLAY_PATH: String = "res://assets/fonts/pricedown.otf"
+## La monoespaciada de la intro de noche.
+const MONO_PATH: String = "res://assets/fonts/ShareTechMono-Regular.ttf"
+## La de segmentos, la del reloj de las 6 AM.
+const DIGITAL_PATH: String = "res://assets/fonts/DSEG14Classic-Bold.ttf"
+## La de puño y letra: la firma de la solicitud y la nota del recibo.
+const HAND_PATH: String = "res://assets/fonts/ReenieBeanie-Regular.ttf"
 
 ## El peso de Oswald para los títulos. Es una fuente variable, así que el grosor
 ## se pide por eje en vez de cargar otro archivo.
@@ -41,6 +49,38 @@ static func typewriter() -> Font:
 static func display() -> Font:
 	var font: Font = _load_font(DISPLAY_PATH)
 	return font if font != null else menu_bold()
+
+
+## La monoespaciada de la intro de noche.
+static func mono() -> Font:
+	return _load_font(MONO_PATH)
+
+
+## La de segmentos del reloj de las 6 AM.
+static func digital() -> Font:
+	return _load_font(DIGITAL_PATH)
+
+
+## La escrita a mano.
+static func hand() -> Font:
+	return _load_font(HAND_PATH)
+
+
+## La fuente que pide un dato por su nombre (lo que traen los campos de
+## data/pantallas_campos.json). Si no se reconoce, la de los menús.
+static func by_name(font_name: String) -> Font:
+	match font_name:
+		"VT323":
+			return terminal()
+		"SpecialElite":
+			return typewriter()
+		"ShareTechMono":
+			return mono()
+		"DSEG14":
+			return digital()
+		"ReenieBeanie":
+			return hand()
+	return menu()
 
 
 ## La de los menús.

@@ -2,12 +2,19 @@ extends Control
 
 ## La sala de servidores: el rack con el patch panel y la hoja de etiquetado.
 ## Mientras el guardia está aquí no vigila la oficina, así que las cámaras y la
-## PC no se pueden usar. Se sale con el botón, con Escape o con S.
+## PC no se pueden usar. Se sale con el botón, con Escape o con S, y **esas tres
+## salidas funcionan siempre**: este Control se queda la tecla antes que nadie.
+## Si se pulsa la tecla del monitor, se sale primero y el monitor se abre ya en
+## la oficina; así no queda un monitor abierto detrás de la sala, que era lo que
+## dejaba el juego trabado.
 ## El fondo está listo para usar assets/art/office/sala_servidores.png en
 ## cuanto exista; hasta entonces es el ambiente oscuro dibujado.
 
 signal closed()
 signal notice_requested(text: String, duration: float)
+## Pidió el monitor estando aquí. No se puede abrir desde la sala, así que
+## primero se sale a la oficina y allá se abre.
+signal cameras_requested()
 
 ## Sin extensión: vale png, jpg o jpeg.
 const BACKGROUND_PATH: String = "res://assets/art/office/sala_servidores"
@@ -45,6 +52,11 @@ func close() -> void:
 		return
 	is_open = false
 	visible = false
+	# Que no se quede nada a medias: un cable agarrado o un botón presionado
+	# seguirían comiéndose el mouse al volver.
+	if patch_panel.has_method("cancel_drag"):
+		patch_panel.cancel_drag()
+	exit_button.release_focus()
 	closed.emit()
 
 
@@ -56,6 +68,12 @@ func _input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
-	if key.keycode == KEY_ESCAPE or key.keycode == KEY_S:
+	if key.keycode == Controls.PAUSE_KEY or key.keycode == KEY_S:
+		close()
+		get_viewport().set_input_as_handled()
+		return
+	# La tecla del monitor: se sale y de eso se encarga la noche.
+	if event.is_action_pressed("toggle_cameras"):
+		cameras_requested.emit()
 		close()
 		get_viewport().set_input_as_handled()

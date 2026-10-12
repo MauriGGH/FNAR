@@ -19,11 +19,12 @@ const PROTECTED_CAMERA: int = 4
 
 ## Colores de los patch cords, en el orden en que se reparten.
 ## Desaturados a propósito, para que peguen con las fotos de la oficina.
+## Los dos colores de patch cord de siempre, bien saturados para que se
+## distingan sobre el rack. Antes había cuatro muy lavados (un gris casi
+## blanco incluido) y con el cable gordo parecían tubos.
 const CORD_COLORS: Array[Color] = [
-	Color(0.3, 0.4, 0.55),    # azul
-	Color(0.66, 0.6, 0.34),   # amarillo
-	Color(0.45, 0.46, 0.48),  # gris
-	Color(0.54, 0.3, 0.28),   # rojo
+	Color(0.11, 0.38, 0.85),   # azul
+	Color(0.93, 0.76, 0.12),   # amarillo
 ]
 
 ## Cuántas cámaras se intercambian en la hoja cuando toca reetiquetar.
@@ -111,7 +112,8 @@ func is_relabel_done() -> bool:
 
 
 func color_of(camera: int) -> Color:
-	return wiring.get(camera, {}).get("color", Color.WHITE)
+	# Si por lo que sea no tiene color, azul: blanco se ve como un tubo.
+	return wiring.get(camera, {}).get("color", CORD_COLORS[0])
 
 
 func is_camera_down(camera: int) -> bool:

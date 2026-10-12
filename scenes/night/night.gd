@@ -91,6 +91,8 @@ var _ticket_elapsed: float = 0.0
 ## etapa iba Rochis, para el rechinido de su silla.
 var _last_rooms: Dictionary = {}
 var _last_rochis_stage: int = -1
+## Salió de la sala de servidores pidiendo el monitor: se abre al llegar.
+var _open_cameras_on_return: bool = false
 
 
 func _ready() -> void:
@@ -137,6 +139,7 @@ func _ready() -> void:
 	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
 	server_room.closed.connect(_leave_server_room)
+	server_room.cameras_requested.connect(_on_server_cameras_requested)
 	server_room.notice_requested.connect(notice_banner.show_notice)
 	breaker_panel.closed.connect(office.zoom_out)
 	breaker_panel.lever_pulled.connect(_on_breaker_pulled)
@@ -639,6 +642,11 @@ func _enter_server_room() -> void:
 	server_room.open()
 
 
+## Pidió el monitor desde la sala: se sale y, ya en la oficina, se abre.
+func _on_server_cameras_requested() -> void:
+	_open_cameras_on_return = true
+
+
 func _leave_server_room() -> void:
 	notice_banner.show_notice(STEPS_NOTICE, STEPS_NOTICE_TIME)
 	fade_overlay.play()
@@ -646,7 +654,13 @@ func _leave_server_room() -> void:
 	GameManager.is_in_server_room = false
 	office.visible = true
 	camera_bar.visible = true
+	# Se vuelve siempre a un estado limpio: la oficina responde y el monitor
+	# está abajo, pase lo que pase dentro de la sala.
+	office.set_interactive(true)
 	office.zoom_out()
+	if _open_cameras_on_return:
+		_open_cameras_on_return = false
+		camera_system.open()
 
 
 ## La descarga del pararrayos: destello blanco y estática en todas las cámaras.

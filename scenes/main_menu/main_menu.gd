@@ -10,7 +10,8 @@ extends Control
 
 const MENU_CONFIRM: GDScript = preload("res://scenes/main_menu/confirm_box.gd")
 
-const TITLE_TEXT: String = "FIVE NIGHTS AT ROCHA'S"
+## El título va en cuatro renglones, como el logo de los juegos originales.
+const TITLE_TEXT: String = "FIVE\nNIGHTS\nAT\nROCHA'S"
 const TEXT_COLOR: Color = Color(0.95, 0.95, 0.93)
 const DIM_COLOR: Color = Color(0.52, 0.53, 0.55)
 const MARKER: String = ">>"
@@ -18,16 +19,16 @@ const MARKER_COLOR: Color = Color(0.98, 0.84, 0.35)
 
 ## Todo medido a 1080p y escalado con el alto de la ventana.
 const REFERENCE_HEIGHT: float = 1080.0
-const TITLE_SIZE: float = 62.0
+const TITLE_SIZE: float = 68.0
 const OPTION_SIZE: float = 36.0
 const SMALL_SIZE: float = 20.0
 
 ## La columna de texto, en fracción de la pantalla: cae sobre la zona negra.
 const LEFT_MARGIN: float = 0.055
 const TEXT_INDENT: float = 0.105
-const TITLE_TOP: float = 0.10
+const TITLE_TOP: float = 0.055
 const STARS_TOP: float = 0.345
-const OPTIONS_TOP: float = 0.45
+const OPTIONS_TOP: float = 0.43
 const LINE_HEIGHT: float = 0.072
 
 ## Borrar la partida: lo que hay que mantener Supr y lo que dice el aviso.
@@ -154,7 +155,7 @@ func _layout() -> void:
 	if _title != null:
 		Fonts.apply(_title, Fonts.terminal(), _font_size(TITLE_SIZE))
 		_title.position = Vector2(left, size.y * TITLE_TOP)
-		_title.size = Vector2(size.x * 0.45, size.y * 0.24)
+		_title.size = Vector2(size.x * 0.45, size.y * 0.34)
 	if _stars != null:
 		_stars.position = Vector2(left, size.y * STARS_TOP)
 	for i: int in _rows.size():

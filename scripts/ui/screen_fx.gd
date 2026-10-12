@@ -1,12 +1,11 @@
 class_name ScreenFx
 extends RefCounted
 
-## Las capas de "tele vieja" que varias pantallas comparten: la estática de las
-## cámaras y las líneas de escaneo. Se arman por código para no repetir los
+## Las capas de "tele vieja" que varias pantallas comparten: la estática (los
+## ocho cuadros de StaticFrames) y las líneas de escaneo. Se arman por código para no repetir los
 ## mismos nodos en cada escena, y porque el menú necesita subirle y bajarle la
 ## estática en marcha.
 
-const STATIC_SHADER: String = "res://scenes/camera_system/camera_static.gdshader"
 const SCANLINES_SHADER: String = "res://scenes/ui/scanlines.gdshader"
 
 const STATIC_NODE: String = "ScreenStatic"
@@ -14,9 +13,16 @@ const SCANLINES_NODE: String = "Scanlines"
 
 
 ## Mete una capa de estática encima de lo que ya haya y la devuelve, para poder
-## cambiarle la fuerza después. Devuelve null si falta el shader.
-static func add_static(parent: Control, strength: float) -> ColorRect:
-	return _add_layer(parent, STATIC_NODE, STATIC_SHADER, {"strength": strength})
+## cambiarle la fuerza después.
+static func add_static(parent: Control, strength: float) -> StaticFrames:
+	if parent == null:
+		return null
+	var layer: StaticFrames = StaticFrames.new()
+	layer.name = STATIC_NODE
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(layer)
+	layer.set_strength(strength)
+	return layer
 
 
 ## Las líneas de escaneo y el parpadeo. Van al final, encima de todo.
@@ -25,12 +31,9 @@ static func add_scanlines(parent: Control) -> ColorRect:
 
 
 ## Cambia la fuerza de una capa de estática ya puesta.
-static func set_static_strength(layer: ColorRect, strength: float) -> void:
-	if layer == null:
-		return
-	var material: ShaderMaterial = layer.material as ShaderMaterial
-	if material != null:
-		material.set_shader_parameter("strength", strength)
+static func set_static_strength(layer: StaticFrames, strength: float) -> void:
+	if layer != null:
+		layer.set_strength(strength)
 
 
 static func _add_layer(parent: Control, node_name: String, shader_path: String,

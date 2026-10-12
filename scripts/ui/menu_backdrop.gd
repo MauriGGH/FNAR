@@ -29,7 +29,7 @@ const STATIC_FLASH: float = 0.42
 
 var _frames: Array[Texture2D] = []
 var _picture: TextureRect = null
-var _static_layer: ColorRect = null
+var _static_layer: StaticFrames = null
 var _next_flash: float = 0.0
 var _flash_left: float = 0.0
 

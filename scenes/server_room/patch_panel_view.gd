@@ -54,16 +54,18 @@ const LOOSE_LENGTH: float = 128.0
 ## La panza del cable conectado, en fracción de lo que hay de alto entre el
 ## patch panel y el switch: baja del panel, cuelga por su peso y vuelve a
 ## subir para entrar al puerto.
-const CORD_DROP: float = 0.55
-const CORD_RISE: float = 0.45
+## Poca panza: lo justo para que se note que es un cable y no una raya.
+const CORD_DROP: float = 0.22
+const CORD_RISE: float = 0.18
 ## Variación por cámara, para que se vean ordenados pero no calcados: cada
 ## cable cuelga un poco distinto y se encima apenas con sus vecinos.
 const CORD_SAG_JITTER: float = 0.2
 const CORD_SIDE_JITTER: float = 9.0
 const SWAY_AMPLITUDE: float = 11.0
 const SWAY_SPEED: float = 1.3
-## Grosor real de un patch cord, como pediste.
-const CORD_WIDTH: float = 11.0
+## Grosor de un patch cord: delgado, como es de verdad. Antes era mucho más
+## gordo y con los colores lavados, y parecía un tubo blanco.
+const CORD_WIDTH: float = 4.5
 const CORD_SEGMENTS: int = 20
 const PLUG_SIZE: Vector2 = Vector2(30.0, 23.0)
 
@@ -211,6 +213,17 @@ func _gi_rect(port: int) -> Rect2:
 ## El LED, donde lo marca el JSON (arriba del puerto en la foto).
 func _led_center(port: int) -> Vector2:
 	return _led_centers[clampi(port - 1, 0, _led_centers.size() - 1)]
+
+
+## Suelta el cable que se esté arrastrando, sin conectarlo. Lo llama la sala
+## al cerrarse: si el jugador sale a media maniobra, el arrastre no debe
+## quedarse vivo esperando un botón que ya nadie va a soltar.
+func cancel_drag() -> void:
+	if _drag_camera == 0:
+		return
+	_drag_camera = 0
+	_hover_camera = 0
+	queue_redraw()
 
 
 ## De donde sale el cable en el panel de arriba.

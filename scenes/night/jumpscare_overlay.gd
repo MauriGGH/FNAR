@@ -69,13 +69,13 @@ var _cache: Dictionary = {}
 ## La capa de estática del final. Normalmente viene en la escena; si este
 ## overlay se usa suelto (la galería de Extras lo crea por código), se arma
 ## aquí, para que la secuencia salga igual en los dos sitios.
-var static_overlay: ColorRect = null
+var static_overlay: StaticFrames = null
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP  # Nada de clicar por debajo.
-	static_overlay = get_node_or_null("StaticOverlay") as ColorRect
+	static_overlay = get_node_or_null("StaticOverlay") as StaticFrames
 	if static_overlay == null:
 		static_overlay = ScreenFx.add_static(self, 1.0)
 	if static_overlay != null:
@@ -150,9 +150,7 @@ func _set_phase(phase: Phase, seconds: float) -> void:
 	if static_overlay != null:
 		static_overlay.visible = phase == Phase.STATIC
 		if static_overlay.visible:
-			var material: ShaderMaterial = static_overlay.material as ShaderMaterial
-			if material != null:
-				material.set_shader_parameter("strength", STATIC_STRENGTH)
+			static_overlay.set_strength(STATIC_STRENGTH)
 	queue_redraw()
 
 

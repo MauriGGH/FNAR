@@ -52,6 +52,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return breaker_lever()
 		"camera_static":
 			return camera_static()
+		"typewriter_key":
+			return typewriter_key()
 		"phone_hang_up":
 			return phone_hang_up()
 		"far_running":
@@ -490,6 +492,24 @@ static func flashlight_click() -> AudioStreamWAV:
 	for i: int in buffer.size():
 		var t: float = float(i) / float(SAMPLE_RATE)
 		buffer[i] = randf_range(-1.0, 1.0) * exp(-CLICK_DECAY * t) * CLICK_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- Tecla de máquina de escribir --------------------------------------------
+## El "clac" de una tecla: un golpe de madera corto con su repique metálico.
+const TYPE_LENGTH: float = 0.09
+const TYPE_HZ: float = 320.0
+const TYPE_DECAY: float = 70.0
+const TYPE_AMPLITUDE: float = 0.55
+const TYPE_RING_HZ: float = 2600.0
+const TYPE_RING_AMPLITUDE: float = 0.12
+
+
+static func typewriter_key() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(TYPE_LENGTH)
+	_add_thud(buffer, 0.0, TYPE_HZ, TYPE_LENGTH, TYPE_AMPLITUDE, TYPE_DECAY, 0.7)
+	# El repique de la palanca al volver, encima del golpe.
+	_add_tone(buffer, 0.012, TYPE_RING_HZ, 0.03, TYPE_RING_AMPLITUDE)
 	return _to_wav(buffer)
 
 

@@ -1,112 +1,195 @@
 extends Control
 
-## Al empezar una partida nueva se pide el nombre del guardia. Lo dicen Ureña
-## cuando llama y Rochis cuando te atrapa, así que vale la pena escribirlo.
+## La solicitud de empleo: al empezar una partida nueva el guardia escribe su
+## nombre en la hoja (assets/art/screens/solicitud_empleo.png) y la firma con
+## Enter. El nombre lo dicen Ureña cuando llama y Rochis cuando te atrapa, así
+## que vale la pena escribirlo.
+##
+## No hay cajas ni botones: se escribe directo sobre el renglón de la hoja, con
+## su cursor parpadeando y un "clac" de máquina por tecla. Las posiciones del
+## renglón y de la firma salen de data/pantallas_campos.json.
 
-const PROMPT: String = "¿Cómo te llamas, guardia?"
-const HINT: String = "máximo %d caracteres · Enter para empezar"
-const PROMPT_SIZE: int = 30
-const HINT_SIZE: int = 17
-const FIELD_SIZE: Vector2 = Vector2(460.0, 64.0)
-const FIELD_FONT: int = 32
-const TEXT_COLOR: Color = Color(0.93, 0.9, 0.84)
-const HINT_COLOR: Color = Color(0.68, 0.7, 0.72, 0.85)
+const IMAGE: String = "res://assets/art/screens/solicitud_empleo"
+const HINT_TEXT: String = "Escribe tu nombre · Enter para firmar · Esc para volver"
+const HINT_SIZE: int = 18
+const HINT_COLOR: Color = Color(0.7, 0.72, 0.74, 0.85)
 
-## Dónde van las piezas, en fracción del alto.
-const PROMPT_TOP: float = 0.3
-const FIELD_TOP: float = 0.41
-const COLUMN_TOP: float = 0.58
+## El cursor del renglón y lo que tarda en parpadear.
+const CURSOR: String = "_"
+const BLINK_TIME: float = 0.5
+## La firma: lo que tarda en aparecer y lo que se queda antes de empezar.
+const SIGNATURE_FADE: float = 0.4
+const SIGNATURE_HOLD: float = 1.0
 
-var _field: LineEdit = null
-var _prompt: Label = null
+var _name: String = ""
+var _signed: bool = false
+var _blink_on: bool = true
+var _blink_left: float = BLINK_TIME
+
+var _sheet: TextureRect = null
+var _name_label: Label = null
+var _signature: Label = null
 var _hint: Label = null
-var _column: VBoxContainer = null
-
-
-## Todo se centra a mano, así que se recoloca si cambia la ventana.
-func _layout() -> void:
-	if _prompt != null:
-		_prompt.offset_top = size.y * PROMPT_TOP
-		_prompt.offset_bottom = _prompt.offset_top + 48.0
-	if _field != null:
-		_field.size = FIELD_SIZE
-		_field.position = Vector2((size.x - FIELD_SIZE.x) * 0.5, size.y * FIELD_TOP)
-	if _hint != null:
-		_hint.offset_top = size.y * FIELD_TOP + FIELD_SIZE.y + 10.0
-		_hint.offset_bottom = _hint.offset_top + 28.0
-	if _column != null:
-		_column.position = Vector2((size.x - UiButton.SIZE.x) * 0.5, size.y * COLUMN_TOP)
 
 
 func _ready() -> void:
-	MenuBackdrop.build(self)
-	_build_prompt()
-	_build_field()
-	_build_buttons()
+	_build()
 	_layout()
 	resized.connect(_layout)
+	_refresh_name()
 
 
-func _build_prompt() -> void:
+func _build() -> void:
+	# La hoja, a pantalla completa.
+	_sheet = TextureRect.new()
+	_sheet.texture = GameAssets.load_texture(IMAGE)
+	_sheet.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_sheet.stretch_mode = TextureRect.STRETCH_SCALE
+	_sheet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sheet.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_sheet)
+
+	_name_label = _make_label(ScreenFields.color(ScreenFields.APPLICATION_NAME))
+	add_child(_name_label)
+
+	# La firma empieza invisible: aparece al apretar Enter.
+	_signature = _make_label(ScreenFields.SIGNATURE_INK)
+	_signature.modulate.a = 0.0
+	add_child(_signature)
+
+	_hint = Label.new()
+	_hint.text = HINT_TEXT
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	Fonts.apply(_hint, Fonts.typewriter(), HINT_SIZE)
+	_hint.add_theme_color_override("font_color", HINT_COLOR)
+	_hint.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_hint.offset_top = -52.0
+	_hint.offset_bottom = -20.0
+	add_child(_hint)
+
+
+func _make_label(ink: Color) -> Label:
 	var label: Label = Label.new()
-	label.text = PROMPT
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_size_override("font_size", PROMPT_SIZE)
-	label.add_theme_color_override("font_color", TEXT_COLOR)
-	label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	add_child(label)
-	_prompt = label
+	label.add_theme_color_override("font_color", ink)
+	return label
 
 
-func _build_field() -> void:
-	_field = LineEdit.new()
-	_field.max_length = NightConfig.MAX_NAME_LENGTH
-	_field.text = SaveGame.player_name
-	_field.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_field.add_theme_font_size_override("font_size", FIELD_FONT)
-	_field.text_submitted.connect(_on_submitted)
-	add_child(_field)
-	_field.grab_focus()
-	_field.select_all()
-
-	var hint: Label = Label.new()
-	hint.text = HINT % NightConfig.MAX_NAME_LENGTH
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hint.add_theme_font_size_override("font_size", HINT_SIZE)
-	hint.add_theme_color_override("font_color", HINT_COLOR)
-	hint.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	add_child(hint)
-	_hint = hint
+## Los dos textos van sobre los campos medidos de la hoja.
+func _layout() -> void:
+	_place(_name_label, ScreenFields.APPLICATION_NAME,
+		ScreenFields.font_size(ScreenFields.APPLICATION_NAME, size.y))
+	var signature_size: int = maxi(1, roundi(
+		ScreenFields.SIGNATURE_SIZE_AT_1080 * size.y / ScreenFields.REFERENCE.y))
+	# La firma es lo único que no es un campo impreso de la hoja: va de puño y
+	# letra, así que la fuente no sale del JSON.
+	_place(_signature, ScreenFields.APPLICATION_SIGNATURE, signature_size, Fonts.hand())
 
 
-func _build_buttons() -> void:
-	var column: VBoxContainer = VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	add_child(column)
-	_column = column
-
-	var start: Button = UiButton.make("Empezar la noche 1")
-	start.pressed.connect(_on_start)
-	column.add_child(start)
-
-	var back: Button = UiButton.make("Volver")
-	back.pressed.connect(_on_back)
-	column.add_child(back)
+func _place(label: Label, field_id: String, font_size: int, font: Font = null) -> void:
+	Fonts.apply(label, font if font != null else ScreenFields.font(field_id), font_size)
+	var width: float = ScreenFields.width(field_id, size)
+	if width <= 0.0:
+		width = size.x * 0.3
+	label.position = ScreenFields.position(field_id, size)
+	label.size = Vector2(width, float(font_size) * 1.6)
+	label.rotation = ScreenFields.rotation(field_id)
 
 
-func _on_submitted(_text: String) -> void:
-	_on_start()
+# --- Escribir -----------------------------------------------------------------
+
+func _process(delta: float) -> void:
+	if _signed:
+		return
+	_blink_left -= delta
+	if _blink_left > 0.0:
+		return
+	_blink_left += BLINK_TIME
+	_blink_on = not _blink_on
+	_refresh_name()
 
 
-## Partida nueva: se borra el progreso anterior y se guarda el nombre.
-func _on_start() -> void:
+## El renglón, con el cursor si toca.
+func _refresh_name() -> void:
+	var cursor: String = CURSOR if _blink_on and not _signed else ""
+	_name_label.text = _name + cursor
+
+
+func _input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed or _signed:
+		return
+	match key.keycode:
+		KEY_ESCAPE:
+			get_viewport().set_input_as_handled()
+			_on_back()
+			return
+		KEY_ENTER, KEY_KP_ENTER:
+			get_viewport().set_input_as_handled()
+			_sign()
+			return
+		KEY_BACKSPACE:
+			get_viewport().set_input_as_handled()
+			_erase()
+			return
+	# Cualquier carácter que se pueda escribir va al renglón.
+	var typed: String = String.chr(key.unicode) if key.unicode >= 32 else ""
+	if typed.is_empty():
+		return
+	get_viewport().set_input_as_handled()
+	_type(typed)
+
+
+func _type(character: String) -> void:
+	if _name.length() >= NightConfig.MAX_NAME_LENGTH:
+		return
+	_name += character
+	_clac()
+
+
+func _erase() -> void:
+	if _name.is_empty():
+		return
+	_name = _name.substr(0, _name.length() - 1)
+	_clac()
+
+
+## El golpe de la tecla, y el cursor se queda prendido mientras se escribe.
+func _clac() -> void:
+	AudioManager.play(Sounds.TYPEWRITER_KEY)
+	_blink_on = true
+	_blink_left = BLINK_TIME
+	_refresh_name()
+
+
+# --- Firmar -------------------------------------------------------------------
+
+## Firma la hoja y arranca la partida. Un nombre vacío no firma nada.
+func _sign() -> void:
+	var clean: String = _name.strip_edges()
+	if clean.is_empty():
+		return
+	_signed = true
+	_name = clean
+	_refresh_name()
+	_hint.visible = false
+	_signature.text = clean
+	var tween: Tween = create_tween()
+	tween.tween_property(_signature, "modulate:a", 1.0, SIGNATURE_FADE)
+	tween.tween_interval(SIGNATURE_HOLD)
+	tween.tween_callback(_start)
+
+
+## Partida nueva: se borra el progreso anterior y se guarda el nombre. El
+## recorte 0 sale antes de la primera noche.
+func _start() -> void:
 	SaveGame.reset()
-	SaveGame.set_player_name(_field.text)
+	SaveGame.set_player_name(_name)
 	SaveGame.unlock_newspaper(Newspapers.FIRST_INDEX)
 	GameManager.prepare_night(1)
-	# El recorte 0 sale antes de la primera noche.
+	NewspaperScreen.pending_documents = []
+	NewspaperScreen.next_scene = Screens.NIGHT_INTRO
 	LoadingScreen.go_to(get_tree(), Screens.NEWSPAPER)
 
 
