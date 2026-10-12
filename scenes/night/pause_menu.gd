@@ -47,13 +47,18 @@ func _build() -> void:
 	add_child(_list)
 	_list.add_action("Continuar", close)
 	_list.add_action("Controles", func() -> void: controls_requested.emit())
-	_list.add_action("Opciones", func() -> void: _options.open())
+	# Al abrir las opciones, la lista de la pausa se esconde: si no, se lee
+	# por detrás del negro de la capa.
+	_list.add_action("Opciones", func() -> void:
+		_list.visible = false
+		_options.open())
 	_list.add_action("Volver al menú", func() -> void: menu_requested.emit())
 	_list.build()
 
 	_hint = MenuStyle.hint(self, HINT)
 	# Encima de todo lo demás de la pausa.
 	_options = OptionsPanel.build(self)
+	_options.closed.connect(func() -> void: _list.visible = true)
 
 
 func _layout() -> void:

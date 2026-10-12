@@ -73,6 +73,11 @@ const DISTANT_ON_MOVE: Dictionary = {
 	"mamador": "mamador_pasos",
 	"armando": "armando_modem",
 }
+## Lo que suena **junto** con lo de arriba, en el mismo movimiento: a Mamador
+## se le oye el llavero con los pasos.
+const DISTANT_WITH_MOVE: Dictionary = {
+	"mamador": "llavero",
+}
 const BARCOSA_HOME: String = "salon_b"
 
 var _animatronics: Array[Animatronic] = []
@@ -96,9 +101,11 @@ var _open_cameras_on_return: bool = false
 
 
 func _ready() -> void:
+	_style_hud()
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
-		animatronic.made_noise.connect(notice_banner.show_notice)
+		# Los ruidos de los profes son apaños de audio, no avisos: no se leen.
+		animatronic.made_noise.connect(notice_banner.show_sound)
 		animatronic.said_line.connect(voice_line.say)
 		if animatronic is Barcosa:
 			(animatronic as Barcosa).door_knocked.connect(office.shake_curtain)
@@ -122,6 +129,7 @@ func _ready() -> void:
 	office.door_toggled.connect(_on_door_toggled)
 	office.pc_requested.connect(pc_screen.open)
 	office.notice_requested.connect(notice_banner.show_notice)
+	office.sound_noticed.connect(notice_banner.show_sound)
 	office.breaker_requested.connect(breaker_panel.open)
 	office.phone_requested.connect(phone_call.answer)
 	office.flashlight_changed.connect(_on_flashlight_changed)
@@ -247,6 +255,15 @@ func _on_recording_started(night: int) -> void:
 
 
 ## Los profes son hijos del nodo Animatronics, así se agregan sin tocar código.
+## El HUD va en VT323, como todo lo que sale de una pantalla o un aparato: el
+## reloj grande arriba a la derecha, la noche debajo y la energía abajo a la
+## izquierda. Los tamaños están en la escena; aquí solo se pone la fuente.
+func _style_hud() -> void:
+	for label: Label in [clock_label, night_label, ticket_label, power_label]:
+		if label != null:
+			label.add_theme_font_override("font", Fonts.terminal())
+
+
 func _collect_animatronics() -> Array[Animatronic]:
 	var found: Array[Animatronic] = []
 	for child: Node in animatronics_holder.get_children():
@@ -256,7 +273,7 @@ func _collect_animatronics() -> Array[Animatronic]:
 
 
 func _on_night_started(night: int) -> void:
-	night_label.text = "Noche %d" % night
+	night_label.text = "NOCHE %d" % night
 	office.set_right_view_empty(false)
 	_schedule_calls(night)
 	for animatronic: Animatronic in _animatronics:
@@ -428,15 +445,20 @@ func _track_distant_sounds() -> void:
 	distant.refresh_room_loops(_animatronics)
 
 
-func _on_profe_moved(slug: String, from_room: String) -> void:
-	# Barcosa solo suena al salir del salón B: ahí es cuando echa a correr.
+func _on_profe_moved(slug: String, _from_room: String) -> void:
+	# Los pasos de Barcosa los lleva él mismo, en bucle y durante toda su
+	# carrera, así que aquí no hay nada que hacer con él.
 	if slug == "barcosa":
-		if from_room == BARCOSA_HOME:
-			distant.play_for(slug, Sounds.FAR_BARCOSA_RUN, distant.RUN_CHANCE)
 		return
 	var sound_id: String = str(DISTANT_ON_MOVE.get(slug, ""))
-	if not sound_id.is_empty():
-		distant.play_for(slug, sound_id)
+	if sound_id.is_empty():
+		return
+	if not distant.play_for(slug, sound_id):
+		return
+	# Lo que va pegado a ese movimiento suena con él, sin sortear otra vez.
+	var together: String = str(DISTANT_WITH_MOVE.get(slug, ""))
+	if not together.is_empty():
+		AudioManager.play(together)
 
 
 func _on_hour_changed(_hour: int) -> void:
@@ -444,7 +466,7 @@ func _on_hour_changed(_hour: int) -> void:
 
 
 func _on_power_changed(percent: float) -> void:
-	power_label.text = INFINITE_POWER_TEXT if PowerManager.is_infinite else "Energía: %d%%" % roundi(percent)
+	power_label.text = INFINITE_POWER_TEXT if PowerManager.is_infinite else "ENERGÍA %d%%" % roundi(percent)
 	usage_bars.set_level(PowerManager.usage_level())
 
 
@@ -493,7 +515,7 @@ func _update_watched_camera() -> void:
 func _on_flashlight_changed(is_on: bool) -> void:
 	PowerManager.set_flashlight_on(is_on)
 	AudioManager.play(Sounds.FLASHLIGHT_CLICK)
-	notice_banner.show_notice(FLASHLIGHT_CLICK, NOTICE_SHORT)
+	notice_banner.show_sound(FLASHLIGHT_CLICK, NOTICE_SHORT)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_flashlight_on(is_on)
 
@@ -565,7 +587,7 @@ func _on_ringing_started(_seconds: float) -> void:
 
 
 func _on_ring_tick() -> void:
-	notice_banner.show_notice(RING_NOTICE, NOTICE_SHORT)
+	notice_banner.show_sound(RING_NOTICE, NOTICE_SHORT)
 	office.pulse_phone_ring()
 
 
@@ -632,7 +654,7 @@ func _enter_server_room() -> void:
 		return
 	camera_system.close()
 	pc_screen.close()
-	notice_banner.show_notice(STEPS_NOTICE, STEPS_NOTICE_TIME)
+	notice_banner.show_sound(STEPS_NOTICE, STEPS_NOTICE_TIME)
 	fade_overlay.play()
 	await fade_overlay.midpoint_reached
 	GameManager.is_in_server_room = true
@@ -648,7 +670,7 @@ func _on_server_cameras_requested() -> void:
 
 
 func _leave_server_room() -> void:
-	notice_banner.show_notice(STEPS_NOTICE, STEPS_NOTICE_TIME)
+	notice_banner.show_sound(STEPS_NOTICE, STEPS_NOTICE_TIME)
 	fade_overlay.play()
 	await fade_overlay.midpoint_reached
 	GameManager.is_in_server_room = false
@@ -676,7 +698,7 @@ func _on_discharge(_cameras: PackedInt32Array) -> void:
 ## El breaker: "[clac]", el temblor lo hace el tablero, y la oficina a oscuras.
 func _on_breaker_pulled() -> void:
 	AudioManager.play(Sounds.BREAKER_LEVER)
-	notice_banner.show_notice(BREAKER_NOTICE, BREAKER_NOTICE_TIME)
+	notice_banner.show_sound(BREAKER_NOTICE, BREAKER_NOTICE_TIME)
 
 
 ## Sin corriente se apagan las cámaras y la PC, y la oficina se oscurece.
@@ -775,7 +797,8 @@ func _on_game_over(cause: String) -> void:
 	SaveGame.unlock_jumpscare(cause)
 	# Mamador no salta: su final es la pantalla de WASTED.
 	if cause == Mamador.GAME_OVER_CAUSE:
-		wasted_screen.play(JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text())
+		wasted_screen.play(JumpscareOverlay.mamador_image(),
+			JumpscareOverlay.mamador_text(), true)
 		return
 	if jumpscare_id.is_empty():
 		get_tree().change_scene_to_file(Screens.GAME_OVER)

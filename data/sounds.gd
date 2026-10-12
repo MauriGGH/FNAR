@@ -35,9 +35,22 @@ const MUSIC_BOX_BLACKOUT: String = "cajita_musical_apagon"
 const MUSIC_BOX_WARNING: String = "cajita_musical_aviso"
 const TICKET: String = "ticket_nuevo"
 const SCREAM: String = "grito"
+## Los gritos de los jumpscares. Cada profe puede tener el suyo (`grito_<id>`);
+## si no está grabado, se echa mano de uno de los tres de base. Los ids salen
+## de scream_for().
+const SCREAM_BASE: Array[String] = ["grito_base_1", "grito_base_2", "grito_base_3"]
+const SCREAM_SLUGS: Array[String] = [
+	"barcosa", "urena", "rochis", "juan", "armando", "cometrabas", "audel",
+]
 const BUSY_TONE: String = "tono_ocupado"
 const ALARM: String = "despertador"
 const SCHOOL_BELL: String = "campana_escuela"
+## Los niños gritando "¡yeeey!" al acabarse las campanadas de las 6 AM.
+const CHILDREN_CHEER: String = "ninos_yay"
+## La música del menú principal, en bucle.
+const MENU_MUSIC: String = "menu_musica"
+## Y la de Extras y la Custom Night, también en bucle.
+const EXTRAS_MUSIC: String = "extras_musica"
 const FOOTSTEPS: String = "pasos_acercandose"
 const LOW_HIT: String = "golpe_grave"
 ## El mismo golpe grave, más bajito, para el tic del menú.
@@ -51,6 +64,11 @@ const HALLWAY_AMBIENCE: String = "ambiente_pasillo"
 const PHONE_RING: String = "telefono_timbre"
 const DOOR_SHUTTER: String = "puerta_cortina"
 const DOOR_BANGS: String = "golpes_cortina"
+## Los tres golpes de metal de Barcosa contra la cortina: se alterna entre
+## ellos sin repetir el mismo dos veces seguidas.
+const METAL_HITS: Array[String] = [
+	"golpe_metal_1", "golpe_metal_2", "golpe_metal_3",
+]
 const CAMERA_BLIP: String = "camara_cambio"
 const FLASHLIGHT_CLICK: String = "linterna_click"
 const BREAKER_LEVER: String = "breaker_palanca"
@@ -71,10 +89,14 @@ const TYPEWRITER_KEYS: Array[String] = [
 const PHONE_HANG_UP: String = "telefono_colgar"
 ## El golpe de la pantalla de WASTED.
 const WASTED: String = "wasted"
+## La puerta derribada y los gritos del operativo, antes del WASTED de Mamador.
+const MAMADOR_BREACH: String = "mamador_brecha"
 
 # --- Lo que se oye de lejos --------------------------------------------------
 const FAR_BARCOSA_RUN: String = "barcosa_corre"
 const FAR_MAMADOR_STEPS: String = "mamador_pasos"
+## El llavero de Mamador, que suena con sus pasos cada vez que se mueve.
+const FAR_KEYS: String = "llavero"
 const FAR_URENA_BATHROOM: String = "urena_banos"
 const FAR_JUAN_KEYBOARD: String = "juan_teclado"
 const FAR_ARMANDO_MODEM: String = "armando_modem"
@@ -105,6 +127,41 @@ const IMPRESSIVE: String = "es_impresionante"
 const NIGHT_CALL: String = "llamada_noche%d"
 
 
+## El golpe de metal que le toca a este porrazo: uno de los tres al azar, pero
+## nunca el mismo dos veces seguidas. `last` es el que acaba de sonar; si no
+## hay ninguno grabado, devuelve el golpe de siempre, que sí tiene provisional.
+static func metal_hit(last: String = "") -> String:
+	var pool: Array[String] = []
+	for id: String in METAL_HITS:
+		if id != last and AudioManager.has_real_file(id):
+			pool.append(id)
+	if pool.is_empty():
+		# Con una sola grabación se repite, y sin ninguna va el de siempre.
+		for id: String in METAL_HITS:
+			if AudioManager.has_real_file(id):
+				pool.append(id)
+	if pool.is_empty():
+		return DOOR_BANGS
+	return pool[randi() % pool.size()]
+
+
+## El grito que le toca a un jumpscare: el suyo si está grabado, uno de los
+## tres de base al azar si no, y el grito de siempre como último recurso.
+## **Nunca devuelve vacío**: un salto sin grito no asusta, y con la estática
+## sola no se entiende lo que pasó.
+static func scream_for(slug: String) -> String:
+	var own: String = "grito_%s" % slug
+	if AudioManager.has_real_file(own):
+		return own
+	var pool: Array[String] = []
+	for id: String in SCREAM_BASE:
+		if AudioManager.has_real_file(id):
+			pool.append(id)
+	if not pool.is_empty():
+		return pool[randi() % pool.size()]
+	return SCREAM
+
+
 ## El id de una línea suelta de profe es el mismo que el de data/voice_lines.gd.
 static func voice_line(line_id: String) -> String:
 	return line_id
@@ -121,226 +178,364 @@ const CATALOG: Dictionary = {
 	"cajita_musical": {
 		"file": "cajita_musical.ogg", "bus": "Música",
 		"volume_db": -16.0, "generator": "music_box",
+		"desc": "Melodía de cajita musical, lenta y metálica, en bucle sin corte. 28 s.",
 	},
 	"cajita_musical_apagon": {
 		"file": "cajita_musical.ogg", "bus": "Música",
 		"volume_db": -4.0, "generator": "music_box",
+		"desc": "La misma cajita, más fuerte: es lo único que se oye a oscuras.",
 	},
 	"ticket_nuevo": {
 		"file": "ticket_nuevo.ogg", "bus": "Efectos",
 		"volume_db": -4.0, "generator": "ticket_chime",
+		"desc": "Campanita corta de aviso de sistema, dos notas que suben.",
 	},
 	"grito": {
 		"file": "grito.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "scream",
+		"desc": "Grito genérico de jumpscare, agudo y saturado. Es el último recurso.",
+	},
+	# Los gritos de cada profe y los tres de base. Van sin provisional: si no
+	# están grabados, scream_for() se cae al "grito" de arriba, que sí lo tiene.
+	"grito_barcosa": {"file": "gritos/grito_barcosa.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de Barcosa al atraparte: hombre mayor, ronco y enojado.",
+	},
+	"grito_urena": {"file": "gritos/grito_urena.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de Ureña: agudo y baboso, casi una risa que se rompe.",
+	},
+	"grito_rochis": {"file": "gritos/grito_rochis.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de Rochis: seco y grave, de pocas palabras.",
+	},
+	"grito_juan": {"file": "gritos/grito_juan.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de Juan.exe: chillido corto con un pitido digital encima.",
+	},
+	"grito_armando": {"file": "gritos/grito_armando.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de Armando: con reverb de micrófono malo y saturado.",
+	},
+	"grito_cometrabas": {"file": "gritos/grito_cometrabas.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de la botarga: coro de voces apagadas dentro de la felpa.",
+	},
+	"grito_audel": {"file": "gritos/grito_audel.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito del Mago Eléctrico: chispazo eléctrico y una carcajada.",
+	},
+	"grito_base_1": {"file": "gritos/grito_base_1.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de jumpscare de reserva (1 de 3), fuerte y saturado.",
+	},
+	"grito_base_2": {"file": "gritos/grito_base_2.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de jumpscare de reserva (2 de 3), distinto al 1.",
+	},
+	"grito_base_3": {"file": "gritos/grito_base_3.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Grito de jumpscare de reserva (3 de 3), distinto a los otros dos.",
 	},
 	"tono_ocupado": {
 		"file": "tono_ocupado.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "busy_tone",
+		"desc": "Tono de ocupado de teléfono fijo, dos o tres pitidos.",
 	},
 	"despertador": {
 		"file": "despertador.ogg", "bus": "Efectos",
 		"volume_db": -8.0, "generator": "alarm",
+		"desc": "Campanadas de reloj despertador de los de cuerda, 2 o 3 s.",
 	},
 	"campana_escuela": {
 		"file": "campana_escuela.ogg", "bus": "Efectos",
 		"volume_db": -4.0, "generator": "school_bell",
+		"desc": "Campana de escuela con aplausos de fondo.",
+	},
+	"ninos_yay": {
+		"file": "ninos_yay.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "school_bell",
+		"desc": "Niños gritando «yeeey», contentos, 1 o 2 s. Entra al acabarse el despertador.",
+	},
+	"extras_musica": {
+		"file": "extras_musica.ogg", "bus": "Música",
+		"volume_db": -14.0, "generator": "menu_music",
+		"desc": "Música de Extras y la Custom Night: más tranquila que la del menú, en bucle sin corte.",
+	},
+	"golpe_metal_1": {
+		"file": "golpe_metal_1.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "door_bang",
+		"desc": "Golpe de metal contra la cortina, toma 1 de 3 (se alternan en cada golpe de Barcosa).",
+	},
+	"golpe_metal_2": {
+		"file": "golpe_metal_2.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "door_bang",
+		"desc": "Golpe de metal contra la cortina, toma 2 de 3.",
+	},
+	"golpe_metal_3": {
+		"file": "golpe_metal_3.ogg", "bus": "Efectos",
+		"volume_db": -3.0, "generator": "door_bang",
+		"desc": "Golpe de metal contra la cortina, toma 3 de 3.",
+	},
+	"llavero": {
+		"file": "llavero.ogg", "bus": "Lejos",
+		"volume_db": -4.0, "generator": "", "pan": PAN_CENTER,
+		"desc": "Un llavero colgando que tintinea al caminar. Suena con los pasos de Mamador.",
+	},
+	"menu_musica": {
+		"file": "menu_musica.ogg", "bus": "Música",
+		"volume_db": -14.0, "generator": "menu_music",
+		"desc": "Música del menú: zumbido grave y lento, inquietante, en bucle sin corte.",
 	},
 	"pasos_acercandose": {
 		"file": "pasos_acercandose.ogg", "bus": "Efectos",
 		"volume_db": -2.0, "generator": "footsteps",
+		"desc": "Tres pasos pesados que se acercan en la oscuridad y paran.",
 	},
 	"se_aleja": {
 		"file": "se_aleja.ogg", "bus": "Efectos",
 		"volume_db": -3.0, "generator": "glass_repel",
+		"desc": "Alguien que se despega del cristal y se va arrastrando los pies.",
 	},
 	"golpe_grave": {
 		"file": "golpe_grave.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "low_hit",
+		"desc": "Golpe grave y seco, de los que pegan un susto. Medio segundo.",
 	},
 	"golpe_grave_menu": {
 		"file": "golpe_grave.ogg", "bus": "Efectos",
-		"volume_db": -10.0, "generator": "low_hit",
+		"volume_db": -4.0, "generator": "low_hit",
+		"desc": "El mismo golpe, para el tic del menú (va aparte por su volumen).",
 	},
 	"ambiente_oficina": {
 		"file": "ambiente_oficina.ogg", "bus": "Ambiente",
 		"volume_db": -14.0, "generator": "office_ambience",
+		"desc": "Zumbido de lámparas y ventilador de oficina, en bucle sin corte.",
 	},
 	"ambiente_pasillo": {
 		"file": "ambiente_pasillo.ogg", "bus": "Ambiente",
 		"volume_db": -20.0, "generator": "hallway_ambience",
+		"desc": "Aire de pasillo vacío de noche, en bucle sin corte, muy tenue.",
 	},
 	"telefono_timbre": {
 		"file": "telefono_timbre.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "phone_ring",
+		"desc": "Timbre de teléfono de escritorio, en bucle hasta que contesten.",
 	},
 	"puerta_cortina": {
 		"file": "puerta_cortina.ogg", "bus": "Efectos",
 		"volume_db": -5.0, "generator": "door_shutter",
+		"desc": "Cortina metálica de local bajando o subiendo, con su traqueteo.",
 	},
 	"golpes_cortina": {
 		"file": "golpes_cortina.ogg", "bus": "Efectos",
 		"volume_db": -3.0, "generator": "door_bang",
+		"desc": "Un puñetazo contra la cortina metálica, con resonancia.",
 	},
 	"camara_cambio": {
 		"file": "camara_cambio.ogg", "bus": "Efectos",
 		"volume_db": -10.0, "generator": "camera_blip",
+		"desc": "Clac de relé y zumbido corto al cambiar de cámara.",
 	},
 	"linterna_click": {
 		"file": "linterna_click.ogg", "bus": "Efectos",
 		"volume_db": -14.0, "generator": "flashlight_click",
+		"desc": "Clic seco de interruptor de linterna.",
 	},
 	"breaker_palanca": {
 		"file": "breaker_palanca.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "breaker_lever",
+		"desc": "Palanca de tablero eléctrico bajando: dos clacs pesados.",
 	},
 	"telefono_colgar": {
 		"file": "telefono_colgar.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "phone_hang_up",
+		"desc": "Auricular que se cuelga sobre la base.",
 	},
 	"wasted": {
 		"file": "wasted.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "wasted_sting",
+		"desc": "Golpe orquestal corto y feo, de muerte en un juego de coches.",
+	},
+	"mamador_brecha": {
+		"file": "mamador_brecha.ogg", "bus": "Efectos",
+		"volume_db": 0.0, "generator": "breach",
+		"desc": "Puerta derribada de una patada y gritos de un operativo entrando. Un segundo.",
 	},
 	"estatica_camara": {
 		"file": "estatica_camara.ogg", "bus": "Ambiente",
 		"volume_db": -30.0, "generator": "camera_static",
+		"desc": "Estática de televisión vieja, en bucle sin corte, suave.",
 	},
 	"menu_blip": {
 		"file": "menu_blip.ogg", "bus": "Efectos",
 		"volume_db": -16.0, "generator": "menu_blip",
+		"desc": "Pitido corto y seco de moverse por un menú de consola vieja.",
 	},
 	"tecla_maquina": {
 		"file": "tecla_maquina.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "typewriter_key",
+		"desc": "Golpe de una tecla de máquina de escribir. Respaldo de las tres de abajo.",
 	},
 	"tecla_maquina_1": {
 		"file": "tecla_maquina_1.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "",
+		"desc": "Tecla de máquina de escribir, toma 1 de 3 (se alternan al escribir).",
 	},
 	"tecla_maquina_2": {
 		"file": "tecla_maquina_2.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "",
+		"desc": "Tecla de máquina de escribir, toma 2 de 3.",
 	},
 	"tecla_maquina_3": {
 		"file": "tecla_maquina_3.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "",
+		"desc": "Tecla de máquina de escribir, toma 3 de 3.",
 	},
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",
 		"volume_db": -2.0, "generator": "",
+		"desc": "Voz de Rochis diciendo «es impresionante». Si falta, la dice la voz sintética.",
 	},
 	"cajita_musical_aviso": {
 		"file": "cajita_musical.ogg", "bus": "Lejos",
 		"volume_db": -22.0, "generator": "music_box", "pan": PAN_RIGHT,
+		"desc": "La misma cajita, muy bajita y con eco, como desde el cubículo 3.",
 	},
 	"barcosa_corre": {
 		"file": "lejos/barcosa_corre.ogg", "bus": "Lejos",
 		"volume_db": -2.0, "generator": "far_running", "pan": PAN_CENTER,
+		"desc": "Pasos corriendo por un pasillo, acercándose, en bucle: suenan toda su carrera.",
 	},
 	"mamador_pasos": {
 		"file": "lejos/mamador_pasos.ogg", "bus": "Lejos",
 		"volume_db": -3.0, "generator": "far_boots", "pan": PAN_CENTER,
+		"desc": "Botas pesadas y un radio con estática, lejos.",
 	},
 	"urena_banos": {
 		"file": "lejos/urena_banos.ogg", "bus": "Lejos",
 		"volume_db": -5.0, "generator": "far_water", "pan": PAN_CENTER,
+		"desc": "Agua de lavabo corriendo, lejos, en bucle.",
 	},
 	"juan_teclado": {
 		"file": "lejos/juan_teclado.ogg", "bus": "Lejos",
 		"volume_db": -6.0, "generator": "far_keyboard", "pan": PAN_CENTER,
+		"desc": "Tecleo de teclado mecánico, lejos, en bucle.",
 	},
 	"armando_modem": {
 		"file": "lejos/armando_modem.ogg", "bus": "Lejos",
 		"volume_db": -5.0, "generator": "far_modem", "pan": PAN_CENTER,
+		"desc": "Módem de 56k negociando, distorsionado y lejos.",
 	},
 	"audel_chispa": {
 		"file": "lejos/audel_chispa.ogg", "bus": "Lejos",
 		"volume_db": -3.0, "generator": "far_spark", "pan": PAN_LEFT,
+		"desc": "Zumbido eléctrico con algún trueno, lejos, en bucle.",
 	},
 	"rochis_silla": {
 		"file": "lejos/rochis_silla.ogg", "bus": "Lejos",
 		"volume_db": -4.0, "generator": "far_chair", "pan": PAN_LEFT,
+		"desc": "Rechinido de una silla de oficina al moverse.",
 	},
 	"lejos_portazo": {
 		"file": "lejos/lejos_portazo.ogg", "bus": "Lejos",
 		"volume_db": -3.0, "generator": "far_door_slam", "pan": PAN_CENTER,
+		"desc": "Un portazo en otra parte del edificio.",
 	},
 	"lejos_silla": {
 		"file": "lejos/lejos_silla.ogg", "bus": "Lejos",
 		"volume_db": -5.0, "generator": "far_chair", "pan": PAN_LEFT,
+		"desc": "Una silla arrastrada en otro cuarto.",
 	},
 	"lejos_pasos_arriba": {
 		"file": "lejos/lejos_pasos_arriba.ogg", "bus": "Lejos",
 		"volume_db": -5.0, "generator": "far_upstairs", "pan": PAN_CENTER,
+		"desc": "Pasos en el piso de arriba, apagados.",
 	},
 	"lejos_risa": {
 		"file": "lejos/lejos_risa.ogg", "bus": "Lejos",
 		"volume_db": -6.0, "generator": "far_laugh", "pan": PAN_RIGHT,
+		"desc": "Una risa corta, muy lejos, imposible de ubicar.",
 	},
 	"lejos_platos": {
 		"file": "lejos/lejos_platos.ogg", "bus": "Lejos",
 		"volume_db": -6.0, "generator": "far_dishes", "pan": PAN_RIGHT,
+		"desc": "Platos y cubiertos en la cafetería vacía.",
 	},
 	"barcosa_puerta_1": {
 		"file": "voces/barcosa_puerta_1.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Barcosa aporreando: «¿Quién cerró? Tengo clase en este salón.»",
 	},
 	"barcosa_puerta_2": {
 		"file": "voces/barcosa_puerta_2.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Barcosa aporreando: «Abra, joven. Nada más paso lista y me voy.»",
 	},
 	"barcosa_puerta_3": {
 		"file": "voces/barcosa_puerta_3.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Barcosa aporreando: «Diez minutos. Le estoy pidiendo diez minutos.»",
 	},
 	"barcosa_se_va": {
 		"file": "voces/barcosa_se_va.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Barcosa rindiéndose: «Bueno, ya. Quedan todos con falta.»",
 	},
 	"mamador_ok_1": {
 		"file": "voces/mamador_ok_1.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Mamador conforme: «Sin novedad. Me retiro.»",
 	},
 	"mamador_ok_2": {
 		"file": "voces/mamador_ok_2.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Mamador conforme: «Nada de inteligencia artificial. Así me gusta.»",
 	},
 	"mamador_ok_3": {
 		"file": "voces/mamador_ok_3.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "Mamador conforme: «Todo en orden. Sigan así.»",
 	},
 	"llamada_noche1": {
 		"file": "llamadas/llamada_noche1.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "La llamada entera de la noche 1 (solo voz; el timbre lo pone el juego). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche2": {
 		"file": "llamadas/llamada_noche2.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "La llamada entera de la noche 2 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche3": {
 		"file": "llamadas/llamada_noche3.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "La llamada entera de la noche 3 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche4": {
 		"file": "llamadas/llamada_noche4.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "La llamada entera de la noche 4 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche5": {
 		"file": "llamadas/llamada_noche5.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "La llamada entera de la noche 5 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche6": {
 		"file": "llamadas/llamada_noche6.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
+		"desc": "La llamada entera de la noche 6 (solo voz). Guion en docs/guion_voces.md.",
 	},
 }
 
 ## Los que suenan en bucle: el AudioManager les marca el bucle al cargarlos.
 const LOOPING: Array[String] = [
-	"cajita_musical", "cajita_musical_aviso", "despertador", "ambiente_oficina",
+	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
-	"urena_banos", "juan_teclado", "audel_chispa",
+	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
+	# Los pasos de Barcosa suenan toda su carrera, así que van en bucle.
+	"barcosa_corre",
 ]
 
 

@@ -58,7 +58,14 @@ func _run() -> void:
 
 
 ## Abre una pantalla, espera a que se vea y la guarda.
+##
+## Lo de despausar en cada pantalla no es un detalle: la pausa de la noche y el
+## panel de pruebas dejan el árbol pausado, y **cambiar de escena no lo
+## despausa**. Sin esto, todo lo que viene después de esas dos sale en blanco,
+## porque los tweens de entrada (los fundidos del recibo y de los documentos)
+## no corren con el árbol parado.
 func _capture(entry: Dictionary) -> void:
+	get_tree().paused = false
 	var prepare: Variant = entry.get("prepare")
 	if prepare is Callable:
 		(prepare as Callable).call()
@@ -149,7 +156,7 @@ func _night_entries() -> Array[Dictionary]:
 			"setup": func(scene: Node) -> void: scene.jumpscare.play("barcosa")},
 		{"name": "19b_pantalla_wasted", "scene": Screens.NIGHT, "wait": 2.0,
 			"setup": func(scene: Node) -> void: scene.wasted_screen.play(
-				JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text())},
+				JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text(), true)},
 	]
 
 
@@ -158,12 +165,12 @@ func _end_of_night_entries() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
 		{"name": "20_seis_am", "scene": Screens.WIN, "wait": 2.2,
 			"prepare": func() -> void: GameManager.prepare_night(5)},
-		{"name": "21_periodico", "scene": Screens.NEWSPAPER, "wait": 0.8,
+		{"name": "21_periodico", "scene": Screens.NEWSPAPER, "wait": 1.3,
 			"prepare": func() -> void:
 				NewspaperScreen.pending_index = 1
 				NewspaperScreen.pending_documents = []
 				NewspaperScreen.next_scene = Screens.MAIN_MENU},
-		{"name": "22_recibo_de_pago", "scene": Screens.PAYMENT, "wait": 0.8,
+		{"name": "22_recibo_de_pago", "scene": Screens.PAYMENT, "wait": 1.3,
 			"prepare": func() -> void:
 				PaymentScreen.setup(5, 3, 4, 225)
 				PaymentScreen.pending_documents = []
@@ -171,7 +178,7 @@ func _end_of_night_entries() -> Array[Dictionary]:
 	]
 	for document_id: String in Documents.IDS:
 		list.append({"name": "23_documento_%s" % document_id, "scene": Screens.DOCUMENT,
-			"wait": 0.8,
+			"wait": 1.3,
 			"prepare": func() -> void:
 				DocumentScreen.queue = []
 				DocumentScreen.pending_document = document_id

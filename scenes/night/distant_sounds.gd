@@ -43,16 +43,19 @@ func _ready() -> void:
 	_ambient_left = randf_range(MIN_AMBIENT_GAP, MAX_AMBIENT_GAP)
 
 
-## Un sonido suelto de un profe, con su probabilidad y su espera.
-func play_for(slug: String, sound_id: String, chance: float = MOVE_CHANCE) -> void:
+## Un sonido suelto de un profe, con su probabilidad y su espera. Devuelve
+## true si de verdad sonó, para que quien lo pidió pueda soltar con él otro
+## sonido que vaya junto (el llavero de Mamador con sus pasos).
+func play_for(slug: String, sound_id: String, chance: float = MOVE_CHANCE) -> bool:
 	if sound_id.is_empty() or not GameManager.is_night_active:
-		return
+		return false
 	if float(_cooldowns.get(slug, 0.0)) > 0.0:
-		return
+		return false
 	if randf() > chance:
-		return
+		return false
 	_cooldowns[slug] = PER_PROFE_GAP
 	AudioManager.play(sound_id)
+	return true
 
 
 ## Los bucles de sitio: se mira dónde está cada profe y se prenden o apagan.

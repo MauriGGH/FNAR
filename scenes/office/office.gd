@@ -26,6 +26,9 @@ signal flashlight_changed(is_on: bool)
 ## Se intentó prender pero el cortaso de Audel la dejó muerta.
 signal flashlight_failed()
 signal notice_requested(text: String, duration: float)
+## Un ruido que todavía no tiene audio. Va por su propia señal porque no se
+## enseña en pantalla, al revés que notice_requested.
+signal sound_noticed(text: String, duration: float)
 
 const CENTER_ZONES_PATH: String = "res://data/oficina_zonas.json"
 const RIGHT_ZONES_PATH: String = "res://data/oficina_derecha_zonas.json"
@@ -100,8 +103,13 @@ const PAN_SMOOTHING: float = 7.0
 
 # Giro de cabeza entre vistas.
 const SWEEP_TIME: float = 0.35
-## Desenfoque máximo a mitad del barrido, en fracción del ancho de la textura.
-const MAX_SWEEP_BLUR: float = 0.028
+## Lo que se corre como mucho el desenfoque del giro, en píxeles de pantalla.
+## Crece hasta la mitad del barrido y se apaga al llegar.
+const MAX_SWEEP_BLUR_PIXELS: float = 24.0
+## Y el del parallax, que es solo un roce cuando el mouse va rápido.
+const MAX_PAN_BLUR_PIXELS: float = 5.0
+## A qué velocidad del parallax (píxeles por segundo) ya está al máximo.
+const PAN_BLUR_FULL_SPEED: float = 900.0
 
 ## Lo que tarda el acercamiento a la pantalla de la PC.
 const ZOOM_TIME: float = 0.4
@@ -499,11 +507,25 @@ func _update_pan(delta: float) -> void:
 		return
 	var wanted: Vector2 = _wanted_pan() if is_interactive else Vector2.ZERO
 	var eased: float = 1.0 - exp(-delta * PAN_SMOOTHING)
+	var before: Vector2 = _pan[_current_view]
 	for i: int in _content_nodes.size():
 		# Las vistas que no se ven también se van colocando, para que al girar
 		# la nueva ya esté donde toca y no dé un salto.
 		_pan[i] = _pan[i].lerp(wanted, eased)
 	_apply_content_position(_current_view)
+	_apply_pan_blur(before, delta)
+
+
+## Un roce de desenfoque cuando el mouse mueve la vista rápido. Es mucho más
+## suave que el del giro: se nota al barrer de un lado a otro y nada más.
+func _apply_pan_blur(before: Vector2, delta: float) -> void:
+	if delta <= 0.0:
+		return
+	# Lo que se movió la vista este cuadro, ya en píxeles de pantalla.
+	var moved: float = absf(_pan[_current_view].x - before.x) * size.x * PAN_RANGE.x
+	var speed: float = moved / delta
+	var blur: float = minf(speed / PAN_BLUR_FULL_SPEED, 1.0) * MAX_PAN_BLUR_PIXELS
+	_set_blur(blur)
 
 
 ## Hacia dónde tira el mouse, de -1 a 1 en cada eje, ya con la zona muerta
@@ -556,7 +578,7 @@ func _apply_sweep(progress: float) -> void:
 	_sweep_from.position.x = -_sweep_direction * progress * size.x
 	_sweep_to.position.x = _sweep_direction * (1.0 - progress) * size.x
 	# El desenfoque sigue la velocidad del barrido: máximo justo a la mitad.
-	_set_blur(sin(progress * PI) * MAX_SWEEP_BLUR)
+	_set_blur(sin(progress * PI) * MAX_SWEEP_BLUR_PIXELS)
 
 
 func _on_sweep_finished(target: int) -> void:
@@ -568,7 +590,10 @@ func _on_sweep_finished(target: int) -> void:
 	_state = ViewState.PANNING
 
 
-func _set_blur(amount: float) -> void:
+## El desenfoque se pide en píxeles de pantalla; el shader lo quiere en
+## fracción del ancho de la imagen, que es la vista entera a VIEW_SCALE.
+func _set_blur(pixels: float) -> void:
+	var amount: float = pixels / maxf(size.x * VIEW_SCALE, 1.0)
 	for image: TextureRect in [left_image, center_image, right_image]:
 		var material: ShaderMaterial = image.material as ShaderMaterial
 		if material != null:
@@ -740,7 +765,7 @@ func _toggle_door() -> void:
 	_refresh_door()
 	if is_door_closed:
 		# La cortina pega contra el piso: ruido y sacudida.
-		notice_requested.emit(DOOR_NOTICE, NOTICE_TIME)
+		sound_noticed.emit(DOOR_NOTICE, NOTICE_TIME)
 		shake()
 	door_toggled.emit(is_door_closed)
 

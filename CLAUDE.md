@@ -41,7 +41,10 @@ res://
 ## Sistemas principales
 
 - **GameManager (autoload):** noche actual, reloj de 12 a 6 AM (cada hora dura unos 75 s), nombre del jugador, victoria y game over con la causa.
-- **PowerManager (autoload):** energía de 0 a 100 %. Gastan: puerta cerrada, linterna y cámaras abiertas. En 0 % todo se apaga. El breaker corta la corriente unos segundos; la chapa de la puerta está en un no-break y sigue funcionando.
+- **PowerManager (autoload):** energía de 0 a 100 %. Gastan: puerta cerrada, linterna, cámaras y PC
+  abiertas. El **consumo base sube por noche** (`NightConfig.IDLE_DRAIN_BY_NIGHT`: 8, 9, 10, 11, 12
+  y 13 %/hora de la noche 1 a la 6; una Custom Night cuenta como la última), que es la manera de
+  apretar sin tocar ninguna mecánica. En 0 % todo se apaga. El breaker corta la corriente unos segundos; la chapa de la puerta está en un no-break y sigue funcionando.
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
@@ -51,7 +54,13 @@ res://
     con una zona muerta en el centro para que no tiemble. **El mouse nunca cambia de vista**,
     aunque lo dejes pegado al borde.
   - **A y D (o las flechas) cambian de vista.** Un toque y la cabeza gira a la de al lado con un
-    barrido de 0.35 s y su desenfoque. No hay que mantener nada.
+    barrido de 0.35 s. No hay que mantener nada.
+  - **Desenfoque de movimiento** (`scenes/office/office_view.gdshader`): durante el barrido la
+    imagen se corre en horizontal, creciendo hasta la mitad del giro y apagándose al llegar
+    (`MAX_SWEEP_BLUR_PIXELS`, 24 px). El parallax del mouse lleva el mismo desenfoque pero
+    **mucho más leve** (`MAX_PAN_BLUR_PIXELS`, 5 px) y solo cuando se mueve rápido: a
+    `PAN_BLUR_FULL_SPEED` (900 px/s) ya está al tope. Se pide en píxeles de pantalla; el shader lo
+    pasa a fracción del ancho de la vista.
   Todo lo que se ve en una vista (zonas de clic, recortes de profes, siluetas, cortina, luz de la
   linterna) cuelga de su nodo `Content`, así que se mueve con la imagen sin tocarlo aparte y los
   clics siguen cayendo en su objeto. Mientras la cabeza gira o la vista se acerca a la PC o al
@@ -88,11 +97,22 @@ cosas sueltas y espaciadas. El jugador
 los sube y los baja en el menú de opciones y queda guardado en `save.cfg`. El TTS no sale por los
 buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume()` a mano.
 
+**Los ruidos no se leen.** Mientras un sonido no esté grabado, el juego **no** escribe
+"[pasos corriendo]" en pantalla: esos avisos van por `NoticeBanner.show_sound()`, que solo los
+saca por consola y nada más cuando el panel de pruebas está encendido (`DebugKeys.is_enabled()`).
+La banda de avisos se queda para lo que el jugador sí tiene que leer (un ticket nuevo, la linterna
+muerta), que va por `show_notice()`.
+
+**Qué falta por grabar:** cada entrada del catálogo lleva un campo `"desc"` con cómo tiene que
+sonar, y `scripts/audio/missing_audio_report.gd` escribe con eso **`docs/audios_faltantes.md`**:
+los ids sin archivo, separados entre los que tienen provisional y los que no suenan, con el nombre
+exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
+
 **Opciones:** `scripts/ui/options_panel.gd` es una capa que se abre encima de lo que haya, así que
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (40 ids). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (72 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -110,6 +130,9 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ticket_nuevo` | `ticket_nuevo.ogg` | Efectos | −4 | no | llega un ticket |
 | `puerta_cortina` | `puerta_cortina.ogg` | Efectos | −5 | no | la cortina al bajar o subir |
 | `golpes_cortina` | `golpes_cortina.ogg` | Efectos | −3 | no | cada golpe de Barcosa |
+| `golpe_metal_1`…`3` | `golpe_metal_N.ogg` | Efectos | −3 | no | cada porrazo de Barcosa, uno al azar sin repetir |
+| `llavero` | `llavero.ogg` | Lejos | −4 | no | el llavero de Mamador, con sus pasos al moverse |
+| `extras_musica` | `extras_musica.ogg` | Música | −14 | sí | música de Extras y de la Custom Night |
 | `camara_cambio` | `camara_cambio.ogg` | Efectos | −10 | no | abrir cámaras y cambiar de una a otra |
 | `linterna_click` | `linterna_click.ogg` | Efectos | −14 | no | prender y apagar la linterna |
 | `breaker_palanca` | `breaker_palanca.ogg` | Efectos | −6 | no | bajar el breaker |
@@ -118,8 +141,12 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | no | el cuadro de una alucinación |
 | `golpe_grave_menu` | `golpe_grave.ogg` | Efectos | −10 | sí | el tic del fondo de los menús (mismo archivo) |
 | `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
-| `despertador` | `despertador.ogg` | Efectos | −8 | sí | el rodillo de las 6 AM |
+| `grito_<id>`, `grito_base_1`…`3` | `gritos/<id>.ogg` | Efectos | 0 | no | el grito de cada jumpscare y los tres de reserva |
+| `mamador_brecha` | `mamador_brecha.ogg` | Efectos | 0 | no | la irrupción del operativo, antes del WASTED |
+| `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
+| `ninos_yay` | `ninos_yay.ogg` | Efectos | −3 | no | los niños al entrar el 6; solo se usa si no está grabado el despertador |
+| `menu_musica` | `menu_musica.ogg` | Música | −14 | sí | música de fondo del menú principal |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 (si no, la voz sintética) |
 | `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
 | `telefono_colgar` | `telefono_colgar.ogg` | Efectos | −6 | no | al acabar o silenciar una llamada |
@@ -255,7 +282,12 @@ su propia estética.
 
 - **`scripts/ui/menu_style.gd` (`MenuStyle`)** guarda los colores, los tamaños medidos a 1080p (que
   se escalan con el alto), el negro de fondo, el título y el pie de pantalla, y el blip. Los
-  títulos van en VT323 grande y en **mayúsculas**, arrancando en el margen izquierdo.
+  títulos van en VT323 grande y en **mayúsculas**, arrancando en el margen izquierdo. Los tamaños
+  son **grandes a propósito**, para que se lean de lejos: título de pantalla 56 px, opciones 44 px,
+  pies 22 px, y el título del menú principal 72 px en sus cuatro renglones.
+- **Las capas que se abren encima de otro menú** (Opciones, la confirmación de borrado) ponen un
+  negro al **90 %** y **esconden la lista de abajo** mientras están abiertas, para que no se lea
+  nada por detrás; al cerrarse la vuelven a enseñar.
 - **`scripts/ui/menu_list.gd` (`MenuList`)** es la lista de opciones de todos ellos: texto a la
   izquierda, `>>` en la elegida, lo apagado en gris oscuro y el cursor se lo salta. Se mueve con
   las flechas o W/S, se acepta con Enter o espacio, se sale con Esc, y **también funciona con el
@@ -283,17 +315,24 @@ pantallas de documentos y periódicos los deja marcados como vistos en `save.cfg
   lleva `scenes/ui/static_frames.gd` (`StaticFrames`), que es un `TextureRect` con
   `set_strength(0..1)` para su opacidad. Se pide con `ScreenFx.add_static(padre, fuerza)` y cada
   sitio tiene la suya (la cámara en reposo apenas se nota, el jumpscare tapa todo).
-- **Intro de noche:** negro pelón con "12:00 AM" al centro y "1ª noche" (2ª, 3ª...) debajo, en
-  Share Tech Mono blanco. Un golpe de estática de 0.3 s al aparecer y otro al irse. Unos 2.5 s y
-  entra sola a la noche.
-- **6 AM:** negro con "5 AM" grande en la fuente de segmentos; el 5 sube como un rodillo y entra el
-  6 en 0.8 s, el texto pasa de blanco a dorado, suena el despertador y luego la campana de la
-  escuela con aplausos. Con la campana cae confeti de triangulitos de colores durante 4 s
-  (`scenes/win_screen/confetti_fall.gd`, dibujado por código). Al acabar, el recorte de esa noche.
+- **Intro de noche:** negro pelón con "12:00 AM" al centro y "1ª noche" (2ª, 3ª...) debajo, a
+  máquina de escribir y en blanco. Un golpe de estática de 0.3 s al aparecer y otro al irse. Unos
+  2.5 s y entra sola a la noche.
+- **6 AM:** negro con "5 AM" grande, también a máquina de escribir y en blanco; el 5 sube como un
+  rodillo y entra el 6 en 0.8 s. **El texto no cambia de color**: lo único que se mueve es la hora.
+  Suenan las campanadas del despertador, que **ya traen el grito de los niños al final**: el
+  confeti cae en los últimos 4 s del audio (se mide su largo de verdad con `AudioManager.length()`)
+  y la pantalla acaba con él. Solo si no estuviera grabado el despertador se pide aparte el
+  `ninos_yay`. El confeti son triangulitos de colores que caen durante 4 s (`scenes/win_screen/confetti_fall.gd`, dibujado por código). Al acabar, el recorte de
+  esa noche.
 - **Game over:** un segundo de estática fuerte y, al aclararse, la cámara vacía del lugar de donde
   salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
   Clic en cualquier lado vuelve al menú, el botón repite la noche. El mapa de profe a cámara está
   en `Extras.ORIGIN_CAMERAS` (la CAM 10 no tiene `vacia`: usa `cam10_salio`).
+- **El HUD va en VT323**, como todo lo que sale de una pantalla o un aparato, y con el reparto de
+  los juegos originales: **la hora grande arriba a la derecha** (86 px), "NOCHE N" debajo y más
+  chica (34 px), el contador de tickets debajo (24 px) y la **energía abajo a la izquierda**
+  (40 px). Los tamaños están en `night.tscn`; la fuente la pone `night.gd` en `_style_hud()`.
 - **Esquina del HUD:** el reloj, la noche y el contador de tickets van en un `VBoxContainer`
   (`Hud/TopRight`) anclado arriba a la derecha, no en posiciones fijas: se apilan solos y no se
   pueden encimar entre ellos aunque les cambie el texto. La columna arranca pasada la banda del
@@ -418,7 +457,16 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 
 ## Personajes
 
-- **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B. Si revisas CAM 10 seguido, se queda; si lo descuidas, se asoma, sale y corre por CAM 1 hasta la puerta. Solo se detiene cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
+- **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B y sube de etapa
+  **por tiempo sin que lo revises**, no por el dado de la IA: hay que dejarlo sin mirar
+  `NightConfig.barcosa_stage_time()` segundos seguidos para que avance uno, y **verlo por la
+  CAM 10 pone la cuenta a cero**. Son 45 s por etapa con el nivel de la noche 2 y 15 s con el de la
+  6, interpolando por nivel (así vale también para la Custom Night, con un piso de 8 s).
+  Revisarlo cada 30 s lo deja clavado hasta la noche 4.
+  Al salir corre por CAM 1 hasta la puerta y **tarda en llegar** `NightConfig.barcosa_run_time()`:
+  6 s en la noche 2 y 3 s en la 6. Desde que sale y hasta que llega **suena `barcosa_corre` en
+  bucle** (pasos acercándose), para poder reaccionar sin estar en las cámaras. Solo se detiene
+  cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
   En la oficina se le ve **de silueta mientras corre por `pasillo_sur`** hacia la puerta. Cuando ya
   está aporreando con la chapa cerrada **no se dibuja nada**: está detrás de la cortina. Lo único
   que se nota es que **la lámina tiembla 2.5 px durante 0.15 s con cada golpe** (señal
@@ -431,13 +479,15 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible. Con la linterna muerta **el pasillo se queda a oscuras**: no hay cono, no se ve quién está en el cristal y no se le pueden contar destellos a nadie. Eso es parte del castigo.
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
     secuencia de cuatro tiempos, en `blackout_death.gd`: 3 a 12 s al azar de oscuridad total;
-    aparecen dos chispas azules a lo lejos que **parpadean al ritmo de la cajita musical**, una
-    por pulso (los de su JSON), y la de la botarga se calla, que a oscuras solo se oye esta. No
+    a lo lejos en el pasillo, al fondo del cristal, se encienden y se apagan **un par de ojos**
+    al ritmo de la cajita musical, uno por pulso (los de su JSON), como la cara de Freddy en
+    FNAF 1: chiquitos, blanco azulados y con un brillo muy leve, y **no se ve nada más**. La
+    cajita de la botarga se calla, que a oscuras solo se oye esta. No
     suena la canción entera: es **un tramo al azar**, que entra por un pulso de la **primera
     mitad** y dura entre **8 y 20 s**, acabando también en un pulso, con un fundido de 0.4 s
     (`MusicBox.random_segment()`, y los números en `blackout_death.gd`). Las chispas siguen los
     pulsos **de ese tramo**, no los del principio de la canción. La cajita de la CAM 4 y el aviso
-    lejano no cambian. Al acabar el tramo, las chispas se apagan y hay **silencio total de 2 a 5 s**; luego
+    lejano no cambian. Al acabar el tramo, los ojos se apagan y hay **silencio total de 2 a 5 s**; luego
     se oyen **tres pasos que se acercan** y, al terminar, `jumpscare_audel` con la animación de
     siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
@@ -480,13 +530,18 @@ para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las
 
 Las imágenes están en `assets/art/jumpscares/`: `jumpscare_<id>.png` y `jumpscare_<id>_a.png` para barcosa, urena, rochis, juan, armando, cometrabas y audel, más `audel_susto` y `mamador_militares`.
 
-La animación de cada muerte es la misma: la variante `_a` durante 0.12 s, corte a la imagen final con un zoom de 1.0 a 1.15 en 0.5 s, temblor fuerte, un destello blanco de un cuadro y un grito provisional; después estática y la pantalla de game over con su causa.
+La animación de cada muerte es la misma: la variante `_a` durante 0.12 s, corte a la imagen final con un zoom de 1.0 a 1.15 en 0.5 s, temblor fuerte, un destello blanco de un cuadro y un grito; después estática y la pantalla de game over con su causa.
+
+**El grito va siempre y a 0 dB**, encima de la estática: nunca se oye solo el siseo. Lo elige
+`Sounds.scream_for(slug)`: el grito propio del profe (`grito_<id>`) si está grabado, si no uno de
+`grito_base_1..3` al azar, y si tampoco están, `grito`, que lleva provisional por código.
 
 Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 (`scenes/ui/wasted_screen.gd`). Ya no lleva luces de policía.
 
 | Cuándo | Qué pasa |
 | --- | --- |
+| −0.8 s | **La irrupción**: pantalla en negro, `mamador_brecha` (la puerta derribada y los gritos del operativo) y un flash blanco de un cuadro. Solo la lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
 | 0.0 s | `jumpscare_mamador_militares` a pantalla completa, con un zoom de 1.0 a 1.08 que no para en toda la secuencia |
 | 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo; suena `wasted` |
 | 1.2 s | Entra una franja negra (alfa 0.55) de lado a lado, centrada, de alto 16 % de la pantalla, con fade de 0.3 s |
@@ -589,9 +644,14 @@ versión (`application/config/version` de project.godot). Abajo al centro, "Mant
 el progreso": mantener Supr 1.5 s llena una barrita y entonces pregunta si de verdad, y solo al
 confirmar se borra `save.cfg`.
 
-**Extras** (opción del menú principal, se desbloquea al pasar la noche 5, como en los juegos originales):
+**Extras** (opción del menú principal, se desbloquea al pasar la noche 5, como en los juegos
+originales). La **columna de secciones** va a la izquierda en VT323 con `>>`, y **no pasa del 28 %
+del ancho**; todo lo demás (el visor de expedientes con sus flechas y su contador, y las rejillas)
+vive en el hueco de la derecha y nunca pisa la columna. Suena `extras_musica` en bucle, aquí y en
+la Custom Night.
 - **Expedientes:** `assets/art/extras/expediente_<id>.png` (1920x1080). Cada imagen ya es la escena
-  completa, la carpeta y el plano, así que no se recorta nada: se ve a pantalla completa y se pasa a
+  completa, la carpeta y el plano, así que no se recorta nada: se ve entera en el hueco de la
+  derecha y se pasa a
   la siguiente con las flechas de los lados, con clic (derecha avanza, izquierda retrocede) o con las
   teclas de dirección. Debajo, el nombre en pantalla, el rol y una línea. Se desbloquea la ficha de
   un profe la primera vez que te mata o al pasar la noche donde se activa.
@@ -602,6 +662,10 @@ confirmar se borra `save.cfg`.
 - **Custom Night** (si no está ya en el menú principal).
 Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
 `scenes/ui/locked_art.gdshader`) y un "???" encima.
+
+**Audio del menú principal:** música de fondo en bucle (`menu_musica`, bus Música, −14 dB) y un
+hilo de estática (`estatica_camara`, −30 dB). Las dos se apagan solas al salir del menú
+(`_exit_tree`), para que no se cuelen en la noche.
 
 **Fondo de los menús (`scripts/ui/menu_backdrop.gd`):** de fondo va siempre
 `assets/art/menu/menu_fondo_0.png`, con líneas de escaneo suaves y un poco de estática. Encima, el
@@ -617,8 +681,8 @@ El tic dura unos **0.35 s** y va en cuatro tramos:
 
 | Tramo | Qué se ve |
 | --- | --- |
-| 0.07 s | Todavía `menu_fondo_0`, pero desgarrado de arriba abajo: las franjas corridas de 10 a 40 px a los lados y los colores separados |
-| 0.10 s | Entra el cuadro del profe y el desgarro se vuelve una banda que **baja** de arriba abajo; ahí suena el golpe (`golpe_grave_menu`, el mismo `golpe_grave.ogg` a −10 dB) |
+| 0.07 s | Todavía `menu_fondo_0`, pero desgarrado de arriba abajo: las franjas corridas de 10 a 40 px a los lados y los colores separados. **El golpe suena aquí** (`golpe_grave_menu`, el mismo `golpe_grave.ogg` a −4 dB), con el primer cuadro roto |
+| 0.10 s | Entra el cuadro del profe y el desgarro se vuelve una banda que **baja** de arriba abajo |
 | 0.15 s | **Congelado**: el profe quieto y sin desgarro, que es lo que asusta |
 | 0.05 s | Uno o dos cuadros de estática a 0.5 de opacidad, que tapan la vuelta a `menu_fondo_0` |
 

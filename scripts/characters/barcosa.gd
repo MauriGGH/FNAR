@@ -1,11 +1,15 @@
 class_name Barcosa
 extends Animatronic
 
-## Barcosa (rol Foxy). Se esconde en la sala de servicio del salón B y va
-## saliendo por etapas cada vez que el dado de la IA le gana... salvo que lo
-## estés viendo por la CAM 10: vigilarlo le quita la oportunidad. Desde la
-## etapa 2 sale corriendo por el pasillo hasta la puerta, y solo lo detiene
-## encontrarla cerrada.
+## Barcosa (rol Foxy). Se esconde en la sala de servicio del salón B y sube de
+## etapa **cuando pasa demasiado tiempo sin que lo revisen** por la CAM 10:
+## nada de dados. Verlo en la cámara pone la cuenta a cero, así que revisarlo
+## seguido lo deja donde está; lo que aguanta cada noche lo dice
+## `NightConfig.barcosa_stage_time()`.
+##
+## Desde la etapa 2 sale corriendo por el pasillo hasta la puerta, y mientras
+## corre se oyen sus pasos acercándose, para que se pueda reaccionar sin estar
+## en las cámaras. Solo lo detiene encontrar la puerta cerrada.
 
 ## Golpeó la puerta: la cortina tiembla. Va aparte de made_noise porque no es
 ## un aviso de texto, es una sacudida.
@@ -29,12 +33,12 @@ const STAGE_PEEKING: int = 1
 const STAGE_LEAVING: int = 2
 const STAGE_NAMES: Array[String] = ["escondido", "asomándose", "saliendo"]
 
-## Cada cuánto tira el dado para avanzar una etapa.
-const STAGE_INTERVAL: float = 5.0
+## Cada cuánto se revisa la cuenta del tiempo sin verlo.
+const STAGE_INTERVAL: float = 0.5
 
-# Lo que tarda en cruzar cada mitad del pasillo.
-const NORTH_RUN_TIME: float = 1.5
-const SOUTH_RUN_TIME: float = 1.0
+## Cómo se reparte la carrera entre las dos mitades del pasillo: el tramo norte
+## es el más largo. El total lo pone NightConfig.barcosa_run_time().
+const NORTH_RUN_SHARE: float = 0.6
 
 # En la puerta cerrada: golpea y habla 5 s, y cada golpe cuesta 1 %.
 const BANG_TIME: float = 5.0
@@ -59,6 +63,14 @@ var stage: int = STAGE_HIDDEN
 var _state: State = State.STALKING
 var _run_step: int = STEP_SALON_B
 var _step_timer: float = 0.0
+## Lo que lleva sin que nadie lo vea por la CAM 10, y lo que necesita juntar
+## para subir de etapa esta noche.
+## El golpe de metal que sonó la última vez, para no repetirlo.
+var _last_hit: String = ""
+var _unwatched: float = 0.0
+var _stage_time: float = NightConfig.BARCOSA_EASY_STAGE_TIME
+## Lo que tarda esta noche en cruzar el pasillo entero.
+var _run_time: float = NightConfig.BARCOSA_EASY_RUN_TIME
 var _bang_elapsed: float = 0.0
 var _knock_timer: float = 0.0
 
@@ -82,6 +94,9 @@ func start() -> void:
 	route = PackedStringArray(ROUTE)
 	super()
 	_state = State.STALKING
+	_unwatched = 0.0
+	_stage_time = NightConfig.barcosa_stage_time(ai_level)
+	_run_time = NightConfig.barcosa_run_time(ai_level)
 	_set_stage(STAGE_HIDDEN)
 
 
@@ -90,16 +105,29 @@ func _process(delta: float) -> void:
 		return
 	match _state:
 		State.STALKING:
-			super(delta)  # El dado de la IA de la clase base
+			_process_stalking(delta)
 		State.RUNNING:
 			_process_run(delta)
 		State.BANGING:
 			_process_banging(delta)
 
 
-## Vigilarlo por la CAM 10 le quita la oportunidad de avanzar.
+## La cuenta del tiempo sin verlo. Mirarlo por la CAM 10 la pone a cero; al
+## llenarse, sube una etapa (o sale corriendo, si ya estaba en la última).
+func _process_stalking(delta: float) -> void:
+	if is_being_watched():
+		_unwatched = 0.0
+		return
+	_unwatched += delta
+	if _unwatched < _stage_time:
+		return
+	_unwatched = 0.0
+	advance()
+
+
+## Ya no tira dados: su avance es el tiempo sin que lo revisen.
 func can_move() -> bool:
-	return _state == State.STALKING and not is_being_watched()
+	return false
 
 
 ## Le ganó el dado: sube una etapa o, si ya está en la 2, sale corriendo.
@@ -150,7 +178,8 @@ func debug_text() -> String:
 		State.BANGING:
 			return "golpeando la puerta (%.1f s)" % maxf(BANG_TIME - _bang_elapsed, 0.0)
 		_:
-			var text: String = "etapa %d (%s)" % [stage, STAGE_NAMES[stage]]
+			var text: String = "etapa %d (%s), %.0f/%.0f s sin verlo" % [
+				stage, STAGE_NAMES[stage], _unwatched, _stage_time]
 			if stage == STAGE_LEAVING and not GameManager.is_hallway_free():
 				text += " esperando el pasillo"
 			return text
@@ -173,9 +202,12 @@ func _try_start_run() -> void:
 		return
 	_state = State.RUNNING
 	_run_step = STEP_PASILLO_NORTE
-	_step_timer = NORTH_RUN_TIME
+	_step_timer = _run_time * NORTH_RUN_SHARE
 	move_to_step(STEP_PASILLO_NORTE)
-	made_noise.emit(RUN_NOTICE, NORTH_RUN_TIME + SOUTH_RUN_TIME)
+	made_noise.emit(RUN_NOTICE, _run_time)
+	# Los pasos suenan toda la carrera, no un golpe y ya: son el aviso de que
+	# hay que cerrar, y tienen que oírse aunque no estés en las cámaras.
+	AudioManager.play_loop(Sounds.FAR_BARCOSA_RUN)
 
 
 func _process_run(delta: float) -> void:
@@ -184,7 +216,7 @@ func _process_run(delta: float) -> void:
 		return
 	if _run_step == STEP_PASILLO_NORTE:
 		_run_step = STEP_PASILLO_SUR
-		_step_timer = SOUTH_RUN_TIME
+		_step_timer = _run_time * (1.0 - NORTH_RUN_SHARE)
 		move_to_step(STEP_PASILLO_SUR)
 		return
 	_arrive_at_door()
@@ -192,6 +224,7 @@ func _process_run(delta: float) -> void:
 
 ## Llegó a la puerta: la chapa cerrada lo detiene; abierta, te atrapa.
 func _arrive_at_door() -> void:
+	AudioManager.stop(Sounds.FAR_BARCOSA_RUN)
 	if not door_closed:
 		_catch_player()
 		return
@@ -216,7 +249,8 @@ func _process_banging(delta: float) -> void:
 	_knock_timer -= delta
 	if _knock_timer <= 0.0:
 		_knock_timer = KNOCK_INTERVAL
-		AudioManager.play(Sounds.DOOR_BANGS)
+		_last_hit = Sounds.metal_hit(_last_hit)
+		AudioManager.play(_last_hit)
 		door_knocked.emit()
 		PowerManager.drain(KNOCK_POWER_COST)
 
@@ -226,13 +260,16 @@ func _go_home() -> void:
 	# Solo se despide si llegó a aporrear la puerta; si lo pararon antes, no.
 	if _state == State.BANGING:
 		said_line.emit(VoiceLines.BARCOSA_LEAVES)
+	AudioManager.stop(Sounds.FAR_BARCOSA_RUN)
 	GameManager.release_hallway(self)
 	_state = State.STALKING
+	_unwatched = 0.0
 	move_to_step(STEP_SALON_B)
 	_set_stage(STAGE_HIDDEN)
 
 
 func _catch_player() -> void:
+	AudioManager.stop(Sounds.FAR_BARCOSA_RUN)
 	stop()
 	GameManager.release_hallway(self)
 	GameManager.trigger_game_over(GAME_OVER_CAUSE)

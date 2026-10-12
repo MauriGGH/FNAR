@@ -1,9 +1,11 @@
 extends Control
 
-## El 6 AM, como en los juegos originales: negro con "5 AM" grande al centro en
-## la fuente de segmentos, el 5 se va hacia arriba como un rodillo y entra el 6,
-## el texto pasa de blanco a dorado, suena el despertador y luego la campana de
-## la escuela con aplausos, y cae confeti. Al terminar avisa.
+## El 6 AM, como en los juegos originales: negro con "5 AM" grande al centro, a
+## máquina de escribir y en blanco; el 5 se va hacia arriba como un rodillo y
+## entra el 6. El texto **no cambia de color**: lo único que se mueve es la
+## hora. Suena el despertador (campanadas de reloj), que **ya trae el grito de
+## los niños al final**, y el confeti cae en ese último tramo. Solo si no está
+## grabado el despertador se pide aparte el `ninos_yay`. Al terminar avisa.
 
 ## Ya acabó: quien la abrió sigue con el recorte de periódico.
 signal finished()
@@ -13,12 +15,13 @@ const REFERENCE_HEIGHT: float = 1080.0
 const DIGIT_SIZE: float = 190.0
 const SUFFIX_TEXT: String = " AM"
 const WHITE: Color = Color(1.0, 1.0, 1.0)
-const GOLD: Color = Color(0.98, 0.84, 0.35)
 
 ## El rodillo: lo que tarda el 5 en salir y el 6 en entrar.
 const ROLL_TIME: float = 0.8
 ## Lo que dura el confeti, que es también lo que se queda quieto el 6.
 const CONFETTI_TIME: float = 4.0
+## Si el despertador no se puede medir, lo que se le supone antes de los niños.
+const FALLBACK_ALARM_TIME: float = 2.5
 ## Lo que espera antes de empezar a girar, para que se lea el 5.
 const READ_TIME: float = 0.7
 const FADE_OUT: float = 0.4
@@ -45,13 +48,18 @@ func _ready() -> void:
 	_build()
 	_layout()
 	resized.connect(_layout)
-	AudioManager.play_loop(Sounds.ALARM)
+	AudioManager.play(Sounds.ALARM)
+	var alarm: float = AudioManager.length(Sounds.ALARM)
+	if alarm <= 0.0:
+		alarm = FALLBACK_ALARM_TIME
+	# El confeti cae en el último tramo del despertador, que es donde está el
+	# grito de los niños; la pantalla acaba cuando acaba el audio.
+	var confetti_at: float = maxf(READ_TIME + ROLL_TIME, alarm - CONFETTI_TIME)
 	var tween: Tween = create_tween()
 	tween.tween_interval(READ_TIME)
-	# El rodillo y el color van juntos: el 6 entra ya dorándose.
 	tween.tween_callback(_roll)
-	tween.tween_interval(ROLL_TIME)
-	tween.tween_callback(_ring_bell)
+	tween.tween_interval(confetti_at - READ_TIME)
+	tween.tween_callback(_cheer)
 	tween.tween_interval(CONFETTI_TIME)
 	tween.tween_property(self, "modulate:a", 0.0, FADE_OUT)
 	tween.tween_callback(_done)
@@ -104,11 +112,11 @@ func _layout() -> void:
 	_window.position = Vector2(block_left, top)
 	_window.size = window
 	for digit: Label in [_old_digit, _new_digit]:
-		Fonts.apply(digit, Fonts.digital(), font_size)
+		Fonts.apply(digit, Fonts.typewriter(), font_size)
 		digit.size = window
 	_place_digits()
 
-	Fonts.apply(_suffix, Fonts.digital(), font_size)
+	Fonts.apply(_suffix, Fonts.typewriter(), font_size)
 	_suffix.position = Vector2(block_left + window.x, top)
 	_suffix.size = Vector2(suffix_width, window.y)
 
@@ -123,7 +131,7 @@ func _place_digits() -> void:
 
 
 func _suffix_width(font_size: int) -> float:
-	var font: Font = Fonts.digital()
+	var font: Font = Fonts.typewriter()
 	if font == null:
 		return float(font_size) * 2.2
 	return font.get_string_size(SUFFIX_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
@@ -140,18 +148,20 @@ func _make_digit(text: String) -> Label:
 
 
 ## Los dos dígitos suben a la vez: el 5 se va por arriba y el 6 ocupa su sitio.
+## El color no se toca: la hora se queda blanca de principio a fin.
 func _roll() -> void:
 	var tween: Tween = create_tween()
 	tween.set_trans(Tween.TRANS_CUBIC)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(self, "_roll_progress", 1.0, ROLL_TIME)
-	tween.parallel().tween_property(_text_root, "modulate", GOLD, ROLL_TIME)
 
 
-## La campana de la escuela con aplausos y el confeti, ya con el 6 puesto.
-func _ring_bell() -> void:
-	AudioManager.stop(Sounds.ALARM)
-	AudioManager.play(Sounds.SCHOOL_BELL)
+## El confeti, ya con el 6 puesto. El grito de los niños solo se pide aparte
+## si no hay despertador grabado: el de verdad ya lo trae al final.
+func _cheer() -> void:
+	if not AudioManager.has_real_file(Sounds.ALARM):
+		AudioManager.stop(Sounds.ALARM)
+		AudioManager.play(Sounds.CHILDREN_CHEER)
 	_confetti.play(CONFETTI_TIME)
 
 

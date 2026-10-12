@@ -81,7 +81,7 @@ func set_flashlight_on(on: bool) -> void:
 
 ## Porcentaje que se pierde por segundo real con el estado actual.
 func drain_per_second() -> float:
-	var per_hour: float = NightConfig.IDLE_DRAIN_PER_HOUR
+	var per_hour: float = NightConfig.idle_drain_per_hour(GameManager.current_night)
 	if is_door_closed:
 		per_hour += NightConfig.DOOR_DRAIN_PER_HOUR
 	if are_cameras_open:

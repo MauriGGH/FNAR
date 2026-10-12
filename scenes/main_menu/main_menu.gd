@@ -17,16 +17,16 @@ const DIM_COLOR: Color = Color(0.52, 0.53, 0.55)
 
 ## Todo medido a 1080p y escalado con el alto de la ventana.
 const REFERENCE_HEIGHT: float = 1080.0
-const TITLE_SIZE: float = 68.0
-const OPTION_SIZE: float = 36.0
-const SMALL_SIZE: float = 20.0
+const TITLE_SIZE: float = 72.0
+const OPTION_SIZE: float = 44.0
+const SMALL_SIZE: float = 22.0
 
 ## La columna de texto, en fracción de la pantalla: cae sobre la zona negra.
 const LEFT_MARGIN: float = 0.055
 const TEXT_INDENT: float = 0.105
 const TITLE_TOP: float = 0.055
-const STARS_TOP: float = 0.345
-const OPTIONS_TOP: float = 0.43
+const STARS_TOP: float = 0.40
+const OPTIONS_TOP: float = 0.47
 const LINE_HEIGHT: float = 0.072
 
 ## Borrar la partida: lo que hay que mantener Supr y lo que dice el aviso.
@@ -56,8 +56,20 @@ func _ready() -> void:
 	_build_footer()
 	_build_confirm()
 	_options_panel = OptionsPanel.build(self)
+	# Mientras haya una capa encima, la lista del menú se esconde: si no, se
+	# lee por detrás del negro.
+	_options_panel.closed.connect(_show_list)
 	_layout()
 	resized.connect(_layout)
+	# El menú tiene su propio ambiente: música de fondo y un hilo de estática.
+	AudioManager.play_loop(Sounds.MENU_MUSIC)
+	AudioManager.play_loop(Sounds.CAMERA_STATIC)
+
+
+## Al salir del menú se lleva su audio con él, que si no se cuela en la noche.
+func _exit_tree() -> void:
+	AudioManager.stop(Sounds.MENU_MUSIC)
+	AudioManager.stop(Sounds.CAMERA_STATIC)
 
 
 func _font_size(base: float) -> int:
@@ -118,6 +130,7 @@ func _build_confirm() -> void:
 	_confirm.name = "WipeConfirm"
 	add_child(_confirm)
 	_confirm.confirmed.connect(_wipe_progress)
+	_confirm.cancelled.connect(_show_list)
 
 
 func _make_label(text: String, base_size: float, color: Color) -> Label:
@@ -182,6 +195,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	if _wipe_held >= WIPE_HOLD:
 		_wipe_held = 0.0
+		_hide_list()
 		_confirm.ask("¿Borrar todo el progreso?",
 			"Se pierden las noches, los recortes, los expedientes y los retos.")
 
@@ -224,7 +238,20 @@ func _on_extras() -> void:
 	get_tree().change_scene_to_file(Screens.EXTRAS_MENU)
 
 
+## Las capas de encima (opciones, confirmación) esconden la lista mientras
+## están abiertas.
+func _show_list() -> void:
+	if _list != null:
+		_list.visible = true
+
+
+func _hide_list() -> void:
+	if _list != null:
+		_list.visible = false
+
+
 func _on_options() -> void:
+	_hide_list()
 	_options_panel.open()
 
 

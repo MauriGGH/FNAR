@@ -186,16 +186,18 @@ func _enter(phase: Phase) -> void:
 	_phase = phase
 	match phase:
 		Phase.PRE_TEAR:
-			# Todavía la foto de siempre, pero ya rota de arriba abajo.
+			# Todavía la foto de siempre, pero ya rota de arriba abajo. El
+			# golpe entra aquí, con el primer cuadro desgarrado: es el momento
+			# en que la imagen se rompe.
 			_phase_left = PRE_TEAR_TIME * _scale
 			_picture.texture = _base
 			_set_tear(PRE_TEAR_PIXELS, RGB_PIXELS, 0.5, 2.0)
+			AudioManager.play(Sounds.MENU_TIC)
 		Phase.TIC_TEAR:
 			# Entra el profe y el desgarro se vuelve una banda que baja.
 			_phase_left = TIC_TEAR_TIME * _scale
 			_picture.texture = _tics[_current] as Texture2D
 			_set_tear(TIC_TEAR_PIXELS, RGB_PIXELS, 0.0, TEAR_BAND_HEIGHT)
-			AudioManager.play(Sounds.MENU_TIC)
 		Phase.FREEZE:
 			# Congelado: el profe quieto y sin desgarro, que es lo que asusta.
 			_phase_left = FREEZE_TIME * _scale

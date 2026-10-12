@@ -49,7 +49,7 @@ const LEVEL_HEIGHT: float = 38.0
 const GRID_TOP: float = 0.17
 const LIST_TOP: float = 0.645
 const LIST_LINE: float = 0.04
-const LIST_SIZE: float = 26.0
+const LIST_SIZE: float = 32.0
 
 const LEFT_ARROW: String = "<"
 const RIGHT_ARROW: String = ">"
@@ -73,6 +73,7 @@ var _list: MenuList = null
 
 func _ready() -> void:
 	MenuBackdrop.build(self)
+	AudioManager.play_loop(Sounds.EXTRAS_MUSIC)
 	for entry: Dictionary in ENTRIES:
 		_levels[str(entry["key"])] = 0
 	_title = MenuStyle.title(self, TITLE)
@@ -389,3 +390,8 @@ func _on_play() -> void:
 func _on_back() -> void:
 	get_tree().change_scene_to_file(
 		Screens.EXTRAS_MENU if SaveGame.is_extras_unlocked() else Screens.MAIN_MENU)
+
+
+## La música de Extras se queda en Extras: al salir se apaga.
+func _exit_tree() -> void:
+	AudioManager.stop(Sounds.EXTRAS_MUSIC)

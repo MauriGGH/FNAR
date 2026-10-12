@@ -1,8 +1,10 @@
 extends Control
 
 ## La muerte por apagón. Cuando la energía llega a 0 todo se apaga y el jugador
-## se queda a oscuras. Entre 3 y 12 s después aparecen dos chispas azules a lo
-## lejos, que parpadean al ritmo de la cajita musical: una por pulso. No suena la
+## se queda a oscuras. Entre 3 y 12 s después, a lo lejos en el pasillo —al
+## fondo del cristal— se encienden y se apagan **un par de ojos** al ritmo de la
+## cajita musical, uno por pulso, como la cara de Freddy en FNAF 1. No se ve
+## nada más. No suena la
 ## canción entera, sino **un tramo al azar** de 8 a 20 s que entra por un pulso
 ## de la primera mitad y sale por otro pulso, con un fundido corto. Cuando el
 ## tramo acaba, las chispas se apagan y hay silencio total entre 2 y 5 s. Luego
@@ -13,10 +15,10 @@ extends Control
 
 ## Llegó el momento del salto.
 signal strike()
-## Ya se ven las chispas. Lo usa la noche para apagar lo que siguiera sonando.
-signal sparks_started()
+## Ya se ven los ojos. Lo usa la noche para apagar lo que siguiera sonando.
+signal eyes_opened()
 
-enum Phase { IDLE, WAITING, SPARKS, SILENCE, STEPS }
+enum Phase { IDLE, WAITING, EYES, SILENCE, STEPS }
 
 const MIN_WAIT: float = 3.0
 const MAX_WAIT: float = 12.0
@@ -30,20 +32,27 @@ const SEGMENT_FADE: float = 0.4
 const MIN_SILENCE: float = 2.0
 const MAX_SILENCE: float = 5.0
 
-## Las dos chispas, en posición normalizada de la pantalla.
-const SPARK_SPOTS: Array[Vector2] = [Vector2(0.39, 0.46), Vector2(0.58, 0.44)]
-const SPARK_COLOR: Color = Color(0.45, 0.72, 1.0)
-const SPARK_RADIUS: float = 7.0
-## Lo que se queda encendida la chispa en cada nota.
-const SPARK_ON_TIME: float = 0.18
+## Los dos ojos, en posición normalizada de la pantalla: al fondo del pasillo,
+## que es lo que se ve por el cristal, y juntos como una cara que mira.
+const EYE_SPOTS: Array[Vector2] = [Vector2(0.473, 0.455), Vector2(0.527, 0.455)]
+## Blanco azulado, chiquitos y con un brillo muy leve alrededor.
+const EYE_COLOR: Color = Color(0.86, 0.93, 1.0)
+const EYE_GLOW: Color = Color(0.55, 0.72, 0.95)
+## El radio del ojo y el del brillo, medidos a 1080p.
+const EYE_RADIUS: float = 4.5
+const EYE_GLOW_RADIUS: float = 13.0
+const EYE_GLOW_ALPHA: float = 0.38
+const REFERENCE_HEIGHT: float = 1080.0
+## Lo que se quedan encendidos en cada pulso.
+const EYE_ON_TIME: float = 0.18
 
 var is_running: bool = false
 var is_showing_sparks: bool = false
 
 var _phase: Phase = Phase.IDLE
 var _left: float = 0.0
-## Cuánto llevamos dentro de la fase de las chispas, para ir casando las notas.
-var _sparks_elapsed: float = 0.0
+## Cuánto llevamos dentro de la fase de los ojos, para ir casando las notas.
+var _eyes_elapsed: float = 0.0
 ## En qué segundo cae cada pulso de la canción, para que las chispas sigan el
 ## ritmo. Salen de `data/audio/cajita_musical_notas.json`; si no está, se usan
 ## los del provisional de ToneBuilder.
@@ -70,7 +79,7 @@ func start() -> void:
 	is_showing_sparks = false
 	_phase = Phase.WAITING
 	_left = randf_range(MIN_WAIT, MAX_WAIT)
-	_sparks_elapsed = 0.0
+	_eyes_elapsed = 0.0
 	visible = true
 	queue_redraw()
 
@@ -95,11 +104,11 @@ func _process(delta: float) -> void:
 	match _phase:
 		Phase.WAITING:
 			if _left <= 0.0:
-				_begin_sparks()
-		Phase.SPARKS:
-			_sparks_elapsed += delta
+				_begin_eyes()
+		Phase.EYES:
+			_eyes_elapsed += delta
 			# Al pasar el último pulso del tramo, la música se va apagando.
-			if _fade_pending and _sparks_elapsed >= _segment_length():
+			if _fade_pending and _eyes_elapsed >= _segment_length():
 				_fade_pending = false
 				AudioManager.fade_out(Sounds.MUSIC_BOX_BLACKOUT, SEGMENT_FADE)
 			queue_redraw()
@@ -120,12 +129,12 @@ func _segment_length() -> float:
 	return maxf(_segment_end - _segment_start, 0.0)
 
 
-## Las chispas y el tramo de la canción, juntos: la música entra por donde
-## empieza el tramo y las chispas siguen sus pulsos.
-func _begin_sparks() -> void:
-	_phase = Phase.SPARKS
+## Los ojos y el tramo de la canción, juntos: la música entra por donde empieza
+## el tramo y los ojos se abren con sus pulsos.
+func _begin_eyes() -> void:
+	_phase = Phase.EYES
 	is_showing_sparks = true
-	_sparks_elapsed = 0.0
+	_eyes_elapsed = 0.0
 	var segment: Vector2 = MusicBox.random_segment(
 		MIN_SEGMENT, MAX_SEGMENT, SEGMENT_START_RANGE)
 	_segment_start = segment.x
@@ -138,11 +147,11 @@ func _begin_sparks() -> void:
 	AudioManager.stop(Sounds.MUSIC_BOX)
 	AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
 	AudioManager.play_from(Sounds.MUSIC_BOX_BLACKOUT, _segment_start)
-	sparks_started.emit()
+	eyes_opened.emit()
 	queue_redraw()
 
 
-## Silencio de verdad: ni chispas ni música.
+## Silencio de verdad: ni ojos ni música.
 func _begin_silence() -> void:
 	_phase = Phase.SILENCE
 	is_showing_sparks = false
@@ -155,7 +164,10 @@ func _begin_silence() -> void:
 ## Los tres pasos acercándose. El salto cae justo cuando se acaban.
 func _begin_steps() -> void:
 	_phase = Phase.STEPS
-	_left = ToneBuilder.footsteps_length()
+	# El salto cae justo cuando se acaban los pasos, midiendo el audio de
+	# verdad; si no está, lo que dure el provisional.
+	var steps: float = AudioManager.length(Sounds.FOOTSTEPS)
+	_left = steps if steps > 0.0 else ToneBuilder.footsteps_length()
 	AudioManager.play(Sounds.FOOTSTEPS)
 
 
@@ -167,11 +179,11 @@ func _fire() -> void:
 	strike.emit()
 
 
-## Las chispas están encendidas si estamos dentro de la ventana de un pulso del
+## Los ojos están abiertos si estamos dentro de la ventana de un pulso del
 ## tramo. Lo que se compara es el segundo de la canción por el que va, no el
-## tiempo desde que empezaron las chispas: el tramo no arranca en el 0.
+## tiempo desde que empezaron: el tramo no arranca en el 0.
 func _is_lit() -> bool:
-	var now: float = _segment_start + _sparks_elapsed
+	var now: float = _segment_start + _eyes_elapsed
 	if now > _segment_end:
 		return false
 	for time: float in _pulse_times:
@@ -179,7 +191,7 @@ func _is_lit() -> bool:
 			continue
 		if time > _segment_end:
 			return false
-		if now >= time and now < time + SPARK_ON_TIME:
+		if now >= time and now < time + EYE_ON_TIME:
 			return true
 	return false
 
@@ -187,19 +199,24 @@ func _is_lit() -> bool:
 func _draw() -> void:
 	if not is_showing_sparks or not _is_lit():
 		return
-	for spot: Vector2 in SPARK_SPOTS:
-		DrawKit.glow(self, spot * size, SPARK_RADIUS, SPARK_COLOR, 1.0)
-		draw_circle(spot * size, SPARK_RADIUS * 0.45, Color(0.85, 0.94, 1.0, 0.9))
+	# Chiquitos: se escalan con el alto, como todo lo demás.
+	var scale: float = size.y / REFERENCE_HEIGHT
+	for spot: Vector2 in EYE_SPOTS:
+		var at: Vector2 = spot * size
+		# Primero el halo, muy tenue, y encima el punto del ojo.
+		draw_circle(at, EYE_GLOW_RADIUS * scale,
+			Color(EYE_GLOW.r, EYE_GLOW.g, EYE_GLOW.b, EYE_GLOW_ALPHA))
+		draw_circle(at, EYE_RADIUS * scale, EYE_COLOR)
 
 
 # --- Depuración ---------------------------------------------------------------
 
-## Para el menú de pruebas: salta la espera a oscuras y arranca con las chispas.
-func debug_skip_to_sparks() -> void:
+## Para el menú de pruebas: salta la espera a oscuras y arranca con los ojos.
+func debug_skip_to_eyes() -> void:
 	if not is_running:
 		start()
 	if _phase == Phase.WAITING:
-		_begin_sparks()
+		_begin_eyes()
 
 
 ## En qué va la secuencia, para enseñarlo en el panel.
@@ -207,8 +224,8 @@ func phase_text() -> String:
 	match _phase:
 		Phase.WAITING:
 			return "a oscuras (%.1f s)" % _left
-		Phase.SPARKS:
-			return "chispas con el tramo %.1f-%.1f s de la canción (quedan %.1f s)" % [
+		Phase.EYES:
+			return "ojos con el tramo %.1f-%.1f s de la canción (quedan %.1f s)" % [
 				_segment_start, _segment_end, _left]
 		Phase.SILENCE:
 			return "silencio (%.1f s)" % _left

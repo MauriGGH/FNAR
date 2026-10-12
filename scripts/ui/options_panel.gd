@@ -9,7 +9,8 @@ extends Control
 ## y derecha o con un clic en el punto de la barra. Todo lo que se toca aquí se
 ## guarda al momento en save.cfg; no hay botón de aceptar ni de cancelar.
 
-## Se cerró: quien lo abrió puede volver a lo suyo.
+## Se cerró: quien lo abrió puede volver a lo suyo (y volver a enseñar su
+## propia lista, que se esconde mientras esto está encima).
 signal closed()
 
 const TITLE: String = "OPCIONES"

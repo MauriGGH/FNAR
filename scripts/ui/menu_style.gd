@@ -11,10 +11,11 @@ extends RefCounted
 ## Todo está medido a 1080p y se escala con el alto de la ventana.
 const REFERENCE_HEIGHT: float = 1080.0
 
-## El tamaño de cada cosa, a 1080p.
-const TITLE_SIZE: float = 54.0
-const OPTION_SIZE: float = 36.0
-const SMALL_SIZE: float = 20.0
+## El tamaño de cada cosa, a 1080p. Van grandes a propósito: en una pantalla
+## de verdad, y de lejos, lo chico no se lee.
+const TITLE_SIZE: float = 56.0
+const OPTION_SIZE: float = 44.0
+const SMALL_SIZE: float = 22.0
 
 const TEXT: Color = Color(0.95, 0.95, 0.93)
 ## Lo secundario (pies de pantalla, valores, notas).
@@ -24,7 +25,9 @@ const DISABLED: Color = Color(0.32, 0.33, 0.35)
 const MARKER_COLOR: Color = Color(0.98, 0.84, 0.35)
 
 ## El negro de las capas que se abren encima de algo (la pausa, las opciones).
-const BACKDROP: Color = Color(0.0, 0.0, 0.0, 0.86)
+## El negro de una capa que se abre encima de otro menú. Va al 90 %: lo de
+## abajo no se tiene que poder leer.
+const BACKDROP: Color = Color(0.0, 0.0, 0.0, 0.9)
 
 ## La columna de texto: dónde empieza el marcador y dónde el texto.
 const LEFT_MARGIN: float = 0.055

@@ -13,8 +13,11 @@ const TITLE: String = "EXTRAS"
 const HINT: String = "flechas o W/S · Enter para elegir · Esc para volver"
 const LOCKED_TEXT: String = "???"
 
-## La columna de secciones ocupa la izquierda; las fichas van en lo que queda.
-const CONTENT_LEFT: float = 0.33
+## La columna de secciones ocupa la izquierda y no pasa de aquí; todo el
+## contenido (el visor de expedientes con sus flechas y las rejillas) vive a la
+## derecha, sin meterse nunca en la columna.
+const LIST_WIDTH: float = 0.28
+const CONTENT_LEFT: float = 0.30
 const CONTENT_RIGHT: float = 0.98
 const LIST_TOP: float = 0.26
 
@@ -57,6 +60,7 @@ var _list: MenuList = null
 
 func _ready() -> void:
 	MenuBackdrop.build(self)
+	AudioManager.play_loop(Sounds.EXTRAS_MUSIC)
 	# El contenido va primero para que la lista y el título queden encima: los
 	# expedientes se ven a pantalla completa y pasan por debajo de ellos.
 	_content = Control.new()
@@ -84,6 +88,9 @@ func _ready() -> void:
 func _build_list() -> void:
 	_list = MenuList.new()
 	_list.top = LIST_TOP
+	# Los renglones se quedan dentro de la columna: así el contenido de la
+	# derecha nunca se encima con ellos.
+	_list.value_gap = LIST_WIDTH - MenuStyle.TEXT_INDENT
 	add_child(_list)
 	_list.add_action("Expedientes", _show_section.bind(Section.DOSSIERS))
 	_list.add_action("Periódicos", _show_section.bind(Section.NEWSPAPERS))
@@ -134,8 +141,11 @@ func _build_dossiers() -> void:
 			"unlocked": SaveGame.has_dossier(character_id),
 			"caption": "%s · %s — %s" % [str(sheet[0]), str(sheet[1]), str(sheet[2])],
 		})
+	# El visor va dentro de un hueco a la derecha, no a pantalla completa: sus
+	# flechas y su contador se colocan solos dentro de ese hueco y no pisan la
+	# columna de secciones.
 	var gallery: ArtGallery = ArtGallery.new()
-	_content.add_child(gallery)
+	_right_region().add_child(gallery)
 	gallery.setup(pages)
 
 
@@ -206,7 +216,7 @@ func _on_jumpscare_input(event: InputEvent, character_id: String) -> void:
 	if click == null or not click.pressed:
 		return
 	if character_id == "mamador":
-		_wasted.play(JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text())
+		_wasted.play(JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text(), true)
 		return
 	_jumpscare.play(Extras.jumpscare_id(character_id))
 
@@ -218,6 +228,23 @@ func _on_newspaper_input(event: InputEvent, index: int) -> void:
 	NewspaperScreen.pending_index = index
 	NewspaperScreen.next_scene = Screens.EXTRAS_MENU
 	get_tree().change_scene_to_file(Screens.NEWSPAPER)
+
+
+## El hueco de la derecha, donde cabe todo lo que no es la columna.
+func _right_region() -> Control:
+	var region: Control = Control.new()
+	region.name = "Region"
+	region.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	region.anchor_left = CONTENT_LEFT
+	region.anchor_right = CONTENT_RIGHT
+	region.anchor_top = 0.0
+	region.anchor_bottom = 1.0
+	region.offset_left = 0.0
+	region.offset_right = 0.0
+	region.offset_top = 0.0
+	region.offset_bottom = 0.0
+	_content.add_child(region)
+	return region
 
 
 ## La rejilla va centrada en la mitad derecha, que es lo que deja libre la
@@ -304,3 +331,8 @@ func _input(event: InputEvent) -> void:
 		return
 	if _list.handle_key(key):
 		get_viewport().set_input_as_handled()
+
+
+## La música de Extras se queda en Extras: al salir se apaga.
+func _exit_tree() -> void:
+	AudioManager.stop(Sounds.EXTRAS_MUSIC)

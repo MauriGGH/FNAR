@@ -367,9 +367,9 @@ func _build_events_section() -> void:
 	_add_button(body, "Energía a 0 (empieza a oscuras)", func() -> void:
 		close()
 		PowerManager.debug_set_power(0.0))
-	_add_button(body, "Saltar a las chispas y la melodía", func() -> void:
+	_add_button(body, "Saltar a los ojos y la melodía", func() -> void:
 		close()
-		_night.blackout_death.debug_skip_to_sparks())
+		_night.blackout_death.debug_skip_to_eyes())
 	_add_button(body, "Salvarte: que den las 6 AM", func() -> void:
 		close()
 		GameManager.debug_win_night())
@@ -421,7 +421,7 @@ func _build_screens_section() -> void:
 	_add_button(body, "Pantalla WASTED (delito federal)", func() -> void:
 		close()
 		_night.wasted_screen.play(
-			JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text()))
+			JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text(), true))
 	_add_button(body, "Pantalla WASTED (ludopatía)", func() -> void:
 		close()
 		_night.wasted_screen.play(JumpscareOverlay.mamador_image(), "LUDOPATÍA"))
@@ -578,6 +578,10 @@ func _build_audio_section() -> void:
 		var sound_id: String = str(id)
 		_add_button(body, sound_id, func() -> void: AudioManager.play(sound_id))
 	_add_button(body, "Callar todo", func() -> void: AudioManager.stop_all())
+	_add_button(body, "Escribir la lista de audios que faltan", func() -> void:
+		var path: String = MissingAudioReport.write()
+		print("[audio] faltan %d de %d; la lista quedó en %s" % [
+			MissingAudioReport.missing_ids().size(), Sounds.CATALOG.size(), path]))
 
 	_add_label(body, "Sonidos lejanos:")
 	_add_button(body, "Uno ambiental al azar", func() -> void:

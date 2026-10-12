@@ -1,7 +1,8 @@
 extends Control
 
 ## La pantalla de antes de cada noche, como la de los juegos originales: negro
-## pelón con "12:00 AM" al centro y la noche debajo, en monoespaciada blanca.
+## pelón con "12:00 AM" al centro y la noche debajo, a máquina de escribir y en
+## blanco.
 ## Un golpe corto de estática al aparecer y otro al irse. Se pasa sola.
 
 const HOUR_TEXT: String = "12:00 AM"
@@ -95,11 +96,11 @@ func _night_text() -> String:
 
 func _layout() -> void:
 	if _hour != null:
-		Fonts.apply(_hour, Fonts.mono(), _font_size(HOUR_SIZE))
+		Fonts.apply(_hour, Fonts.typewriter(), _font_size(HOUR_SIZE))
 		_hour.position = Vector2(0.0, size.y * HOUR_TOP)
 		_hour.size = Vector2(size.x, size.y * 0.12)
 	if _night != null:
-		Fonts.apply(_night, Fonts.mono(), _font_size(NIGHT_SIZE))
+		Fonts.apply(_night, Fonts.typewriter(), _font_size(NIGHT_SIZE))
 		_night.position = Vector2(0.0, size.y * NIGHT_TOP)
 		_night.size = Vector2(size.x, size.y * 0.08)
 

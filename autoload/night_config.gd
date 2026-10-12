@@ -44,7 +44,11 @@ const MAX_NAME_LENGTH: int = 16
 # 75 s, nunca contra la del modo prueba: el modo prueba acorta la noche, no
 # acelera la energía. Así la energía baja a la misma velocidad siempre.
 const MAX_POWER: float = 100.0
-const IDLE_DRAIN_PER_HOUR: float = 11.0  # consumo base de la oficina
+## El consumo base de la oficina, por noche: la instalación va aguantando cada
+## vez menos y la noche 6 arranca ya castigada. El índice es la noche menos 1.
+const IDLE_DRAIN_BY_NIGHT: Array[float] = [8.0, 9.0, 10.0, 11.0, 12.0, 13.0]
+## El de respaldo, por si alguien pregunta sin decir qué noche.
+const IDLE_DRAIN_PER_HOUR: float = 9.0
 const DOOR_DRAIN_PER_HOUR: float = 22.0    # extra mientras la puerta está cerrada
 const CAMERA_DRAIN_PER_HOUR: float = 14.0  # extra mientras las cámaras están abiertas
 const PC_DRAIN_PER_HOUR: float = 12.0      # extra mientras la PC está encendida
@@ -69,6 +73,11 @@ const GLASS_TIME_LAST_NIGHT: float = 5.5
 
 
 ## Lo que aguanta uno del cristal esa noche antes de entrar.
+## El consumo base de esa noche. Una Custom Night se cuenta como la última.
+static func idle_drain_per_hour(night: int) -> float:
+	return IDLE_DRAIN_BY_NIGHT[clampi(night, 1, IDLE_DRAIN_BY_NIGHT.size()) - 1]
+
+
 static func glass_time(night: int) -> float:
 	var span: int = maxi(LAST_NIGHT - 1, 1)
 	var t: float = float(clampi(night, 1, LAST_NIGHT) - 1) / float(span)
@@ -79,6 +88,46 @@ static func glass_time(night: int) -> float:
 ## cuesta ahuyentarlo. Lo usa el panel de pruebas para enseñarlo.
 static func glass_margin(night: int) -> float:
 	return glass_time(night) - FLASH_FILL_TIME
+
+
+# --- Barcosa ------------------------------------------------------------------
+## Barcosa no avanza de etapa con un dado: avanza cuando pasa demasiado tiempo
+## **sin que lo revises** por la CAM 10, y verlo pone la cuenta otra vez a cero.
+## Lo que aguanta sale de su nivel, que es lo que cambia por noche: con el de la
+## noche 2 (3) son 45 s por etapa, y con el de la noche 6 (15), 15 s. Las de en
+## medio se interpolan, y en una Custom Night con el nivel al tope nunca baja de
+## BARCOSA_MIN_STAGE_TIME, para que siga siendo jugable.
+const BARCOSA_EASY_LEVEL: int = 3
+const BARCOSA_HARD_LEVEL: int = 15
+const BARCOSA_EASY_STAGE_TIME: float = 45.0
+const BARCOSA_HARD_STAGE_TIME: float = 15.0
+const BARCOSA_MIN_STAGE_TIME: float = 8.0
+
+## Y lo que tarda en cruzar el pasillo desde que sale hasta que llega a la
+## puerta: 6 s con el nivel de la noche 2 y 3 s con el de la 6. Ese es el tiempo
+## que tienes para cerrar cuando lo oyes venir corriendo.
+const BARCOSA_EASY_RUN_TIME: float = 6.0
+const BARCOSA_HARD_RUN_TIME: float = 3.0
+const BARCOSA_MIN_RUN_TIME: float = 2.0
+
+
+## Dónde cae un nivel de Barcosa entre el de la noche 2 y el de la noche 6.
+## Por debajo o por encima se sigue la misma recta, de ahí que haya topes.
+static func _barcosa_t(ai_level: int) -> float:
+	var span: float = float(maxi(BARCOSA_HARD_LEVEL - BARCOSA_EASY_LEVEL, 1))
+	return float(ai_level - BARCOSA_EASY_LEVEL) / span
+
+
+## Lo que aguanta sin que lo revisen antes de subir una etapa.
+static func barcosa_stage_time(ai_level: int) -> float:
+	return maxf(lerpf(BARCOSA_EASY_STAGE_TIME, BARCOSA_HARD_STAGE_TIME,
+		_barcosa_t(ai_level)), BARCOSA_MIN_STAGE_TIME)
+
+
+## Lo que tarda en llegar a la puerta desde que sale corriendo.
+static func barcosa_run_time(ai_level: int) -> float:
+	return maxf(lerpf(BARCOSA_EASY_RUN_TIME, BARCOSA_HARD_RUN_TIME,
+		_barcosa_t(ai_level)), BARCOSA_MIN_RUN_TIME)
 
 
 # --- Breaker y cortaso -------------------------------------------------------

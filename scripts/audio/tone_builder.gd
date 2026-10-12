@@ -56,6 +56,10 @@ static func build(generator: String) -> AudioStreamWAV:
 			return typewriter_key()
 		"menu_blip":
 			return menu_blip()
+		"menu_music":
+			return menu_music()
+		"breach":
+			return breach()
 		"phone_hang_up":
 			return phone_hang_up()
 		"far_running":
@@ -494,6 +498,58 @@ static func flashlight_click() -> AudioStreamWAV:
 	for i: int in buffer.size():
 		var t: float = float(i) / float(SAMPLE_RATE)
 		buffer[i] = randf_range(-1.0, 1.0) * exp(-CLICK_DECAY * t) * CLICK_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- Irrupción del operativo -------------------------------------------------
+## La puerta derribada y los gritos de encima: un golpe seco muy grave y, tras
+## él, ruido de banda ancha con la envolvente picada de unas voces gritando.
+const BREACH_LENGTH: float = 1.2
+const BREACH_HIT_HZ: float = 65.0
+const BREACH_SHOUTS: Array[float] = [0.18, 0.42, 0.7, 0.95]
+const BREACH_SHOUT_LENGTH: float = 0.22
+const BREACH_SHOUT_AMPLITUDE: float = 0.45
+
+
+static func breach() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(BREACH_LENGTH)
+	# El portazo.
+	_add_thud(buffer, 0.0, BREACH_HIT_HZ, 0.5, 0.95, 9.0, 0.5)
+	# Y los gritos encima, cada uno con su propia subida y bajada.
+	for start: float in BREACH_SHOUTS:
+		var first: int = int(start * SAMPLE_RATE)
+		var samples: int = int(BREACH_SHOUT_LENGTH * SAMPLE_RATE)
+		for i: int in samples:
+			var index: int = first + i
+			if index >= buffer.size():
+				break
+			var t: float = float(i) / float(samples)
+			var envelope: float = sin(t * PI)
+			buffer[index] += randf_range(-1.0, 1.0) * envelope * BREACH_SHOUT_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- Música del menú ---------------------------------------------------------
+## Un zumbido grave y lento, de los que no se notan hasta que paran. Dura seis
+## segundos justos y las tres frecuencias caben un número entero de veces en
+## ellos, así que el bucle no da ningún salto.
+const MENU_MUSIC_LENGTH: float = 6.0
+const MENU_MUSIC_HZ: Array[float] = [55.0, 82.5, 110.0]
+const MENU_MUSIC_GAINS: Array[float] = [0.5, 0.26, 0.14]
+## Lo que respira: sube y baja tres veces en los seis segundos.
+const MENU_MUSIC_BREATH_HZ: float = 0.5
+const MENU_MUSIC_AMPLITUDE: float = 0.35
+
+
+static func menu_music() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(MENU_MUSIC_LENGTH)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var value: float = 0.0
+		for note: int in MENU_MUSIC_HZ.size():
+			value += sin(TAU * MENU_MUSIC_HZ[note] * t) * MENU_MUSIC_GAINS[note]
+		var breath: float = 0.75 + 0.25 * sin(TAU * MENU_MUSIC_BREATH_HZ * t)
+		buffer[i] = value * breath * MENU_MUSIC_AMPLITUDE
 	return _to_wav(buffer)
 
 
