@@ -12,14 +12,16 @@ extends Control
 ## La caja del rodillo ya viene pintada en las fotos, con la puerta abierta y
 ## con la puerta cerrada, así que aquí no se dibuja nada de eso.
 ##
-## Mientras baja, la capa respeta el cono de la linterna igual que el fondo:
-## fuera del cono se ve apagada, dentro a todo brillo. De eso se encarga el
-## mismo shader que usa la foto iluminada; como la capa está alineada con la
-## vista, sus UV son las de la vista y el haz le cae donde toca.
+## Mientras baja o sube, la lámina respeta el cono de la linterna **igual que
+## el fondo**: tiene sus dos fotos, `cortina_capa_oscura.png` fuera del cono y
+## `cortina_capa.png` dentro, y el shader `shutter_reveal.gdshader` mezcla una
+## con otra en el borde del haz. Antes era una sola foto, la iluminada, bajada
+## de brillo: se veía alumbrada aunque el pasillo estuviera a oscuras.
 
 ## La capa de la cortina, del tamaño de la vista.
 const LAYER_PATH: String = "res://assets/art/office/cortina_capa"
-const REVEAL_SHADER: String = "res://scenes/office/flashlight_reveal.gdshader"
+const DARK_LAYER_PATH: String = "res://assets/art/office/cortina_capa_oscura"
+const REVEAL_SHADER: String = "res://scenes/office/shutter_reveal.gdshader"
 
 ## Dónde está la lámina dentro de la capa, en normalizadas de la vista. Medido
 ## sobre el PNG: x 407, y 250, 150 x 271 de 1375x768.
@@ -63,12 +65,14 @@ var _shake_offset: Vector2 = Vector2.ZERO
 func _ready() -> void:
 	set_process(false)
 	_texture = GameAssets.load_texture(LAYER_PATH)
+	var dark: Texture2D = GameAssets.load_texture(DARK_LAYER_PATH)
 	if _texture != null and ResourceLoader.exists(REVEAL_SHADER):
 		var material: ShaderMaterial = ShaderMaterial.new()
 		material.shader = load(REVEAL_SHADER)
-		# Fuera del cono no desaparece: se queda apagada, como el fondo.
-		material.set_shader_parameter("base_alpha", 1.0)
-		material.set_shader_parameter("base_brightness", OfficeLayers.DIM_BRIGHTNESS)
+		# Si todavía no estuviera la foto a oscuras, se usa la iluminada para
+		# las dos: se vería como antes, pero sin romperse.
+		material.set_shader_parameter("dark_texture",
+			dark if dark != null else _texture)
 		self.material = material
 
 

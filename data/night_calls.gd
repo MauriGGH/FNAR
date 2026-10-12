@@ -23,6 +23,22 @@ extends RefCounted
 
 ## Lo que tarda en sonar desde que empieza la noche.
 const CALL_DELAY: float = 3.0
+
+## La llamada del Mencho: un número equivocado que entra **una vez por noche**,
+## a una hora al azar entre la 1 y las 5 AM. No es la llamada de la noche y no
+## cuenta como tal: no hay nada que contestar ni que elegir, solo se oye. El
+## audio ya trae su efecto de teléfono, así que el juego solo pone el timbre.
+## Si a las 5 AM todavía no ha sonado, entra ahí a la fuerza.
+const MENCHO_FROM_HOUR: float = 1.0
+const MENCHO_TO_HOUR: float = 5.0
+const MENCHO_RING_TIME: float = 10.0
+## Un subtítulo corto y nada más: la gracia es oírla.
+const MENCHO_SUBTITLES: Array[Dictionary] = [{"at": 0.0, "text": "¿Bueno? ..."}]
+
+
+## A qué hora de la noche le toca sonar esta vez.
+static func mencho_hour() -> float:
+	return randf_range(MENCHO_FROM_HOUR, MENCHO_TO_HOUR)
 ## Lo que suena antes de darse por perdida. No contestar no tiene castigo.
 const RING_TIME: float = 10.0
 

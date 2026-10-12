@@ -109,11 +109,17 @@ func _layout() -> void:
 
 ## Arranca la llamada de esa noche. Si no hay audio, no hace nada y avisa.
 func play(night: int) -> void:
-	_sound_id = NightCalls.sound_id(night)
+	play_call(NightCalls.sound_id(night), NightCalls.subtitles(night))
+
+
+## Cualquier llamada grabada: su audio y sus subtítulos. La de la noche sale
+## de arriba; la del Mencho le pasa los suyos, que son un solo renglón.
+func play_call(sound_id: String, lines: Array[Dictionary]) -> void:
+	_sound_id = sound_id
 	if not AudioManager.has_real_file(_sound_id):
 		finished.emit()
 		return
-	_lines = NightCalls.subtitles(night)
+	_lines = lines
 	_length = AudioManager.length(_sound_id)
 	_current = -1
 	is_playing = true

@@ -14,6 +14,9 @@ const MINIMAP_DATA_PATH: String = "res://data/minimapa_camaras.json"
 ## Imagen de un estado de cámara, sin extensión: basta agregar el archivo
 ## (png, jpg o jpeg) para que funcione, sin tocar código.
 const CAMERA_IMAGE_FORMAT: String = "res://assets/art/cameras/cam%02d_%s"
+## Igual, pero con el nombre entero ya hecho: lo usa el vistazo de reojo, que
+## enseña la imagen de otra cámara en la que estés viendo.
+const CAMERA_IMAGE_FORMAT_RAW: String = "res://assets/art/cameras/%s"
 ## Si falta la imagen de un estado, se usa la imagen base de esa cámara y se
 ## pone la etiqueta de texto encima. Así se pueden ir agregando de a poco.
 const BASE_STATES: Array[String] = ["etapa0", "vacia", "base"]
@@ -81,6 +84,10 @@ var _camera_signature: String = ""
 var _ambient_elapsed: float = 0.0
 var _ambient_tween: Tween = null
 ## El suceso que se está enseñando ahora mismo, y lo que le queda.
+## El vistazo "de reojo": la imagen que se cuela y lo que le queda puesta.
+var _glimpse: Texture2D = null
+var _glimpse_left: float = 0.0
+
 var _ambient_event: Dictionary = {}
 var _ambient_event_left: float = 0.0
 var _ambient_camera: int = Rooms.NO_CAMERA
@@ -178,9 +185,30 @@ func switch_to_camera(camera: int) -> void:
 	current_camera = camera
 	_ambient_event = {}
 	_ambient_event_left = 0.0
+	_roll_glimpse()
 	_refresh_view()
 	_play_strong_static()
 	camera_changed.emit(current_camera)
+
+
+## El dado del vistazo de reojo, en cada cambio de cámara.
+func _roll_glimpse() -> void:
+	if randi() % AmbientEvents.GLIMPSE_ONE_IN != 0:
+		return
+	play_glimpse(AmbientEvents.glimpse_state())
+
+
+## Cuela esa imagen de acecho en la cámara que se esté viendo, medio segundo.
+## Lo usa el dado de arriba y también el panel de pruebas.
+func play_glimpse(state: String) -> void:
+	var texture: Texture2D = _load_texture(CAMERA_IMAGE_FORMAT_RAW % state)
+	if texture == null:
+		return
+	_glimpse = texture
+	_glimpse_left = AmbientEvents.GLIMPSE_TIME
+	AudioManager.play(Sounds.DISTURBING)
+	# Se pinta ya: si esperara al siguiente refresco, no se vería nunca.
+	_refresh_camera_content()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -280,6 +308,16 @@ func _rank_of(slug: String) -> int:
 ## deja la etiqueta de texto encima; si tampoco hay base, queda el fondo gris.
 func _refresh_camera_content() -> void:
 	var room: String = Rooms.room_of_camera(current_camera)
+	# El vistazo de reojo manda sobre todo lo demás mientras dura.
+	if _glimpse_left > 0.0:
+		feed_image.texture = _glimpse
+		feed_image.visible = true
+		camera_overlay.hide_region()
+		fallback_label.visible = false
+		saturated_label.visible = false
+		no_signal_label.visible = false
+		_refresh_occupants(room)
+		return
 	# Sin señal no se ve nada: estática fija y el cartel parpadeando.
 	if GameManager.patch_panel.is_camera_down(current_camera):
 		feed_image.visible = false
@@ -449,6 +487,13 @@ func _refresh_occupants(_room: String) -> void:
 ## Las etapas cambian sin que nadie se mueva, así que la etiqueta se repinta sola.
 func _process(delta: float) -> void:
 	_apply_winding()
+	# El vistazo de reojo se cuenta aquí arriba, antes de cualquier corte: si
+	# se contara abajo, una interferencia lo dejaría clavado en pantalla.
+	if _glimpse_left > 0.0:
+		_glimpse_left -= delta
+		if _glimpse_left <= 0.0:
+			_glimpse = null
+			_refresh_camera_content()
 	if is_open:
 		# La espera del audio corre siempre, así que el reloj se repinta
 		# aunque la estática esté tapando la imagen.

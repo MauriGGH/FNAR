@@ -24,6 +24,22 @@ const EVENT_TIME: float = 4.0
 ## El evento que parpadea alterna con la imagen vacía a este ritmo.
 const BLINK_TIME: float = 0.45
 
+## El vistazo "de reojo": cada tantos cambios de cámara, **en la cámara que
+## sea**, se cuela medio segundo la imagen de acecho de un profe al azar, con
+## su golpe de sonido. No hace nada más: ni mata, ni quita energía, ni cambia
+## dónde está nadie. Es solo para que el jugador dude de lo que vio.
+const GLIMPSE_ONE_IN: int = 150
+const GLIMPSE_TIME: float = 0.5
+const GLIMPSE_STATES: Array[String] = [
+	"cam12_urena-acecho", "cam06_audel-acecho", "cam13_mamador-acecho",
+	"cam13_juan-acecho", "cam13_armando-acecho",
+]
+
+
+## Una imagen de acecho al azar, para el vistazo de reojo.
+static func glimpse_state() -> String:
+	return GLIMPSE_STATES[randi() % GLIMPSE_STATES.size()]
+
 ## Los sucesos con imagen propia, por cámara. "blink" es el que alterna con
 ## cam09_vacia en vez de quedarse fijo.
 const EVENTS: Dictionary = {

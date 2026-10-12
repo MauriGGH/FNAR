@@ -192,7 +192,9 @@ func _enter(phase: Phase) -> void:
 			_phase_left = PRE_TEAR_TIME * _scale
 			_picture.texture = _base
 			_set_tear(PRE_TEAR_PIXELS, RGB_PIXELS, 0.5, 2.0)
-			AudioManager.play(Sounds.MENU_TIC)
+			# El de los tres lleva su propio glitch, más largo.
+			AudioManager.play(Sounds.MENU_GLITCH_LONG if _current == ULTRA_ID
+				else Sounds.MENU_TIC)
 		Phase.TIC_TEAR:
 			# Entra el profe y el desgarro se vuelve una banda que baja.
 			_phase_left = TIC_TEAR_TIME * _scale

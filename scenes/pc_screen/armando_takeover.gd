@@ -116,6 +116,10 @@ func play(phrase: String) -> void:
 	_slip = 0.0
 	is_active = true
 	visible = true
+	# El golpe de que se cayó el sistema y, debajo, el zumbido roto que se
+	# queda mientras él tenga la pantalla.
+	AudioManager.play(Sounds.ARMANDO_CRASH)
+	AudioManager.play_loop(Sounds.ARMANDO_GLITCH)
 	queue_redraw()
 
 
@@ -163,9 +167,13 @@ func _input(event: InputEvent) -> void:
 		_finish(true)
 
 
+## Se acabó, por escribir APÁGATE o por acabarse el tiempo: en los dos casos
+## se callan sus dos sonidos.
 func _finish(ok: bool) -> void:
 	is_active = false
 	visible = false
+	AudioManager.stop(Sounds.ARMANDO_CRASH)
+	AudioManager.stop(Sounds.ARMANDO_GLITCH)
 	if ok:
 		survived.emit()
 	else:

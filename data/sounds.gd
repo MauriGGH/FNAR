@@ -91,6 +91,27 @@ const PHONE_HANG_UP: String = "telefono_colgar"
 const WASTED: String = "wasted"
 ## La puerta derribada y los gritos del operativo, antes del WASTED de Mamador.
 const MAMADOR_BREACH: String = "mamador_brecha"
+## Armando tomando la pantalla de la PC: el crash al aparecer y el zumbido
+## que se queda en bucle mientras dura.
+const ARMANDO_CRASH: String = "armando_windows_crash"
+const ARMANDO_GLITCH: String = "armando_glitch_bucle"
+## La frase que suelta el Mago justo al quedarse la oficina sin energía.
+const BLACKOUT_LINE: String = "apagon_frase"
+## El glitch largo del tic "ultra" del menú, el de los tres profes.
+const MENU_GLITCH_LONG: String = "menu_glitch_largo"
+## El vistazo "de reojo" de las cámaras.
+const DISTURBING: String = "sonido_perturbador"
+## La llamada del Mencho: número equivocado, una vez por noche.
+const MENCHO_CALL: String = "llamada_mencho"
+
+## El rescate de Sergio, que todavía no está hecho: los ids quedan registrados
+## para que el día que se programe solo haya que pedirlos.
+## - ROSE_SUSPENSE: al congelarse el susto.
+## - ROSE_AIR: con el destello blanco y el tótem.
+## - AURA: al terminar, y también al ganar el tótem en el minijuego.
+const ROSE_SUSPENSE: String = "rosa_suspenso"
+const ROSE_AIR: String = "rosa_aire"
+const AURA: String = "aura"
 
 # --- Lo que se oye de lejos --------------------------------------------------
 const FAR_BARCOSA_RUN: String = "barcosa_corre"
@@ -357,6 +378,51 @@ const CATALOG: Dictionary = {
 		"volume_db": 0.0, "generator": "wasted_sting",
 		"desc": "Golpe orquestal corto y feo, de muerte en un juego de coches.",
 	},
+	"armando_windows_crash": {
+		"file": "armando_windows_crash.ogg", "bus": "Efectos",
+		"volume_db": -2.0, "generator": "",
+		"desc": "Pantallazo azul: el sonido de un sistema que se cae de golpe.",
+	},
+	"armando_glitch_bucle": {
+		"file": "armando_glitch_bucle.ogg", "bus": "Efectos",
+		"volume_db": -18.0, "generator": "",
+		"desc": "Zumbido digital roto, en bucle sin corte, mientras Armando tiene la pantalla tomada.",
+	},
+	"apagon_frase": {
+		"file": "apagon_frase.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Lo que se oye justo al irse la luz, antes de la oscuridad del apagón.",
+	},
+	"menu_glitch_largo": {
+		"file": "menu_glitch_largo.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "low_hit",
+		"desc": "Glitch largo y feo para el tic «ultra» del menú, el de los tres profes.",
+	},
+	"sonido_perturbador": {
+		"file": "extras/sonido_perturbador.ogg", "bus": "Efectos",
+		"volume_db": -4.0, "generator": "",
+		"desc": "El golpe del vistazo «de reojo»: medio segundo de algo que no debería estar ahí.",
+	},
+	"llamada_mencho": {
+		"file": "llamadas/llamada_mencho.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Número equivocado, ya con efecto de teléfono. Entra una vez por noche entre la 1 y las 5 AM.",
+	},
+	"rosa_suspenso": {
+		"file": "extras/rosa_suspenso.ogg", "bus": "Música",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Rescate de Sergio (sin programar): el suspenso de cuando el susto se congela.",
+	},
+	"rosa_aire": {
+		"file": "extras/rosa_aire.ogg", "bus": "Música",
+		"volume_db": -4.0, "generator": "",
+		"desc": "Rescate de Sergio (sin programar): el golpe de aire del destello blanco y el tótem.",
+	},
+	"aura": {
+		"file": "extras/aura.ogg", "bus": "Música",
+		"volume_db": -6.0, "generator": "",
+		"desc": "Rescate de Sergio (sin programar): el aura del final, y también al ganar el tótem en el minijuego.",
+	},
 	"mamador_brecha": {
 		"file": "mamador_brecha.ogg", "bus": "Efectos",
 		"volume_db": 0.0, "generator": "breach",
@@ -534,6 +600,8 @@ const LOOPING: Array[String] = [
 	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
 	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
+	# El zumbido de Armando dura lo que dure su toma de pantalla.
+	"armando_glitch_bucle",
 	# Los pasos de Barcosa suenan toda su carrera, así que van en bucle.
 	"barcosa_corre",
 ]

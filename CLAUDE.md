@@ -119,7 +119,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (72 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (81 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -150,6 +150,13 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
 | `grito_<id>`, `grito_base_1`…`3` | `gritos/<id>.ogg` | Efectos | 0 | no | el grito de cada jumpscare y los tres de reserva |
 | `mamador_brecha` | `mamador_brecha.ogg` | Efectos | 0 | no | la irrupción del operativo, antes del WASTED |
+| `armando_windows_crash` | `armando_windows_crash.ogg` | Efectos | −2 | no | Armando toma la pantalla de la PC |
+| `armando_glitch_bucle` | `armando_glitch_bucle.ogg` | Efectos | −18 | sí | de fondo, mientras dura esa toma |
+| `apagon_frase` | `apagon_frase.ogg` | Voces | 0 | no | justo al quedarse la oficina sin energía |
+| `menu_glitch_largo` | `menu_glitch_largo.ogg` | Efectos | −4 | no | el tic «ultra» del menú, el de los tres |
+| `sonido_perturbador` | `extras/sonido_perturbador.ogg` | Efectos | −4 | no | el vistazo «de reojo» de las cámaras |
+| `llamada_mencho` | `llamadas/llamada_mencho.ogg` | Voces | 0 | no | la llamada del Mencho, una por noche |
+| `rosa_suspenso`, `rosa_aire`, `aura` | `extras/<id>.ogg` | Música | −4 / −6 | no | el rescate de Sergio (todavía sin programar) |
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
 | `ninos_yay` | `ninos_yay.ogg` | Efectos | −3 | no | los niños al entrar el 6; solo se usa si no está grabado el despertador |
@@ -184,6 +191,14 @@ corta en cualquier momento.
 
 La llamada de Ureña es otra cosa y sigue como estaba: conversación con respuestas, en la
 ventanita de la esquina y con síntesis de voz.
+
+**La llamada del Mencho:** un número equivocado que entra **todas las noches, una sola vez**, a
+una hora al azar entre la 1 y las 5 AM (`NightCalls.mencho_hour()`). El teléfono suena como
+siempre y, al contestar, se oye `llamadas/llamada_mencho.ogg` —que ya trae su efecto de teléfono—
+con un único subtítulo corto, «¿Bueno? ...». **No cuenta como la llamada de la noche** y no abre
+la ventanita: se oye y ya. El teléfono es uno solo, así que si justo está sonando la de Ureña o la
+del Phone Guy, el Mencho espera a que acaben; si se le hicieron las 5 AM esperando, entra en
+cuanto el teléfono quede libre.
 
 ## Música y sonidos lejanos
 
@@ -473,9 +488,20 @@ colocada en su sitio (ocupa x 407, y 250, 150 x 271 sobre la imagen de 1375x768)
 chapa se va revelando de arriba hacia abajo en **0.6 s**, con el sonido `puerta_cortina`; al abrir,
 a la inversa. Al terminar de bajar, la vista central cambia a las fotos `*_cerrada` (la oscura y la
 iluminada) y la capa deja de dibujarse, porque a partir de ahí la cortina la trae el fondo.
-Mientras baja, la capa **respeta el cono de la linterna igual que el fondo**: fuera del cono se ve
-apagada, dentro a todo brillo. Por eso el cono abarca también la zona `entrance_door`, que es el
+
+Mientras se mueve, la lámina tiene **sus dos fotos, igual que el fondo**:
+`cortina_capa_oscura.png` fuera del cono de la linterna y `cortina_capa.png` dentro, del mismo
+tamaño y en la misma posición. Las mezcla `scenes/office/shutter_reveal.gdshader`, que recibe la
+oscura en `dark_texture` y usa las mismas UV para las dos, así que la lámina no se mueve ni un
+píxel al pasar de una a otra. Antes era una sola foto, la iluminada, con el brillo bajado: se veía
+alumbrada aunque el pasillo estuviera a oscuras. Por eso el cono abarca también la zona `entrance_door`, que es el
 fondo del pasillo. En la CAM 2, si la puerta está cerrada, el código encima sobre la imagen del estado actual el recorte de `cam02_cortina` en el rectángulo normalizado x 0.729, y 0.223, w 0.1245, h 0.752 (definido en `data/camera_overlays.gd`, que se mide sobre la imagen y no se adivina). Las imágenes `cam02_barcosa-golpeando` ya traen la cortina abajo y no llevan el recorte encima. En la CAM 2, Mamador se pinta a la izquierda de la puerta, frente al cristal del sillón, para no quedar tapado por la cortina.
+
+**El vistazo «de reojo»:** en **1 de cada 150 cambios de cámara**
+(`AmbientEvents.GLIMPSE_ONE_IN`), la cámara a la que acabas de cambiar enseña durante **0.5 s** la
+imagen de acecho de un profe al azar —la de otra cámara, da igual cuál— con el golpe de
+`sonido_perturbador`, y vuelve sola a lo que tocaba. **No hace nada más**: ni mata, ni quita
+energía, ni mueve a nadie. Es para que el jugador dude de lo que vio.
 
 **Cámaras de ambiente (7, 8, 9):** ninguna ruta de ida pasa por ahí; solo las usan Mamador y Armando al retirarse (ver Rutas de retiro). Además, de vez en cuando muestran sucesos raros sin consecuencias (una sombra, una luz que parpadea), que sirven de atmósfera y de pistas para una secuela.
 
@@ -506,7 +532,8 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 - **Mago Eléctrico (rol Balloon Boy; antes Audel Electrix):** en pantalla y diálogos se llama "Mago Eléctrico"; en código, ids, estados y archivos se sigue usando `audel` (por ejemplo `cam06_audel-acecho`, `centro_audel.png`) para no romper nada. vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
   - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible. Con la linterna muerta **el pasillo se queda a oscuras**: no hay cono, no se ve quién está en el cristal y no se le pueden contar destellos a nadie. Eso es parte del castigo.
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
-    secuencia de cuatro tiempos, en `blackout_death.gd`: 3 a 12 s al azar de oscuridad total;
+    secuencia de cuatro tiempos, en `blackout_death.gd`. Justo al apagarse todo, antes de la
+    oscuridad, suena `apagon_frase`; después, 3 a 12 s al azar de oscuridad total;
     a lo lejos en el pasillo, al fondo del cristal, se encienden y se apagan **un par de ojos**
     al ritmo de la cajita musical, uno por pulso (los de su JSON), como la cara de Freddy en
     FNAF 1: chiquitos, blanco azulados y con un brillo muy leve, y **no se ve nada más**. La
@@ -536,7 +563,9 @@ Los tiempos están en `autoload/night_config.gd` para poder ajustarlos sin tocar
 cero) y lo que aguanta en el cristal, que se interpola entre `GLASS_TIME_FIRST_NIGHT` (9 s) y
 `GLASS_TIME_LAST_NIGHT` (5.5 s). Eso deja unos **7.25 s de margen de reacción en la noche 1 y 3.75 s
 en la 6**; `NightConfig.glass_margin(noche)` lo calcula y el panel de pruebas lo enseña.
-- **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
+- **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. Al aparecer suena `armando_windows_crash` y, debajo,
+`armando_glitch_bucle` en bucle a −18 dB mientras dura la toma; los dos se callan al escribir
+APÁGATE o al acabarse el tiempo. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
 - **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
 
 ## Alucinaciones
@@ -554,6 +583,21 @@ para que el jugador dude de lo que vio. Son raras, se hacen más seguidas en las
 | `botarga` | La botarga sentada en la silla de la oficina: su propio jumpscare muy oscurecido, para que se adivine la silueta. |
 | `expediente` | Un expediente cualquiera con el nombre del jugador escrito donde va el del profe. El valor del campo NOMBRE empieza en x 0.072, y 0.253 y llega a x 0.296, con alto 0.033, sobre una hoja girada −2.5°: el parche (color del papel #d6c49e) y el nombre se giran ese mismo ángulo apoyados en esa esquina. El nombre va en Special Elite a 30 px en 1080p, color #282019. |
 
+## Pendiente: el rescate de Sergio
+
+Todavía **no está programado**; esto es el diseño, para cuando toque. Los sonidos ya están
+registrados en el catálogo (`rosa_suspenso`, `rosa_aire` y `aura`), así que solo hay que pedirlos.
+
+En su rescate, la secuencia es:
+
+1. El susto se **congela** a media animación y suena `rosa_suspenso`.
+2. Desde arriba **baja un haz de luz blanca** con `rosa_aire`, y dentro del haz **desciende
+   flotando la silueta de Sergio**.
+3. Sergio **deja el tótem** —con el efecto del tótem de Minecraft: el objeto girando y el
+   destello—, suena `aura` y se va.
+
+`aura` suena también al **ganar el tótem en el minijuego**, que es la otra manera de conseguirlo.
+
 ## Jumpscares
 
 Las imágenes están en `assets/art/jumpscares/`: `jumpscare_<id>.png` y `jumpscare_<id>_a.png` para barcosa, urena, rochis, juan, armando, cometrabas y audel, más `audel_susto` y `mamador_militares`.
@@ -562,7 +606,9 @@ La animación de cada muerte es la misma: la variante `_a` durante 0.12 s, corte
 
 **El grito va siempre y a 0 dB**, encima de la estática: nunca se oye solo el siseo. Lo elige
 `Sounds.scream_for(slug)`: el grito propio del profe (`grito_<id>`) si está grabado, si no uno de
-`grito_base_1..3` al azar, y si tampoco están, `grito`, que lleva provisional por código.
+`grito_base_1..3` al azar, y si tampoco están, `grito`, que lleva provisional por código. **Los
+siete propios ya están grabados** (`gritos/grito_<id>.ogg`); el de Ureña es una risa, y es lo que
+se oye en su jumpscare.
 
 Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 (`scenes/ui/wasted_screen.gd`). Ya no lleva luces de policía.

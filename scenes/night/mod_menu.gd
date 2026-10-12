@@ -403,6 +403,13 @@ func _build_events_section() -> void:
 			_add_button(body, "CAM %02d · %s" % [camera, name], func() -> void:
 				_night.camera_system.debug_play_ambient(camera, index))
 
+	_add_button(body, "Que llame el Mencho", func() -> void:
+		close()
+		_night.debug_mencho_call())
+	_add_button(body, "Vistazo de reojo en la cámara de ahora", func() -> void:
+		close()
+		_night.camera_system.play_glimpse(AmbientEvents.glimpse_state()))
+
 	_add_label(body, "Tickets:")
 	_add_button(body, "Que llegue uno nuevo",
 		func() -> void: GameManager.debug_arrive_next_ticket())

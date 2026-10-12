@@ -23,8 +23,10 @@ signal answer_given(kind: int)
 ## Contestaron la llamada grabada de la noche: que empiecen el audio y los
 ## subtítulos. De eso se encarga la barra de subtítulos, no esta ventanita.
 signal recording_started(night: int)
+## Lo mismo, pero con la del Mencho, que no es de ninguna noche en concreto.
+signal mencho_started()
 
-enum Mode { NONE, RECORDING, URENA }
+enum Mode { NONE, RECORDING, URENA, MENCHO }
 ## Por dónde va la llamada de Ureña.
 enum Step { GREETING, LINE, REACTION, FAREWELL }
 
@@ -108,11 +110,15 @@ func answer() -> void:
 		return
 	is_ringing = false
 	call_answered.emit()
-	if mode == Mode.RECORDING:
-		# La grabada no abre la ventanita: sus subtítulos van abajo al centro.
+	if mode == Mode.RECORDING or mode == Mode.MENCHO:
+		# Las grabadas no abren la ventanita: sus subtítulos van abajo al
+		# centro y el juego sigue.
 		is_open = false
 		visible = false
-		recording_started.emit(_recording_night)
+		if mode == Mode.MENCHO:
+			mencho_started.emit()
+		else:
+			recording_started.emit(_recording_night)
 		return
 	is_open = true
 	visible = true
@@ -152,9 +158,16 @@ func queue_recording(night: int, seconds: float) -> void:
 	start_ringing(seconds, false)
 
 
+## La llamada del Mencho: igual que la grabada, pero sin noche. El teléfono
+## suena y, al contestar, se oye y ya.
+func queue_mencho(seconds: float) -> void:
+	mode = Mode.MENCHO
+	start_ringing(seconds, false)
+
+
 ## La barra de subtítulos avisó de que la llamada acabó o se silenció.
 func end_recording() -> void:
-	if mode != Mode.RECORDING:
+	if mode != Mode.RECORDING and mode != Mode.MENCHO:
 		return
 	mode = Mode.NONE
 	_recording_night = 0

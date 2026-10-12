@@ -89,6 +89,9 @@ var _rochis: Rochis = null
 
 # Teléfono: la llamada de la noche y la de Ureña.
 var _nightly_call_left: float = 0.0
+## A qué hora le toca sonar al Mencho esta noche, y si ya sonó. En −1 es que
+## ya pasó y no vuelve: es una por noche.
+var _mencho_call_at: float = -1.0
 ## Las horas a las que va a llamar esta noche, de la más temprana a la última.
 var _urena_calls_at: PackedFloat32Array = PackedFloat32Array()
 var _ticket_elapsed: float = 0.0
@@ -143,6 +146,7 @@ func _ready() -> void:
 	phone_call.snub_line.connect(_on_snub_line)
 	phone_call.call_ended.connect(_on_call_ended)
 	phone_call.recording_started.connect(_on_recording_started)
+	phone_call.mencho_started.connect(_on_mencho_started)
 	call_subtitles.finished.connect(phone_call.end_recording)
 	phone_call.answer_given.connect(_on_answer_given)
 	office.server_room_requested.connect(_enter_server_room)
@@ -250,6 +254,19 @@ func debug_night_call() -> void:
 ## Contestaron: arrancan el audio y los subtítulos de abajo.
 func _on_recording_started(night: int) -> void:
 	call_subtitles.play(night)
+
+
+## Contestaron al Mencho: su audio con su único renglón de subtítulo.
+func _on_mencho_started() -> void:
+	call_subtitles.play_call(Sounds.MENCHO_CALL, NightCalls.MENCHO_SUBTITLES)
+
+
+## Para el panel de pruebas: que llame ahora mismo.
+func debug_mencho_call() -> void:
+	if phone_call.is_ringing or phone_call.is_open:
+		return
+	_mencho_call_at = -1.0
+	phone_call.queue_mencho(NightCalls.MENCHO_RING_TIME)
 
 
 
@@ -531,6 +548,8 @@ func _on_flashlight_failed() -> void:
 func _schedule_calls(night: int) -> void:
 	# Si esa noche no tiene guion, el teléfono no suena.
 	_nightly_call_left = NightCalls.CALL_DELAY if NightCalls.has_call(night) else -1.0
+	# El Mencho llama todas las noches, una sola vez, entre la 1 y las 5 AM.
+	_mencho_call_at = NightCalls.mencho_hour()
 	_urena_calls_at.clear()
 	phone_call.reset_urena_lines()
 	if _urena == null or not _urena.is_active:
@@ -550,10 +569,14 @@ func _process_calls(delta: float) -> void:
 		if _nightly_call_left <= 0.0:
 			phone_call.queue_recording(GameManager.current_night, NightCalls.RING_TIME)
 		return
-	if _urena_calls_at.is_empty() or GameManager.night_progress() < _urena_calls_at[0]:
-		return
-	# Si justo está sonando otra cosa, esta llamada se espera al siguiente paso.
+	# El teléfono es uno: si está sonando o abierto, lo que toque espera.
 	if phone_call.is_ringing or phone_call.is_open:
+		return
+	if _mencho_call_at >= 0.0 and GameManager.night_progress() >= _mencho_call_at:
+		_mencho_call_at = -1.0
+		phone_call.queue_mencho(NightCalls.MENCHO_RING_TIME)
+		return
+	if _urena_calls_at.is_empty() or GameManager.night_progress() < _urena_calls_at[0]:
 		return
 	_urena_calls_at.remove_at(0)
 	trigger_urena_call()
@@ -717,6 +740,8 @@ func _on_power_depleted() -> void:
 		return
 	camera_system.close()
 	pc_screen.close()
+	# Lo que se oye justo al apagarse todo, antes de que empiece la oscuridad.
+	AudioManager.play(Sounds.BLACKOUT_LINE)
 	blackout_death.start()
 
 
