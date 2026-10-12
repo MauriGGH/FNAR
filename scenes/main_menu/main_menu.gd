@@ -196,6 +196,11 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	var blocked: bool = (_confirm != null and _confirm.is_open) \
 		or (_options_panel != null and _options_panel.is_open)
+	# Con una capa encima, la lista se esconde; al cerrarse vuelve. Se decide
+	# aquí, cada cuadro, y no al abrir cada cosa: así no depende de que quien
+	# abra la capa se acuerde de esconderla.
+	if _list != null:
+		_list.visible = not blocked
 	if blocked or not Input.is_key_pressed(WIPE_KEY):
 		if _wipe_held > 0.0:
 			_wipe_held = 0.0

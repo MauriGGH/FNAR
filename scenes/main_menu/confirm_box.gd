@@ -34,7 +34,7 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	MenuStyle.backdrop(self, Color(0.0, 0.0, 0.0, 0.94))
+	MenuStyle.backdrop(self)
 	_question = MenuStyle.label("", MenuStyle.TEXT)
 	add_child(_question)
 	_detail = MenuStyle.label("", MenuStyle.DIM)
