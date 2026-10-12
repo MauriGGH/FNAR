@@ -385,16 +385,20 @@ func _refresh_music_box() -> void:
 		AudioManager.stop(Sounds.MUSIC_BOX)
 		AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
 		return
+	# Conforme se queda sin cuerda, la cajita se va quedando grave y lenta.
+	var pitch: float = _come_trabas.music_pitch()
 	var watching: bool = camera_system.is_open \
 		and camera_system.current_camera == Rooms.camera_of(ComeTrabas.ROOM)
 	if watching:
 		AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
 		AudioManager.play_loop(Sounds.MUSIC_BOX)
+		AudioManager.set_pitch(Sounds.MUSIC_BOX, pitch)
 		return
 	AudioManager.stop(Sounds.MUSIC_BOX)
 	# Fuera de la CAM 4 solo se oye el aviso, y solo con poca cuerda.
 	if _come_trabas.wind <= ComeTrabas.WARNING_THRESHOLD:
 		AudioManager.play_loop(Sounds.MUSIC_BOX_WARNING)
+		AudioManager.set_pitch(Sounds.MUSIC_BOX_WARNING, pitch)
 	else:
 		AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
 

@@ -126,6 +126,19 @@ func warning_level() -> int:
 	return 2 if wind <= CRITICAL_THRESHOLD else 1
 
 
+## Lo más grave que llega a sonar la cajita, ya sin cuerda. Por encima del
+## aviso suena normal; de ahí para abajo se va apagando como un juguete al que
+## se le acaba la pila.
+const MIN_PITCH: float = 0.80
+
+
+## El tono al que toca ahora mismo, de MIN_PITCH a 1.0.
+func music_pitch() -> float:
+	if wind >= WARNING_THRESHOLD:
+		return 1.0
+	return lerpf(MIN_PITCH, 1.0, clampf(wind / WARNING_THRESHOLD, 0.0, 1.0))
+
+
 ## Estado de la CAM 4 según la cuerda.
 func camera_state() -> String:
 	if is_attacking:

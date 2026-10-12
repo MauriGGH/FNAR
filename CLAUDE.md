@@ -147,12 +147,24 @@ ventanita de la esquina y con síntesis de voz.
 
 ## Música y sonidos lejanos
 
-**Música:** lo único con melodía es la cajita de la botarga, y funciona como en FNAF 2: **solo se
-oye con la CAM 4 en pantalla**. En la oficina no se oye... salvo cuando a la botarga le queda
-menos del 25 % de cuerda (`ComeTrabas.WARNING_THRESHOLD`): ahí entra `cajita_musical_aviso`, el
-mismo archivo a −22 dB por el bus Lejos, muy bajito y con eco, como aviso de que hay que ir a
-dársela. No hay ningún otro bucle con melodía. El zumbido de lámparas y ventilador
-(`ambiente_oficina`) se queda como estaba.
+**Música:** lo único con melodía es la cajita de la botarga, `assets/audio/cajita_musical.ogg`
+(28.3 s, empalma sin corte). Funciona como en FNAF 2: **solo se oye con la CAM 4 en pantalla**. En
+la oficina no se oye... salvo cuando a la botarga le queda menos del 25 % de cuerda
+(`ComeTrabas.WARNING_THRESHOLD`): ahí entra `cajita_musical_aviso`, el mismo archivo a −22 dB por
+el bus Lejos, muy bajito y con eco, como aviso de que hay que ir a dársela.
+
+**El tono baja con la cuerda.** Por encima del 25 % suena normal; de ahí para abajo se va volviendo
+grave y lenta de forma continua, hasta 0.80 al llegar a cero, como un juguete al que se le acaba la
+pila (`ComeTrabas.music_pitch()`, que vale igual para la de la CAM 4 y para el aviso lejano).
+
+**Los tiempos de la canción** están en `data/audio/cajita_musical_notas.json`: `pulsos` (el ritmo,
+53) y `notas` (cada ataque, 118), más la duración. Los lee `data/music_box.gd`, que si el JSON
+falta se cae a los tiempos del provisional de `tone_builder.gd`. Las chispas del apagón parpadean
+**una por pulso** con esos tiempos.
+
+No hay ningún otro bucle con melodía. El zumbido de lámparas y ventilador (`ambiente_oficina`) se
+queda como estaba. **De qué canción se trata no se dice en ningún texto**: ni el nombre, ni el
+número, ni el autor. Solo se oye.
 
 **Sonidos lejanos** (`scenes/night/distant_sounds.gd`): cada profe tiene el suyo, con probabilidad
 (55 %, y 90 % el de Barcosa) y un mínimo de 6 s entre dos del mismo. Los de sitio van en bucle
@@ -345,8 +357,8 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
     secuencia de cuatro tiempos, en `blackout_death.gd`: 3 a 12 s al azar de oscuridad total;
     aparecen dos chispas azules a lo lejos que **parpadean al ritmo de la cajita musical**, una
-    por nota, mientras suena la melodía entera (la de la botarga se calla: a oscuras solo se oye
-    esta); al acabar la melodía, las chispas se apagan y hay **silencio total de 2 a 5 s**; luego
+    por pulso (los de su JSON), mientras suena la canción entera y una sola vez —son 28 s, así que
+    es una espera larga a propósito— y la de la botarga se calla, que a oscuras solo se oye esta; al acabar la melodía, las chispas se apagan y hay **silencio total de 2 a 5 s**; luego
     se oyen **tres pasos que se acercan** y, al terminar, `jumpscare_audel` con la animación de
     siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la

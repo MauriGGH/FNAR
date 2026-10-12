@@ -2,7 +2,7 @@ extends Control
 
 ## La muerte por apagón. Cuando la energía llega a 0 todo se apaga y el jugador
 ## se queda a oscuras. Entre 3 y 12 s después aparecen dos chispas azules a lo
-## lejos, que parpadean al ritmo de la cajita musical: una por nota. Cuando la
+## lejos, que parpadean al ritmo de la cajita musical: una por pulso. Cuando la
 ## melodía acaba, las chispas se apagan y hay silencio total entre 2 y 5 s. Luego
 ## se oyen tres pasos que se acercan, y de ahí viene el salto del Mago Eléctrico.
 ##
@@ -36,18 +36,18 @@ var _phase: Phase = Phase.IDLE
 var _left: float = 0.0
 ## Cuánto llevamos dentro de la fase de las chispas, para ir casando las notas.
 var _sparks_elapsed: float = 0.0
-## En qué segundo entra cada nota de la melodía. Son los tiempos del provisional
-## de ToneBuilder; si algún día entra un archivo de verdad con otro compás, hay
-## que medirlo y ajustarlo aquí.
-var _note_times: PackedFloat32Array = PackedFloat32Array()
+## En qué segundo cae cada pulso de la canción, para que las chispas sigan el
+## ritmo. Salen de `data/audio/cajita_musical_notas.json`; si no está, se usan
+## los del provisional de ToneBuilder.
+var _pulse_times: PackedFloat32Array = PackedFloat32Array()
 var _melody_length: float = 0.0
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_note_times = ToneBuilder.music_box_note_times()
-	_melody_length = ToneBuilder.music_box_length()
+	_pulse_times = MusicBox.pulse_times()
+	_melody_length = MusicBox.length()
 
 
 ## Empieza la cuenta a oscuras. El tiempo es al azar para que no se aprenda.
@@ -136,9 +136,9 @@ func _fire() -> void:
 	strike.emit()
 
 
-## Las chispas están encendidas si estamos dentro de la ventana de una nota.
+## Las chispas están encendidas si estamos dentro de la ventana de un pulso.
 func _is_lit() -> bool:
-	for time: float in _note_times:
+	for time: float in _pulse_times:
 		if _sparks_elapsed >= time and _sparks_elapsed < time + SPARK_ON_TIME:
 			return true
 	return false

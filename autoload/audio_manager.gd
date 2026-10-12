@@ -73,6 +73,14 @@ func stop(id: String) -> void:
 		player.stop()
 
 
+## El tono de un sonido: 1.0 es el normal, menos es más grave y más lento. Lo
+## usa la cajita de la botarga, que se va apagando conforme se queda sin cuerda.
+func set_pitch(id: String, pitch: float) -> void:
+	var player: AudioStreamPlayer = _player_for(id)
+	if player != null:
+		player.pitch_scale = maxf(pitch, 0.01)
+
+
 func is_playing(id: String) -> bool:
 	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
 	return player != null and player.playing
