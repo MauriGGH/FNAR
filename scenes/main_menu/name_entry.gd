@@ -21,6 +21,11 @@ const BLINK_TIME: float = 0.5
 const SIGNATURE_FADE: float = 0.4
 const SIGNATURE_HOLD: float = 1.0
 
+## Las grabaciones de la tecla que de verdad están en assets/audio/, y la
+## última que sonó, para no repetirla.
+var _key_sounds: Array[String] = []
+var _last_key_sound: String = ""
+
 var _name: String = ""
 var _signed: bool = false
 var _blink_on: bool = true
@@ -33,6 +38,7 @@ var _hint: Label = null
 
 
 func _ready() -> void:
+	_load_key_sounds()
 	_build()
 	_layout()
 	resized.connect(_layout)
@@ -155,9 +161,33 @@ func _erase() -> void:
 	_clac()
 
 
+## Cuáles de las tres grabaciones de la tecla están puestas. Se pregunta una
+## sola vez, al abrir la hoja, y no en cada tecla.
+func _load_key_sounds() -> void:
+	for sound_id: String in Sounds.TYPEWRITER_KEYS:
+		if AudioManager.has_real_file(sound_id):
+			_key_sounds.append(sound_id)
+
+
+## La grabación que le toca a esta tecla: una al azar, nunca la misma dos veces
+## seguidas. Sin grabaciones, el id de respaldo, que siempre suena.
+func _key_sound() -> String:
+	if _key_sounds.is_empty():
+		return Sounds.TYPEWRITER_KEY
+	var pool: Array[String] = []
+	for sound_id: String in _key_sounds:
+		if sound_id != _last_key_sound:
+			pool.append(sound_id)
+	# Con una sola grabación no hay de dónde elegir: se repite y ya.
+	if pool.is_empty():
+		pool = _key_sounds
+	_last_key_sound = pool[randi() % pool.size()]
+	return _last_key_sound
+
+
 ## El golpe de la tecla, y el cursor se queda prendido mientras se escribe.
 func _clac() -> void:
-	AudioManager.play(Sounds.TYPEWRITER_KEY)
+	AudioManager.play(_key_sound())
 	_blink_on = true
 	_blink_left = BLINK_TIME
 	_refresh_name()

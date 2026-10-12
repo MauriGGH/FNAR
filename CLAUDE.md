@@ -91,7 +91,7 @@ buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (37 ids). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (40 ids). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -100,7 +100,8 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
 | `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
-| `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | cada tecla al escribir el nombre en la solicitud |
+| `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
+| `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
 | `cajita_musical_apagon` | `cajita_musical.ogg` | Música | −4 | no | las chispas del apagón (mismo archivo) |
 | `telefono_timbre` | `telefono_timbre.ogg` | Efectos | −6 | sí | mientras el teléfono suena |
@@ -314,7 +315,10 @@ arte, se vuelven a medir los campos en el JSON y no se toca código.
 - **Solicitud de empleo** (`solicitud_empleo.png`, `scenes/main_menu/name_entry.gd`): al empezar
   partida nueva. El nombre se escribe **directo sobre el renglón** de la hoja (campo
   `solicitud_nombre`, Special Elite), con cursor que parpadea y un "clac" de máquina por tecla;
-  máximo 16 caracteres (`NightConfig.MAX_NAME_LENGTH`). **No hay cajas ni botones.** Con Enter
+  máximo 16 caracteres (`NightConfig.MAX_NAME_LENGTH`). El "clac" **alterna al azar entre
+  `tecla_maquina_1..3`** (las que de verdad estén en `assets/audio/`, que se preguntan una sola vez
+  al abrir la hoja) **sin repetir la misma dos veces seguidas**; si no hay ninguna, suena
+  `tecla_maquina`, que siempre está porque lleva provisional por código. **No hay cajas ni botones.** Con Enter
   aparece la firma en `solicitud_firma`, el mismo nombre en Reenie Beanie y tinta azul #283a8c, que
   entra en 0.4 s; 1 s después arranca la partida. Esc vuelve al menú. Abajo, chiquito: "Escribe tu
   nombre · Enter para firmar · Esc para volver".

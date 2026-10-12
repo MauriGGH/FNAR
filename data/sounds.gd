@@ -58,8 +58,15 @@ const BREAKER_LEVER: String = "breaker_palanca"
 const CAMERA_STATIC: String = "estatica_camara"
 ## El blip de moverse por un menú y el de aceptar (el mismo, más agudo).
 const MENU_BLIP: String = "menu_blip"
-## El golpe de una tecla de máquina de escribir, al escribir el nombre.
+## El golpe de una tecla de máquina de escribir, al escribir el nombre. Este es
+## el de respaldo: siempre suena, aunque sea el provisional por código.
 const TYPEWRITER_KEY: String = "tecla_maquina"
+## Las tres grabaciones de la tecla. Si están en assets/audio/, se alterna entre
+## ellas sin repetir la misma dos veces seguidas; si no, suena el de respaldo.
+## Por eso no llevan provisional: quien las usa pregunta antes si están.
+const TYPEWRITER_KEYS: Array[String] = [
+	"tecla_maquina_1", "tecla_maquina_2", "tecla_maquina_3",
+]
 ## El clac de colgar, al acabar o silenciar una llamada.
 const PHONE_HANG_UP: String = "telefono_colgar"
 ## El golpe de la pantalla de WASTED.
@@ -206,6 +213,18 @@ const CATALOG: Dictionary = {
 	"tecla_maquina": {
 		"file": "tecla_maquina.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "typewriter_key",
+	},
+	"tecla_maquina_1": {
+		"file": "tecla_maquina_1.ogg", "bus": "Efectos",
+		"volume_db": -12.0, "generator": "",
+	},
+	"tecla_maquina_2": {
+		"file": "tecla_maquina_2.ogg", "bus": "Efectos",
+		"volume_db": -12.0, "generator": "",
+	},
+	"tecla_maquina_3": {
+		"file": "tecla_maquina_3.ogg", "bus": "Efectos",
+		"volume_db": -12.0, "generator": "",
 	},
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",
