@@ -1,8 +1,13 @@
 extends Control
 
-## Lo que hace el teléfono de la oficina cuando suena. No dibuja ningún
-## adorno propio: solo enciende el LED y la pantallita que ya trae la foto
-## oficina_centro, y mueve un poquito el teléfono con cada timbrazo.
+## Lo que hace el teléfono de la oficina cuando suena: enciende el LED y la
+## pantallita que ya trae la foto, y los sacude un poco con cada timbrazo.
+##
+## **Solo suma luz, nunca pinta encima.** Antes también repintaba un pedazo de
+## la foto corrido, para que el teléfono entero temblara; pero esa foto es la
+## del pasillo **a oscuras**, así que con la linterna encendida dejaba un
+## cuadrado negro alrededor del teléfono, tapando la foto iluminada. Lo que
+## tiembla ahora es la luz, que es lo único que se nota.
 ##
 ## El nodo cubre todo el contenido de la vista central, así que las posiciones
 ## son las mismas normalizadas de las zonas y escalan junto con la vista.
@@ -36,16 +41,10 @@ const PULSE_WIDTH: float = 0.24
 const SHAKE_PIXELS: float = 2.0
 const SHAKE_SPEED_X: float = 74.0
 const SHAKE_SPEED_Y: float = 53.0
-## Margen que se repinta alrededor del teléfono para que al moverlo no se
-## note el corte contra el resto de la foto.
-const SHAKE_PADDING: float = 12.0
-
 var is_ringing: bool = false
 var is_in_call: bool = false
 
 var _pulse_elapsed: float = PULSE_TIME
-var _background: Texture2D = null
-var _phone_rect: Rect2 = Rect2()
 var _glow: Control = null
 
 
@@ -62,18 +61,6 @@ func _ready() -> void:
 	_glow.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_glow.draw.connect(_draw_glow)
 	resized.connect(_refresh)
-
-
-## La foto de la vista central, para poder repintar el teléfono corrido.
-func set_background(texture: Texture2D) -> void:
-	_background = texture
-	queue_redraw()
-
-
-## El rectángulo de la zona del teléfono, en coordenadas del contenido.
-func set_phone_rect(rect: Rect2) -> void:
-	_phone_rect = rect
-	queue_redraw()
 
 
 func set_ringing(ringing: bool) -> void:
@@ -114,19 +101,6 @@ func _refresh() -> void:
 
 
 # --- Dibujo -------------------------------------------------------------------
-
-## Capa normal: solo el temblor del teléfono, repintando ese pedazo de la foto
-## unos píxeles corrido.
-func _draw() -> void:
-	var offset: Vector2 = _shake_offset()
-	if offset == Vector2.ZERO or _background == null or _phone_rect.size.x <= 0.0:
-		return
-	var area: Rect2 = _phone_rect.grow(SHAKE_PADDING)
-	var source: Rect2 = Rect2(
-		Vector2(area.position.x / size.x, area.position.y / size.y) * _background.get_size(),
-		Vector2(area.size.x / size.x, area.size.y / size.y) * _background.get_size())
-	draw_texture_rect_region(_background, Rect2(area.position + offset, area.size), source)
-
 
 ## Capa aditiva: el foquito y la pantallita encendidos.
 func _draw_glow() -> void:

@@ -73,6 +73,11 @@ const GLASS_DOOR_ZONE: String = "entrance_door"
 ## difuminado para que no se vea ninguna línea dura.
 const BEAM_MARGIN: float = 1.12
 const BEAM_SOFTNESS: float = 0.14
+## Hasta dónde baja el haz, en normalizadas del contenido. El pasillo acaba a
+## media altura, así que el borde de abajo caería justo en mitad de la imagen y
+## se vería como una raya: se estira hasta pasarse del borde para que el corte
+## quede fuera de lo que se ve.
+const BEAM_BOTTOM: float = 1.4
 ## Lo rápido que entra y sale la luz al prender y apagar.
 const BEAM_FADE_SPEED: float = 16.0
 ## El parpadeo del foco: cuánto baja y a qué velocidades. Son dos ondas de
@@ -293,8 +298,13 @@ func _update_beam_area() -> void:
 	var door: Rect2 = _normalized_zone(GLASS_DOOR_ZONE)
 	if door.size.x > 0.0:
 		hallway = hallway.merge(door)
-	_beam_center = hallway.get_center()
-	_beam_half = hallway.size * 0.5 * BEAM_MARGIN
+	# Crece un poco por los lados y por arriba, como siempre...
+	var extra: Vector2 = hallway.size * (BEAM_MARGIN - 1.0) * 0.5
+	var grown: Rect2 = hallway.grow_individual(extra.x, extra.y, extra.x, 0.0)
+	# ...y por abajo se sale de la pantalla, para no dejar la raya.
+	grown.size.y = maxf(BEAM_BOTTOM - grown.position.y, grown.size.y)
+	_beam_center = grown.get_center()
+	_beam_half = grown.size * 0.5
 
 
 func _apply_beam() -> void:
@@ -462,8 +472,6 @@ func _layout_flashlight() -> void:
 		# con las mismas normalizadas de las zonas y escalan con la vista.
 		phone_light.position = Vector2.ZERO
 		phone_light.size = content_size
-		phone_light.set_background(center_image.texture)
-		phone_light.set_phone_rect(zone_rect("phone"))
 
 
 ## Las capas de oscuridad cubren todo el contenido y sus puntos de luz van
@@ -978,8 +986,6 @@ func _on_shutter_closed_changed(closed: bool) -> void:
 		CENTER_DARK_CLOSED if closed else CENTER_DARK)
 	center_lit.texture = GameAssets.load_texture(
 		CENTER_LIT_CLOSED if closed else CENTER_LIT)
-	if phone_light != null:
-		phone_light.set_background(center_image.texture)
 
 
 ## La linterna y el foquito del teléfono viven en la vista central.

@@ -76,8 +76,12 @@ res://
   alumbra la linterna**. Con la cortina abajo se cambian las dos por
   `oficina_centro_oscura_cerrada.jpeg` y `oficina_centro_cerrada.jpeg`. La linterna **no se apunta**: ilumina de golpe toda la franja del
   pasillo, con el borde difuminado y sin ninguna línea dura
-  (`scenes/office/flashlight_reveal.gdshader`), y el foco parpadea un poco. Se mantiene con Ctrl o
-  con el clic izquierdo sostenido sobre el cristal, y gasta energía mientras está encendida.
+  (`scenes/office/flashlight_reveal.gdshader`), y el foco parpadea un poco. El haz sale del
+  recuadro del pasillo crecido un poco por los lados y por arriba, pero **por abajo se estira hasta
+  pasarse del contenido** (`BEAM_BOTTOM`): si acabara donde acaba el pasillo, su borde caería a
+  media altura de la imagen y se vería como una raya horizontal cruzando la pantalla. Se mantiene
+  con Ctrl o con el clic izquierdo sostenido sobre el cristal, y gasta energía mientras está
+  encendida.
 
 ## Audio
 
@@ -433,10 +437,11 @@ material, porque en la vista central cada uno se comporta distinto frente al con
 - **Siluetas tras el cristal:** si un profe está en la recepción o en el tramo de `pasillo_sur` que
   se ve desde la oficina, se dibuja al fondo con `layers/silueta_<id>.png`. **A oscuras no se ve
   nada**, igual que con los profes pegados al cristal: fuera del cono su alfa es 0 y no se dibujan.
-  Dentro del cono salen **en penumbra** (`SILHOUETTE_LIT_BRIGHTNESS`, 0.55) y con **1.5 px** de
-  desenfoque (`SILHOUETTE_BLUR_PIXELS`, medidos sobre 1920 de ancho), sin halo ni brillo: así se
-  nota que están lejos, detrás del segundo cristal, y no al nivel de los que ya están encima de ti.
-  El shader lo hace con dos mandos nuevos, `lit_brightness` e `inside_blur`. Hay cinco (Barcosa, Mamador,
+  Dentro del cono se ven **tal cual están pintadas**: ni brillo ni desenfoque
+  (`SILHOUETTE_LIT_BRIGHTNESS` en 1.0 y `SILHOUETTE_BLUR_PIXELS` en 0). El arte ya viene con su
+  penumbra y su distancia —están detrás del segundo cristal—, así que no hay nada que tratar. El
+  shader conserva los dos mandos (`lit_brightness` e `inside_blur`) por si alguna capa los
+  necesita. Hay cinco (Barcosa, Mamador,
   Ureña, Juan.exe y Armando) y **pueden verse varias a la vez**: cada una tiene su sitio y ninguna
   se encima con otra, comprobado con `tools/measure_office_layers.py`. Si falta el archivo de
   alguien, no se dibuja nada.
@@ -452,6 +457,12 @@ Dónde cae cada profe dentro de su recorte, y dónde tiene Armando el ojo, está
 `data/office_layers.gd`. No se adivina: lo mide `tools/measure_office_layers.py` sobre los propios
 PNG (el recuadro de los píxeles opacos, y el píxel naranja más brillante de `centro_armando`). Si
 cambia el arte, se vuelve a correr.
+
+**El teléfono cuando suena** (`scenes/office/phone_light.gd`): enciende el LED y la pantallita que
+ya trae la foto y los sacude un poco con cada timbrazo. **Solo suma luz, nunca pinta encima.**
+Antes también repintaba un pedazo de la foto corrido, para que el teléfono entero temblara; pero
+esa foto es la del pasillo **a oscuras**, así que con la linterna encendida dejaba un cuadrado
+negro alrededor del teléfono, tapando la foto iluminada.
 
 **Cortina de la puerta:** la caja del rodillo **ya viene pintada en las cuatro fotos de la vista
 central**, así que el código no la dibuja (`DRAW_ROLLER_BOX` fuera) y **ya no hay oclusores**: no
