@@ -305,7 +305,7 @@ su propia estética.
   foto con texto encima (ver **Pantallas que son una imagen**).
 
 **Capturas de todas las pantallas:** el panel de pruebas (F1 → Pantallas → **"Capturar todas"**)
-recorre las 32 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
+recorre las 33 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
 guarda un PNG de cada una con `scripts/ui/screen_capture.gd`. Van a `user://capturas/`, que en
 Linux es `~/.local/share/godot/app_userdata/Five Nights at Rocha\'s/capturas/`. La herramienta se
 cuelga de la raíz del árbol, no de una escena, porque va cambiando de escena. Ojo: pasar por las
@@ -315,11 +315,11 @@ pantallas de documentos y periódicos los deja marcados como vistos en `save.cfg
 pausado y cambiar de escena no lo despausa, así que sin eso todo lo que viniera después salía en
 blanco (los fundidos de entrada del recibo y de los documentos no corren con el árbol parado).
 
-Dos capturas son de comprobación y no de catálogo: **`18a_siluetas_en_el_pasillo`** mete a dos
-profes en `pasillo_sur` **por su propia ruta** (no pinta las siluetas a mano: usa `move_to_step()`,
-y de ahí en adelante manda el juego) para ver que la cadena entera funciona, y
-**`18b_giro_a_la_mitad`** deja el barrido clavado al 50 % con `office.debug_hold_sweep()`, para
-poder mirar el desenfoque siempre en el mismo punto.
+Tres capturas son de comprobación y no de catálogo: **`18a_siluetas_sin_linterna`** y **`18b_siluetas_con_linterna`** meten a dos profes en
+`pasillo_sur` **por su propia ruta** (no pintan las siluetas a mano: usan `move_to_step()`, y de
+ahí en adelante manda el juego) para ver que a oscuras no se ve nadie y que con la linterna
+aparecen en penumbra; **`18c_giro_a_la_mitad`** deja el barrido clavado al 50 % con
+`office.debug_hold_sweep()`, para poder mirar el desenfoque siempre en el mismo punto.
 
 ## Transiciones y pantallas
 
@@ -431,11 +431,12 @@ material, porque en la vista central cada uno se comporta distinto frente al con
 - **El ojo de Armando:** si está en el cristal y el cono no le da, lo único que se ve de él es un
   punto naranja tenue que parpadea de vez en cuando donde tiene el ojo.
 - **Siluetas tras el cristal:** si un profe está en la recepción o en el tramo de `pasillo_sur` que
-  se ve desde la oficina, se dibuja al fondo con `layers/silueta_<id>.png`: fuera del cono, al
-  **80 %** de brillo (`OfficeLayers.SILHOUETTE_BRIGHTNESS`) y con **2 px** de desenfoque
-  (`SILHOUETTE_BLUR_PIXELS`, medidos sobre 1920 de ancho); dentro, nítida y a todo brillo. El arte
-  ya viene oscuro de por sí (ronda los 47 de 255), así que a ese 80 % se leen como bultos
-  reconocibles y no como figuras iluminadas. Hay cinco (Barcosa, Mamador,
+  se ve desde la oficina, se dibuja al fondo con `layers/silueta_<id>.png`. **A oscuras no se ve
+  nada**, igual que con los profes pegados al cristal: fuera del cono su alfa es 0 y no se dibujan.
+  Dentro del cono salen **en penumbra** (`SILHOUETTE_LIT_BRIGHTNESS`, 0.55) y con **1.5 px** de
+  desenfoque (`SILHOUETTE_BLUR_PIXELS`, medidos sobre 1920 de ancho), sin halo ni brillo: así se
+  nota que están lejos, detrás del segundo cristal, y no al nivel de los que ya están encima de ti.
+  El shader lo hace con dos mandos nuevos, `lit_brightness` e `inside_blur`. Hay cinco (Barcosa, Mamador,
   Ureña, Juan.exe y Armando) y **pueden verse varias a la vez**: cada una tiene su sitio y ninguna
   se encima con otra, comprobado con `tools/measure_office_layers.py`. Si falta el archivo de
   alguien, no se dibuja nada.

@@ -126,12 +126,14 @@ func _make_material(lit_only: bool, slug: String, silhouette: bool) -> ShaderMat
 		return null
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = load(REVEAL_SHADER)
-	# Una silueta se ve siempre; fuera del cono va un poco apagada y con un
-	# desenfoque muy leve, que se calcula en _apply_beam porque depende de lo
-	# ancha que sea la vista.
+	# Una silueta no existe a oscuras: fuera del cono no se dibuja. Dentro sale
+	# en penumbra y con un desenfoque leve, que se pone en _apply_beam porque
+	# se mide en píxeles.
 	if silhouette:
-		material.set_shader_parameter("base_alpha", 1.0)
-		material.set_shader_parameter("base_brightness", OfficeLayers.SILHOUETTE_BRIGHTNESS)
+		material.set_shader_parameter("base_alpha", 0.0)
+		material.set_shader_parameter("base_brightness", 1.0)
+		material.set_shader_parameter("lit_brightness",
+			OfficeLayers.SILHOUETTE_LIT_BRIGHTNESS)
 		_silhouette_materials.append(material)
 		return material
 	var always: bool = not lit_only and OfficeLayers.is_always_visible(slug)
@@ -146,7 +148,9 @@ func _apply_beam() -> void:
 	# a fracción del ancho con el tamaño que tenga la vista ahora.
 	var blur: float = OfficeLayers.SILHOUETTE_BLUR_PIXELS / OfficeLayers.REFERENCE_WIDTH
 	for material: ShaderMaterial in _silhouette_materials:
+		# El mismo por los dos lados: lejos está, con luz y sin ella.
 		material.set_shader_parameter("outside_blur", blur)
+		material.set_shader_parameter("inside_blur", blur)
 	for slug: Variant in _materials:
 		var material: ShaderMaterial = _materials[slug] as ShaderMaterial
 		material.set_shader_parameter("beam_center", _beam_center)

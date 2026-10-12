@@ -50,12 +50,12 @@ const DISABLED: Array[String] = ["derecha_rochis", "centro_barcosa"]
 ## profe que esté en uno de ellos y tenga su `layers/silueta_<id>.png` se
 ## dibuja como silueta al fondo del pasillo.
 const GLASS_ROOMS: Array[String] = ["recepcion", "pasillo_sur"]
-## Cómo se ve una silueta fuera del cono: **no tan apagada** (tiene que
-## reconocerse quién es, aunque sea a oscuras) y con un desenfoque de apenas
-## un par de píxeles, para que se lea como bulto tras el cristal. Dentro del
-## cono va nítida y a todo brillo, como todo lo demás.
-const SILHOUETTE_BRIGHTNESS: float = 0.8
-const SILHOUETTE_BLUR_PIXELS: float = 2.0
+## Cómo se ve una silueta. **A oscuras no se ve nada**, igual que los profes
+## pegados al cristal: fuera del cono no se dibuja. Dentro sí, pero en penumbra
+## y algo desenfocada, para que se note que está lejos, detrás del segundo
+## cristal, y no al nivel de los que ya están encima de ti. Sin halo ni brillo.
+const SILHOUETTE_LIT_BRIGHTNESS: float = 0.55
+const SILHOUETTE_BLUR_PIXELS: float = 1.5
 ## Los píxeles se miden siempre sobre una pantalla de 1920 de ancho; la vista
 ## interna mide menos (el juego se estira), así que hay que convertir.
 const REFERENCE_WIDTH: float = 1920.0

@@ -108,9 +108,12 @@ func _save(file_name: String) -> void:
 ## el mismo camino que usarían jugando: se les mueve a ese paso de su ruta y el
 ## night.gd hace el resto. Así la captura comprueba la cadena entera, no solo
 ## que la capa de siluetas sepa dibujar.
-func _send_to_hallway(scene: Node, slugs: Array) -> void:
+func _send_to_hallway(scene: Node, slugs: Array, flashlight: bool) -> void:
 	if not scene.has_method("animatronics"):
 		return
+	# Con la linterna se ven en penumbra; sin ella no se tiene que ver nada,
+	# y esa es justo la captura que interesa comprobar.
+	scene.office.debug_force_flashlight = flashlight
 	for animatronic: Animatronic in scene.animatronics():
 		if not animatronic.image_slug() in slugs:
 			continue
@@ -172,10 +175,13 @@ func _night_entries() -> Array[Dictionary]:
 			"setup": func(scene: Node) -> void: scene.mod_menu.open()},
 		# Las dos de comprobar: que las siluetas se dibujan de verdad cuando
 		# alguien entra al pasillo, y cómo se ve el giro a media vuelta.
-		{"name": "18a_siluetas_en_el_pasillo", "scene": Screens.NIGHT, "wait": 1.2,
+		{"name": "18a_siluetas_sin_linterna", "scene": Screens.NIGHT, "wait": 1.2,
 			"setup": func(scene: Node) -> void: _send_to_hallway(scene,
-				["mamador", "urena"])},
-		{"name": "18b_giro_a_la_mitad", "scene": Screens.NIGHT, "wait": 1.0,
+				["mamador", "urena"], false)},
+		{"name": "18b_siluetas_con_linterna", "scene": Screens.NIGHT, "wait": 1.6,
+			"setup": func(scene: Node) -> void: _send_to_hallway(scene,
+				["mamador", "urena"], true)},
+		{"name": "18c_giro_a_la_mitad", "scene": Screens.NIGHT, "wait": 1.0,
 			"setup": func(scene: Node) -> void: scene.office.debug_hold_sweep(0.5)},
 		{"name": "18_tablero_breaker", "scene": Screens.NIGHT, "wait": 1.0,
 			"setup": func(scene: Node) -> void: scene.breaker_panel.open()},
