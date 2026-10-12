@@ -60,13 +60,23 @@ var _shake_offset: Vector2 = Vector2.ZERO
 var _blink_elapsed: float = 0.0
 
 
-@onready var exit_button: Button = $ExitButton
+## Lo que se considera "el tablero": la placa, un poco crecida. Un clic fuera
+## de aquí es un clic para salir.
+const ACTIVE_MARGIN: float = 24.0
+
+var _exit_hint: ExitHint = null
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	exit_button.pressed.connect(close)
+	_exit_hint = ExitHint.build(self)
+
+
+## El tablero, con su margen. La palanca va dentro de la placa, así que con
+## ella basta.
+func active_rect() -> Rect2:
+	return PLATE.grow(ACTIVE_MARGIN)
 
 
 func open() -> void:
@@ -76,6 +86,8 @@ func open() -> void:
 	visible = true
 	_lever = 1.0 if PowerManager.is_blackout else 0.0
 	_dragging = false
+	if _exit_hint != null:
+		_exit_hint.show_once("breaker")
 	queue_redraw()
 
 
@@ -95,8 +107,9 @@ func shake() -> void:
 
 # --- Entrada ------------------------------------------------------------------
 
-## Escape y clic derecho regresan a la vista normal. Va en _input porque este
-## Control está en STOP y se quedaría con los botones del mouse.
+## Se sale con Escape, con clic derecho o **dando clic fuera del tablero**. Ya
+## no hay botón. Va en _input porque este Control está en STOP y se quedaría
+## con los botones del mouse.
 func _input(event: InputEvent) -> void:
 	if not is_open:
 		return
@@ -106,7 +119,14 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	var click: InputEventMouseButton = event as InputEventMouseButton
-	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_RIGHT:
+	if click == null or not click.pressed:
+		return
+	if click.button_index == MOUSE_BUTTON_RIGHT:
+		close()
+		get_viewport().set_input_as_handled()
+		return
+	if click.button_index == MOUSE_BUTTON_LEFT \
+			and not active_rect().has_point(click.position):
 		close()
 		get_viewport().set_input_as_handled()
 

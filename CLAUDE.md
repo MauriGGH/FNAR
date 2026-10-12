@@ -706,13 +706,40 @@ la de Mamador lanza esta misma pantalla de WASTED.
 
 Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en la sala de servidores, dejando la oficina sin vigilar. La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
 
-**Tickets durante la noche:** las tareas no están todas desde las 12. Llegan como tickets repartidos en la noche (el primero al inicio y los demás espaciados hasta las 5 AM, con algo de azar), con un aviso sonoro y un contador en la oficina. **Los tickets no vencen**: una vez que llega uno se queda en la lista hasta que el jugador lo termina, y se paga por cada tarea completada. Lo único que corre es el reloj de la noche.
+**Tickets durante la noche:** las tareas no están todas desde las 12. Llegan como tickets repartidos en la noche (el primero al inicio y los demás espaciados hasta las 5 AM, con algo de azar).
+
+**El aviso de un ticket es sutil**, como todo en los juegos originales: un "ping" (`ticket_nuevo`)
+y nada de texto en pantalla. Lo demás depende de dónde esté el jugador:
+
+- **Con la PC cerrada:** un **sobrecito parpadea tres veces** encima de la pantalla del monitor de
+  la oficina (`scenes/office/ticket_envelope.gd`, dibujado por código). Si estabas mirando para
+  allá lo ves; si no, te queda el ping.
+- **Con la PC abierta:** una **notificación de sistema** dentro del escritorio, en la esquina de
+  abajo a la derecha, en VT323: "1 ticket nuevo", y se va en 3 s.
+
+**El contador de tickets ya no está en el HUD de la oficina.** Se consulta dentro de la PC, que es
+donde se trabaja: en la **barra de abajo del escritorio**, a la derecha ("TICKETS 1/3"), y en la
+**ventana de Tareas**, junto a las pagadas. **Los tickets no vencen**: una vez que llega uno se queda en la lista hasta que el jugador lo termina, y se paga por cada tarea completada. Lo único que corre es el reloj de la noche.
 
 **Pasos con espera:** casi todas las tareas tienen al menos un paso que tarda (copiar un respaldo, reiniciar un servicio, esperar respuestas de ping, propagar una configuración), con barra de progreso. La barra solo avanza mientras la PC está abierta; al bajarla se pausa. Ese es el dilema central: quedarse en la PC o vigilar. La duración de las esperas crece por noche.
 
 Las tareas imitan herramientas reales de un coordinador de sistemas, con diseño original (sin logos ni nombres de marcas): una terminal estilo consola (comandos tipo `ipconfig`, `ping`, reinicio de servicios), un simulador de redes estilo diagrama de topología donde se conectan y configuran equipos, y el patch panel físico en la sala de servidores.
 
-**La PC:** al hacer clic en el monitor, la vista se acerca a la pantalla y aparece un escritorio retro original enmarcado por el bisel del monitor, con íconos: Terminal, Simulador de red, Tareas y Asistente IA. La ventana del Asistente IA sigue abierta y trabajando aunque se baje la PC. Usar la PC gasta energía (cuenta como una barra de consumo).
+**La PC:** al hacer clic en el monitor, la vista se acerca a la pantalla y aparece un escritorio retro original enmarcado por el bisel del monitor, con íconos: Terminal, Simulador de red, Tareas y Asistente IA.
+
+**Salir de una pantalla acercada** (la PC, el tablero del breaker, la sala de servidores) es
+siempre igual y **ya no hay botones**: un **clic izquierdo fuera de la zona activa** regresa a la
+oficina, y **Esc** (o clic derecho) sigue sirviendo. La zona activa es la que cada pantalla
+declara en su `active_rect()`: el hueco del escritorio en la PC —el bisel es del tamaño de la
+ventana, así que lo de "fuera" es su marco de plástico—, la placa del tablero en el breaker y el
+rack con su hoja de etiquetado en la sala. Lo único que queda es una pista chiquita y gris abajo
+al centro, **"clic fuera o Esc para salir"**, que sale **una sola vez por noche y por pantalla**
+(`scripts/ui/exit_hint.gd`, que `night.gd` reinicia en cada noche) y se desvanece sola.
+
+**Ese clic no hace nada en la oficina.** Las tres pantallas se comen el evento, pero la linterna
+no se prende por eventos sino preguntando por el botón del mouse cada cuadro, así que al volver a
+la oficina **se ignora el botón hasta que se suelte** (`office.set_interactive()` levanta la
+bandera `_swallow_click`). Sin eso, el mismo clic con el que sales de la PC te prendía la linterna. La ventana del Asistente IA sigue abierta y trabajando aunque se baje la PC. Usar la PC gasta energía (cuenta como una barra de consumo).
 
 ## Niveles de IA por noche
 

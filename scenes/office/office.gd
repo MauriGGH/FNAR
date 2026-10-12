@@ -47,6 +47,7 @@ const CENTER_LIT_CLOSED: String = "res://assets/art/office/oficina_centro_cerrad
 const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay.gd")
 const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
+const TICKET_ENVELOPE: GDScript = preload("res://scenes/office/ticket_envelope.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
 const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
@@ -197,6 +198,10 @@ var _urena_photos: int = 0
 
 var flashlight_overlay: Control = null
 var phone_light: Control = null
+var ticket_envelope: Control = null
+## true mientras haya que ignorar el botón del mouse que viene apretado de
+## otra pantalla, hasta que se suelte.
+var _swallow_click: bool = false
 var door_shutter: Control = null
 var photo_viewer: Control = null
 ## El puntito del ojo de Armando, solo en la vista central.
@@ -230,6 +235,7 @@ func _ready() -> void:
 	_build_door_shutter()
 	_build_layers()
 	_build_labels()
+	_build_ticket_envelope()
 	_build_photo_viewer()
 	_build_blackout_overlays()
 	_build_flashlight()
@@ -252,10 +258,14 @@ func _ready() -> void:
 ## está a oscuras y solo se ve lo que queda dentro del haz.
 func _update_flashlight(delta: float) -> void:
 	var allowed: bool = is_interactive and _state == ViewState.PANNING and _current_view == View.CENTER
+	# El clic heredado de la pantalla que se acaba de cerrar no cuenta.
+	if _swallow_click and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_swallow_click = false
 	var wants_on: bool = false
 	if allowed:
 		wants_on = debug_force_flashlight or Input.is_key_pressed(Controls.FLASHLIGHT_KEY)
-		if not wants_on and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		if not wants_on and not _swallow_click \
+				and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			wants_on = zone_rect(GLASS_ZONE).has_point(center_content.get_local_mouse_position())
 
 	if wants_on != _flashlight_on:
@@ -390,6 +400,11 @@ func _refresh_urena_photos() -> void:
 ## la vista es la misma que se dejó.
 func set_interactive(interactive: bool) -> void:
 	is_interactive = interactive
+	# Al volver de una pantalla acercada, el botón del mouse puede seguir
+	# apretado (es el clic con el que se salió): hasta que se suelte, la
+	# oficina lo ignora. Si no, ese mismo clic prendería la linterna.
+	if interactive:
+		_swallow_click = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 
 
 # --- Colocación ---------------------------------------------------------------
@@ -472,6 +487,24 @@ func _layout_flashlight() -> void:
 		# con las mismas normalizadas de las zonas y escalan con la vista.
 		phone_light.position = Vector2.ZERO
 		phone_light.size = content_size
+	if ticket_envelope != null:
+		ticket_envelope.position = Vector2.ZERO
+		ticket_envelope.size = content_size
+		ticket_envelope.set_target(zone_rect("monitor_screen"))
+
+
+## El sobrecito del ticket, encima de la pantalla del monitor. Va en el
+## contenido de la vista central, así que se mueve con la vista.
+func _build_ticket_envelope() -> void:
+	ticket_envelope = TICKET_ENVELOPE.new()
+	ticket_envelope.name = "TicketEnvelope"
+	center_content.add_child(ticket_envelope)
+
+
+## Llegó un ticket y la PC está cerrada: el sobre parpadea sobre el monitor.
+func blink_ticket() -> void:
+	if ticket_envelope != null:
+		ticket_envelope.blink()
 
 
 ## Las capas de oscuridad cubren todo el contenido y sus puntos de luz van

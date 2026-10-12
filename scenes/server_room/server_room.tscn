@@ -53,13 +53,3 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 1)
-
-[node name="ExitButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 820.0
-offset_top = 486.0
-offset_right = 1080.0
-offset_bottom = 528.0
-focus_mode = 0
-theme_override_font_sizes/font_size = 19
-text = "Regresar a la oficina  [Esc]"

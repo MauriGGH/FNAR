@@ -35,6 +35,9 @@ const SWITCH_PORT_TOP: float = 20.0
 const LED_OFFSET: float = 64.0
 
 const SHEET: Rect2 = Rect2(800.0, 150.0, 300.0, 320.0)
+## Lo que ocupa de verdad todo lo que se puede tocar aquí, con su margen: un
+## clic fuera de esto es un clic para salir de la sala.
+const ACTIVE_MARGIN: float = 28.0
 const SHEET_TILT: float = -0.045
 ## La hoja real es una tira angosta, así que al pasar el mouse se agranda de
 ## verdad; nunca más de lo que cabe en la pantalla.
@@ -560,6 +563,12 @@ func _draw_sparks() -> void:
 
 
 ## Lo que crece la hoja al pasar el mouse, sin pasarse del alto de la pantalla.
+## El rack con su hoja de etiquetado, que es lo activo de la pantalla. Sale de
+## las mismas medidas con las que se dibuja, no de números aparte.
+func active_rect() -> Rect2:
+	return RACK.merge(_sheet_rect).grow(ACTIVE_MARGIN)
+
+
 func _sheet_scale() -> float:
 	if not _sheet_hovered:
 		return 1.0

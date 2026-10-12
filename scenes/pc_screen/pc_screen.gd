@@ -17,6 +17,25 @@ const AI_SOLVE_TIME: float = 8.0
 const AI_CHAT_LINES: int = 5
 const CLAUDIO_GREETING: String = "Claudio v0.9 — asistente de la Coordinación"
 
+## La barra de abajo del escritorio: su alto y el margen de sus textos.
+const BAR_HEIGHT: float = 26.0
+const BAR_COLOR: Color = Color(0.11, 0.12, 0.15, 0.92)
+const BAR_EDGE: Color = Color(0.3, 0.33, 0.38)
+const BAR_TEXT: Color = Color(0.82, 0.86, 0.9)
+const BAR_FONT: int = 18
+const BAR_MARGIN: float = 10.0
+
+## La notificación de sistema de la esquina: lo que dice, lo que mide y lo que
+## tarda en irse.
+const TOAST_TEXT: String = "1 ticket nuevo"
+const TOAST_SIZE: Vector2 = Vector2(176.0, 38.0)
+const TOAST_MARGIN: float = 12.0
+const TOAST_FONT: int = 18
+const TOAST_TIME: float = 3.0
+const TOAST_FADE: float = 0.4
+const TOAST_FILL: Color = Color(0.13, 0.15, 0.19, 0.96)
+const TOAST_EDGE: Color = Color(0.56, 0.86, 0.95)
+
 const ICON_LEFT: float = 20.0
 const ICON_TOP: float = 48.0
 const ICON_GAP: float = 6.0
@@ -36,11 +55,17 @@ var _solve_elapsed: float = 0.0
 var _chat: PackedStringArray = PackedStringArray()
 var _icons: Array[DesktopIcon] = []
 var _armando: ArmandoPrompts = null
+## La barra de abajo con el contador, la notificación de la esquina y la pista
+## de cómo salir.
+var _bar: ColorRect = null
+var _bar_tickets: Label = null
+var _toast: Panel = null
+var _toast_tween: Tween = null
+var _exit_hint: ExitHint = null
 
 @onready var bezel: Control = $Bezel
 @onready var screen: Control = $Screen
 @onready var crt_overlay: ColorRect = $Screen/CrtOverlay
-@onready var close_pc_button: Button = $Screen/ClosePcButton
 @onready var icons_holder: Control = $Screen/Icons
 
 @onready var tasks_window: PcWindow = $Screen/Windows/TasksWindow
@@ -69,7 +94,6 @@ func _ready() -> void:
 	_fit_screen()
 	bezel.resized.connect(_fit_screen)
 
-	close_pc_button.pressed.connect(close)
 	ai_solve_button.pressed.connect(_request_solve)
 	ai_hint_button.pressed.connect(_request_hint)
 	terminal.typing_finished.connect(_on_typing_finished)
@@ -90,6 +114,12 @@ func _ready() -> void:
 	_solve_mode = SolveMode.NONE
 
 	_build_icons()
+	_build_bar()
+	_build_toast()
+	_exit_hint = ExitHint.build(self)
+	# _fit_screen() ya corrió más arriba, cuando la pista todavía no existía:
+	# hay que volver a colocar para que se entere de su recuadro.
+	_fit_screen()
 	_set_ai_window_open(false)
 	task_window.visible = false
 	terminal_window.visible = false
@@ -99,6 +129,12 @@ func _ready() -> void:
 	_refresh_chat()
 
 
+## Lo activo de la pantalla: el hueco del escritorio. Fuera de aquí, un clic
+## izquierdo sale a la oficina.
+func active_rect() -> Rect2:
+	return Rect2(screen.position, screen.size)
+
+
 ## El escritorio ocupa el hueco que deja el bisel del monitor.
 func _fit_screen() -> void:
 	var hole: Rect2 = bezel.screen_rect()
@@ -106,6 +142,90 @@ func _fit_screen() -> void:
 	screen.size = hole.size
 	crt_overlay.size = hole.size
 	armando_takeover.size = hole.size
+	_layout_bar()
+	_layout_toast()
+	if _exit_hint != null:
+		# La pista va dentro del escritorio, no en el marco del monitor.
+		_exit_hint.set_region(Rect2(screen.position,
+			Vector2(screen.size.x, screen.size.y - BAR_HEIGHT)))
+
+
+# --- La barra de abajo y la notificación -------------------------------------
+
+## La barra del escritorio retro: a la derecha, el contador de tickets. Antes
+## estaba en el HUD de la oficina, debajo de la hora; ahí estorbaba y además
+## no es algo que se vea de reojo, es algo que se consulta.
+func _build_bar() -> void:
+	_bar = ColorRect.new()
+	_bar.name = "Bar"
+	_bar.color = BAR_COLOR
+	_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen.add_child(_bar)
+
+	_bar_tickets = Label.new()
+	_bar_tickets.name = "BarTickets"
+	_bar_tickets.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_bar_tickets.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_bar_tickets.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	Fonts.apply(_bar_tickets, Fonts.terminal(), BAR_FONT)
+	_bar_tickets.add_theme_color_override("font_color", BAR_TEXT)
+	screen.add_child(_bar_tickets)
+	_layout_bar()
+
+
+func _layout_bar() -> void:
+	if _bar == null:
+		return
+	_bar.position = Vector2(0.0, screen.size.y - BAR_HEIGHT)
+	_bar.size = Vector2(screen.size.x, BAR_HEIGHT)
+	_bar_tickets.position = Vector2(BAR_MARGIN, screen.size.y - BAR_HEIGHT)
+	_bar_tickets.size = Vector2(screen.size.x - BAR_MARGIN * 2.0, BAR_HEIGHT)
+
+
+## La notificación de sistema: un recuadro chiquito abajo a la derecha.
+func _build_toast() -> void:
+	_toast = Panel.new()
+	_toast.name = "Toast"
+	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box: StyleBoxFlat = StyleBoxFlat.new()
+	box.bg_color = TOAST_FILL
+	box.set_border_width_all(1)
+	box.border_color = TOAST_EDGE
+	_toast.add_theme_stylebox_override("panel", box)
+	_toast.modulate.a = 0.0
+	screen.add_child(_toast)
+
+	var label: Label = Label.new()
+	label.text = TOAST_TEXT
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	Fonts.apply(label, Fonts.terminal(), TOAST_FONT)
+	label.add_theme_color_override("font_color", BAR_TEXT)
+	_toast.add_child(label)
+	_layout_toast()
+
+
+func _layout_toast() -> void:
+	if _toast == null:
+		return
+	_toast.size = TOAST_SIZE
+	_toast.position = Vector2(screen.size.x - TOAST_SIZE.x - TOAST_MARGIN,
+		screen.size.y - BAR_HEIGHT - TOAST_SIZE.y - TOAST_MARGIN)
+
+
+## Llegó un ticket con la PC abierta: la notificación de la esquina, 3 s.
+func show_ticket_toast() -> void:
+	if _toast == null:
+		return
+	_layout_toast()
+	if _toast_tween != null and _toast_tween.is_valid():
+		_toast_tween.kill()
+	_toast.modulate.a = 1.0
+	_toast_tween = create_tween()
+	_toast_tween.tween_interval(TOAST_TIME)
+	_toast_tween.tween_property(_toast, "modulate:a", 0.0, TOAST_FADE)
 
 
 # --- Abrir y cerrar la PC -----------------------------------------------------
@@ -123,6 +243,10 @@ func open() -> void:
 	is_open = true
 	visible = true
 	PowerManager.set_pc_open(true)
+	_refresh_bar()
+	# La primera vez de la noche se recuerda cómo se sale.
+	if _exit_hint != null:
+		_exit_hint.show_once("pc")
 	opened.emit()
 
 
@@ -135,7 +259,14 @@ func close() -> void:
 	closed.emit()
 
 
-## De la PC se sale por el botón, con Escape o con clic derecho.
+## De la PC se sale con Escape, con clic derecho o **dando clic fuera de la
+## pantalla del monitor**: lo activo es el escritorio, y el marco de plástico
+## que lo rodea es "salir". Ya no hay botón.
+##
+## (El bisel es del tamaño de la ventana, así que "fuera del bisel" no existe:
+## lo que hay fuera de lo activo es su marco, los 64 px de los lados, 48 de
+## arriba y 80 de abajo que `monitor_bezel.gd` deja alrededor del hueco.)
+##
 ## Va en _input y no en _unhandled_input porque un Control en STOP (la raíz de
 ## la PC lo es, para no dejar pasar clics a la oficina) se queda con los
 ## botones del mouse aunque no los use, y el clic derecho nunca llegaría.
@@ -148,7 +279,14 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	var click: InputEventMouseButton = event as InputEventMouseButton
-	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_RIGHT:
+	if click == null or not click.pressed:
+		return
+	if click.button_index == MOUSE_BUTTON_RIGHT:
+		close()
+		get_viewport().set_input_as_handled()
+		return
+	if click.button_index == MOUSE_BUTTON_LEFT \
+			and not active_rect().has_point(click.position):
 		close()
 		get_viewport().set_input_as_handled()
 
@@ -244,8 +382,26 @@ func _refresh_task_list() -> void:
 			state,
 			task.get("description", "") if arrived else "Llega mas tarde en la noche.",
 		]
-	task_progress_label.text = "%d de %d pagadas · %d tickets llegados" % [
-		GameManager.paid_task_count(), tasks.size(), GameManager.arrived_ticket_count()]
+	task_progress_label.text = "TICKETS %d/%d · %d de %d pagadas" % [
+		GameManager.completed_task_count(), GameManager.arrived_ticket_count(),
+		GameManager.paid_task_count(), tasks.size()]
+	_refresh_bar()
+
+
+## La noche pide que se repinte el contador (le llega un ticket, se termina
+## una tarea).
+func refresh_tickets() -> void:
+	_refresh_bar()
+
+
+## El contador de la barra de abajo: lo hecho sobre lo que ha llegado.
+func _refresh_bar() -> void:
+	if _bar_tickets == null:
+		return
+	var arrived: int = GameManager.arrived_ticket_count()
+	_bar_tickets.text = "TICKETS %d/%d" % [GameManager.completed_task_count(), arrived] \
+		if arrived > 0 else ""
+
 
 
 ## queue_free() es diferido, así que los hijos viejos seguirían en el árbol

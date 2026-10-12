@@ -43,7 +43,6 @@ const FLASH_TIME: float = 0.28
 @onready var phone_call: Control = $Hud/PhoneCall
 @onready var debug_help: Label = $Hud/DebugHelp
 @onready var pause_menu: Control = $Hud/PauseMenu
-@onready var ticket_label: Label = $Hud/TopRight/TicketLabel
 @onready var jumpscare: Control = $Hud/JumpscareOverlay
 @onready var blackout_death: Control = $Hud/BlackoutDeath
 @onready var hallucinations: Control = $Hud/HallucinationOverlay
@@ -63,7 +62,6 @@ const URENA_SNUB_NOTICE: String = "[Ureña se quedo esperando...]"
 const NO_CALL_NOTICE: String = "[esta noche no tiene guion de llamada]"
 const BLACKOUT_CAUSE: String = "Mago Eléctrico"
 const BLACKOUT_JUMPSCARE: String = "audel"
-const TICKET_NOTICE: String = "[ticket nuevo: %s]"
 ## Cada cuánto se repinta el contador de tickets.
 const TICKET_REFRESH_TIME: float = 0.25
 
@@ -286,7 +284,7 @@ func debug_mencho_call(call_id: String = "") -> void:
 ## reloj grande arriba a la derecha, la noche debajo y la energía abajo a la
 ## izquierda. Los tamaños están en la escena; aquí solo se pone la fuente.
 func _style_hud() -> void:
-	for label: Label in [clock_label, night_label, ticket_label, power_label]:
+	for label: Label in [clock_label, night_label, power_label]:
 		if label != null:
 			label.add_theme_font_override("font", Fonts.terminal())
 
@@ -301,6 +299,9 @@ func _collect_animatronics() -> Array[Animatronic]:
 
 func _on_night_started(night: int) -> void:
 	night_label.text = "NOCHE %d" % night
+	# La pista de cómo salir de las pantallas acercadas vuelve a salir una vez
+	# por noche, en cada una.
+	ExitHint.reset()
 	office.set_right_view_empty(false)
 	_schedule_calls(night)
 	for animatronic: Animatronic in _animatronics:
@@ -328,25 +329,27 @@ func _on_ticket_arrived(index: int) -> void:
 	var tasks: Array = GameManager.night_tasks()
 	if index < 0 or index >= tasks.size():
 		return
+	# El aviso es sutil, como en los juegos originales: el "ping" y nada más.
+	# Con la PC abierta, una notificación de sistema dentro del escritorio;
+	# con la PC cerrada, el sobrecito parpadeando sobre el monitor.
 	AudioManager.play(Sounds.TICKET)
-	notice_banner.show_notice(TICKET_NOTICE % str(tasks[index].get("title", "tarea")), NOTICE_SHORT)
+	if pc_screen.is_open:
+		pc_screen.show_ticket_toast()
+	else:
+		office.blink_ticket()
 	_refresh_tickets(0.0, true)
 
 
-## Se venció: cuesta energía y Mamador se pone más agresivo por una hora.
-## El contador de la esquina: cuántos tickets llevas y cuánto le queda al más
-## urgente. Mientras no llegue ninguno no se enseña nada.
+## El contador de tickets **ya no vive en el HUD de la oficina**: se consulta
+## dentro de la PC, en la barra de abajo del escritorio y en la ventana de
+## Tareas. Aquí solo se le avisa a la PC de que se repinte.
 func _refresh_tickets(delta: float, force: bool = false) -> void:
 	_ticket_elapsed += delta
 	if not force and _ticket_elapsed < TICKET_REFRESH_TIME:
 		return
 	_ticket_elapsed = 0.0
-	var arrived: int = GameManager.arrived_ticket_count()
-	if arrived <= 0:
-		ticket_label.text = ""
-		return
-	var done: int = GameManager.paid_task_count()
-	ticket_label.text = "TICKETS %d/%d" % [done, arrived]
+	if pc_screen.is_open:
+		pc_screen.refresh_tickets()
 
 
 ## Por cada zona de presencia busca al primer profe que se vea ahí. Con

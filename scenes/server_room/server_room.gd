@@ -2,8 +2,8 @@ extends Control
 
 ## La sala de servidores: el rack con el patch panel y la hoja de etiquetado.
 ## Mientras el guardia está aquí no vigila la oficina, así que las cámaras y la
-## PC no se pueden usar. Se sale con el botón, con Escape o con S, y **esas tres
-## salidas funcionan siempre**: este Control se queda la tecla antes que nadie.
+## PC no se pueden usar. Se sale con un **clic fuera del rack**, con Escape o
+## con S, y **esas tres salidas funcionan siempre**: este Control se queda la tecla antes que nadie.
 ## Si se pulsa la tecla del monitor, se sale primero y el monitor se abre ya en
 ## la oficina; así no queda un monitor abierto detrás de la sala, que era lo que
 ## dejaba el juego trabado.
@@ -23,14 +23,14 @@ var is_open: bool = false
 
 @onready var background: TextureRect = $Background
 @onready var patch_panel: Control = $PatchPanel
-@onready var exit_button: Button = $ExitButton
+var _exit_hint: ExitHint = null
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	exit_button.pressed.connect(close)
 	patch_panel.notice_requested.connect(notice_requested.emit)
+	_exit_hint = ExitHint.build(self)
 	_load_background()
 
 
@@ -45,6 +45,8 @@ func open() -> void:
 		return
 	is_open = true
 	visible = true
+	if _exit_hint != null:
+		_exit_hint.show_once("server_room")
 
 
 func close() -> void:
@@ -56,14 +58,20 @@ func close() -> void:
 	# seguirían comiéndose el mouse al volver.
 	if patch_panel.has_method("cancel_drag"):
 		patch_panel.cancel_drag()
-	exit_button.release_focus()
 	closed.emit()
 
 
-## Escape y S salen. Va en _input porque este Control está en STOP y se
-## quedaría con los botones del mouse antes de llegar a _unhandled_input.
+## Se sale con Escape, con S o **dando clic fuera del rack**. Ya no hay botón.
+## Va en _input porque este Control está en STOP y se quedaría con los botones
+## del mouse antes de llegar a _unhandled_input.
 func _input(event: InputEvent) -> void:
 	if not is_open:
+		return
+	var click: InputEventMouseButton = event as InputEventMouseButton
+	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT \
+			and not patch_panel.active_rect().has_point(click.position):
+		close()
+		get_viewport().set_input_as_handled()
 		return
 	var key: InputEventKey = event as InputEventKey
 	if key == null or not key.pressed or key.echo:
