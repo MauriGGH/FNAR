@@ -5,7 +5,8 @@ extends Control
 ## que te atrapó, en blanco y negro y con grano, como una cinta de vigilancia.
 ## Encima, "GAME OVER" y la causa escritas a máquina.
 ##
-## Clic en cualquier lado vuelve al menú; el botón repite la misma noche.
+## Clic en cualquier lado vuelve al menú; la lista de abajo, en VT323 como el
+## resto de los menús, repite la noche o vuelve al menú.
 
 const GREYSCALE_SHADER: String = "res://scenes/ui/greyscale.gdshader"
 
@@ -20,14 +21,16 @@ const TEXT_FADE: float = 0.45
 
 const TITLE_SIZE: int = 64
 const CAUSE_SIZE: int = 26
-const HINT_SIZE: int = 17
-const HINT_COLOR: Color = Color(0.72, 0.7, 0.68, 0.8)
-const HINT_TEXT: String = "clic para volver al menú"
+
+const HINT: String = "flechas o W/S · Enter para elegir · clic para volver al menú"
+## Dónde cae la lista, en fracción del alto.
+const LIST_TOP: float = 0.6
 
 @onready var cause_label: Label = $CauseLabel
 @onready var title_label: Label = $TitleLabel
-@onready var retry_button: Button = $RetryButton
 
+var _list: MenuList = null
+var _hint: Label = null
 var _picture: TextureRect = null
 var _static_layer: StaticFrames = null
 var _can_leave: bool = false
@@ -41,16 +44,17 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build_picture()
 	_style_texts()
-	_build_hint()
+	_build_list()
 	_static_layer = ScreenFx.add_static(self, STATIC_HEAVY)
-	# El botón y los textos se arman en la escena, así que hay que subirlos por
-	# encima de la imagen y de la estática.
-	for node_name: String in ["TitleLabel", "CauseLabel", "RetryButton"]:
+	# Los textos se arman en la escena, así que hay que subirlos por encima de
+	# la imagen y de la estática.
+	for node_name: String in ["TitleLabel", "CauseLabel"]:
 		var node: Node = get_node_or_null(node_name)
 		if node != null:
 			move_child(node, get_child_count() - 1)
-
-	retry_button.pressed.connect(_on_retry_pressed)
+	move_child(_list, get_child_count() - 1)
+	_layout()
+	resized.connect(_layout)
 	_play_intro()
 
 
@@ -81,23 +85,28 @@ func _style_texts() -> void:
 	cause_label.text = GameManager.last_game_over_cause
 	title_label.modulate.a = 0.0
 	cause_label.modulate.a = 0.0
-	retry_button.modulate.a = 0.0
-	retry_button.disabled = true
 
 
-func _build_hint() -> void:
-	var label: Label = Label.new()
-	label.name = "Hint"
-	label.text = HINT_TEXT
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	Fonts.apply(label, Fonts.typewriter(), HINT_SIZE)
-	label.add_theme_color_override("font_color", HINT_COLOR)
-	label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	label.offset_top = -48.0
-	label.offset_bottom = -20.0
-	label.modulate.a = 0.0
-	add_child(label)
+## Las dos salidas, en VT323 y con ">>", como todos los menús. Empiezan
+## apagadas: aparecen cuando se aclara la estática.
+func _build_list() -> void:
+	_list = MenuList.new()
+	_list.top = LIST_TOP
+	_list.modulate.a = 0.0
+	add_child(_list)
+	_list.add_action("Repetir la noche", _on_retry_pressed)
+	_list.add_action("Volver al menú",
+		func() -> void: get_tree().change_scene_to_file(Screens.MAIN_MENU))
+	_list.build()
+
+	_hint = MenuStyle.hint(self, HINT)
+	_hint.modulate.a = 0.0
+
+
+func _layout() -> void:
+	MenuStyle.place_hint(_hint, size)
+	if _list != null:
+		_list.layout()
 
 
 ## Estática fuerte, luego la imagen, luego el texto.
@@ -109,17 +118,13 @@ func _play_intro() -> void:
 		tween.parallel().tween_property(_picture, "modulate:a", 1.0, IMAGE_FADE)
 	tween.tween_property(title_label, "modulate:a", 1.0, TEXT_FADE)
 	tween.parallel().tween_property(cause_label, "modulate:a", 1.0, TEXT_FADE)
-	tween.tween_property(retry_button, "modulate:a", 1.0, TEXT_FADE)
-	var hint: Control = get_node_or_null("Hint") as Control
-	if hint != null:
-		tween.parallel().tween_property(hint, "modulate:a", 1.0, TEXT_FADE)
+	tween.tween_property(_list, "modulate:a", 1.0, TEXT_FADE)
+	tween.parallel().tween_property(_hint, "modulate:a", 1.0, TEXT_FADE)
 	tween.tween_callback(_allow_leaving)
 
 
 func _allow_leaving() -> void:
 	_can_leave = true
-	retry_button.disabled = false
-	retry_button.grab_focus()
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -128,6 +133,15 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	get_tree().change_scene_to_file(Screens.MAIN_MENU)
 	accept_event()
+
+
+## Las teclas van a la lista en cuanto se puede salir.
+func _input(event: InputEvent) -> void:
+	if not _can_leave:
+		return
+	var key: InputEventKey = event as InputEventKey
+	if key != null and key.pressed and _list.handle_key(key):
+		get_viewport().set_input_as_handled()
 
 
 ## Repetir la noche que se estaba jugando, con su misma configuración.

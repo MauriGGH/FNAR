@@ -5,37 +5,56 @@ extends Control
 
 const TITLE: String = "SOBREVIVISTE LAS SEIS NOCHES"
 const BODY: String = "La coordinación quedó clausurada.\nEl responsable sigue sin ser identificado."
-const TITLE_SIZE: int = 40
-const BODY_SIZE: int = 24
-const TITLE_COLOR: Color = Color(0.93, 0.9, 0.84)
-const BODY_COLOR: Color = Color(0.74, 0.76, 0.78)
+const HINT: String = "flechas o W/S · Enter para elegir"
+const BODY_TOP: float = 0.3
+const LIST_TOP: float = 0.52
+
+var _title: Label = null
+var _body: Label = null
+var _hint: Label = null
+var _list: MenuList = null
 
 
 func _ready() -> void:
 	MenuBackdrop.build(self)
-	_add_label(TITLE, TITLE_SIZE, TITLE_COLOR, size.y * 0.3, 60.0)
-	_add_label(BODY, BODY_SIZE, BODY_COLOR, size.y * 0.42, 100.0)
+	_title = MenuStyle.title(self, TITLE)
+	_body = MenuStyle.label(BODY, MenuStyle.DIM)
+	add_child(_body)
 
-	var column: VBoxContainer = VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	add_child(column)
-	column.position = Vector2((size.x - UiButton.SIZE.x) * 0.5, size.y * 0.64)
-	var extras: Button = UiButton.make("Extras", not SaveGame.is_extras_unlocked())
-	extras.pressed.connect(func() -> void: get_tree().change_scene_to_file(Screens.EXTRAS_MENU))
-	column.add_child(extras)
-	var menu: Button = UiButton.make("Volver al menú")
-	menu.pressed.connect(func() -> void: get_tree().change_scene_to_file(Screens.MAIN_MENU))
-	column.add_child(menu)
+	_list = MenuList.new()
+	_list.top = LIST_TOP
+	add_child(_list)
+	_list.add_action("Extras",
+		func() -> void: get_tree().change_scene_to_file(Screens.EXTRAS_MENU),
+		SaveGame.is_extras_unlocked())
+	_list.add_action("Volver al menú",
+		func() -> void: get_tree().change_scene_to_file(Screens.MAIN_MENU))
+	_list.build()
+
+	_hint = MenuStyle.hint(self, HINT)
+	_layout()
+	resized.connect(_layout)
 
 
-func _add_label(text: String, font_size: int, color: Color, top: float, height: float) -> void:
-	var label: Label = Label.new()
-	label.text = text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", color)
-	label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	label.offset_top = top
-	label.offset_bottom = top + height
-	add_child(label)
+func _layout() -> void:
+	MenuStyle.place_title(_title, size, 0.16)
+	MenuStyle.place_hint(_hint, size)
+	if _body != null:
+		_body.add_theme_font_size_override("font_size",
+			MenuStyle.font_size(MenuStyle.SMALL_SIZE * 1.4, size.y))
+		_body.position = Vector2(size.x * MenuStyle.LEFT_MARGIN, size.y * BODY_TOP)
+		_body.size = Vector2(size.x * 0.7, size.y * 0.15)
+	if _list != null:
+		_list.layout()
+
+
+func _input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed:
+		return
+	if key.keycode == KEY_ESCAPE and not key.echo:
+		get_tree().change_scene_to_file(Screens.MAIN_MENU)
+		get_viewport().set_input_as_handled()
+		return
+	if _list.handle_key(key):
+		get_viewport().set_input_as_handled()

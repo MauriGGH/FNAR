@@ -1,31 +1,33 @@
 extends Control
 
-## El menú de Extras: expedientes, periódicos, jumpscares y Custom Night.
-## Todo lo que no esté desbloqueado sale como silueta con "???".
+## El menú de Extras: expedientes, periódicos, documentos y jumpscares. Todo lo
+## que no esté desbloqueado sale oscurecido con "???".
+##
 ## Las cuatro secciones viven en esta misma pantalla, para no multiplicar
-## escenas por algo que es una galería.
+## escenas por algo que es una galería. A la izquierda, la lista de secciones en
+## VT323 con ">>" como todos los menús; a la derecha, lo que se esté viendo.
 
 enum Section { DOSSIERS, NEWSPAPERS, DOCUMENTS, JUMPSCARES }
 
-const TITLE_SIZE: int = 34
-const TAB_FONT: int = 22
-const TEXT_COLOR: Color = Color(0.93, 0.9, 0.84)
+const TITLE: String = "EXTRAS"
+const HINT: String = "flechas o W/S · Enter para elegir · Esc para volver"
 const LOCKED_TEXT: String = "???"
 
-# Rejilla de fichas.
+## La columna de secciones ocupa la izquierda; las fichas van en lo que queda.
+const CONTENT_LEFT: float = 0.33
+const CONTENT_RIGHT: float = 0.98
+const LIST_TOP: float = 0.26
+
+# Rejilla de fichas. Sin paneles ni bordes: la imagen y su texto debajo.
 const CARD_SIZE: Vector2 = Vector2(188.0, 236.0)
 const CARD_GAP: int = 14
-const CARD_COLUMNS: int = 4
-## Dónde empiezan las rejillas, por debajo de las pestañas.
-const GRID_TOP: float = 150.0
-## Lo ancho de cada pestaña. Con cuatro ya no caben a 230 cada una.
-const TAB_WIDTH: float = 190.0
+const CARD_COLUMNS: int = 3
+## Dónde empieza la rejilla, en fracción del alto.
+const GRID_TOP: float = 0.2
 const CARD_NAME_SIZE: int = 18
 const CARD_ROLE_SIZE: int = 14
-const CARD_FILL: Color = Color(0.1, 0.11, 0.13, 0.8)
-const CARD_BORDER: Color = Color(0.72, 0.74, 0.76, 0.6)
-## La silueta de lo bloqueado.
-const SILHOUETTE: Color = Color(0.06, 0.06, 0.07, 0.95)
+## El hueco negro de lo que está bloqueado.
+const SILHOUETTE: Color = Color(0.04, 0.04, 0.05, 1.0)
 
 ## Nombre en pantalla, rol y una línea, por personaje. Los ids son los de
 ## data/extras.gd, los mismos que usa el código para las imágenes.
@@ -48,18 +50,22 @@ var _section: Section = Section.DOSSIERS
 var _jumpscare: Control = null
 var _wasted: WastedScreen = null
 var _content: Control = null
+var _title: Label = null
+var _hint: Label = null
+var _list: MenuList = null
 
 
 func _ready() -> void:
 	MenuBackdrop.build(self)
-	# El contenido va primero para que las pestañas y el pie queden encima: los
+	# El contenido va primero para que la lista y el título queden encima: los
 	# expedientes se ven a pantalla completa y pasan por debajo de ellos.
 	_content = Control.new()
 	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_content)
-	_build_header()
-	_build_footer()
+	_title = MenuStyle.title(self, TITLE)
+	_build_list()
+	_hint = MenuStyle.hint(self, HINT)
 	# La galería reproduce de verdad: estas dos capas van encima de todo.
 	_jumpscare = JUMPSCARE_OVERLAY.new()
 	_jumpscare.name = "JumpscareOverlay"
@@ -69,60 +75,38 @@ func _ready() -> void:
 	_wasted = WastedScreen.new()
 	_wasted.name = "WastedScreen"
 	add_child(_wasted)
+	_layout()
+	resized.connect(_layout)
 	_show_section(Section.DOSSIERS)
 
 
-func _build_header() -> void:
-	var title: Label = Label.new()
-	title.text = "EXTRAS"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title.add_theme_font_size_override("font_size", TITLE_SIZE)
-	title.add_theme_color_override("font_color", TEXT_COLOR)
-	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	title.offset_top = 28.0
-	title.offset_bottom = 72.0
-	add_child(title)
-
-	var tabs: HBoxContainer = HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 10)
-	tabs.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
-	tabs.offset_top = 86.0
-	tabs.offset_bottom = 134.0
-	add_child(tabs)
-	for entry: Array in [[Section.DOSSIERS, "Expedientes"],
-			[Section.NEWSPAPERS, "Periódicos"], [Section.DOCUMENTS, "Documentos"],
-			[Section.JUMPSCARES, "Jumpscares"]]:
-		var button: Button = UiButton.make(str(entry[1]))
-		button.custom_minimum_size = Vector2(TAB_WIDTH, 44.0)
-		button.add_theme_font_size_override("font_size", TAB_FONT)
-		button.pressed.connect(_show_section.bind(entry[0] as Section))
-		tabs.add_child(button)
+## La columna de secciones, más Custom Night y la salida.
+func _build_list() -> void:
+	_list = MenuList.new()
+	_list.top = LIST_TOP
+	add_child(_list)
+	_list.add_action("Expedientes", _show_section.bind(Section.DOSSIERS))
+	_list.add_action("Periódicos", _show_section.bind(Section.NEWSPAPERS))
+	_list.add_action("Documentos", _show_section.bind(Section.DOCUMENTS))
+	_list.add_action("Jumpscares", _show_section.bind(Section.JUMPSCARES))
+	_list.add_action("Custom Night",
+		func() -> void: get_tree().change_scene_to_file(Screens.CUSTOM_NIGHT))
+	_list.add_action("Volver al menú",
+		func() -> void: get_tree().change_scene_to_file(Screens.MAIN_MENU))
+	_list.build()
 
 
-func _build_footer() -> void:
-	var row: HBoxContainer = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	row.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.offset_top = -72.0
-	row.offset_bottom = -20.0
-	add_child(row)
-
-	var custom: Button = UiButton.make("Custom Night")
-	custom.custom_minimum_size = Vector2(260.0, 48.0)
-	custom.pressed.connect(func() -> void: get_tree().change_scene_to_file(Screens.CUSTOM_NIGHT))
-	row.add_child(custom)
-
-	var back: Button = UiButton.make("Volver al menú")
-	back.custom_minimum_size = Vector2(260.0, 48.0)
-	back.pressed.connect(func() -> void: get_tree().change_scene_to_file(Screens.MAIN_MENU))
-	row.add_child(back)
+func _layout() -> void:
+	MenuStyle.place_title(_title, size, 0.1)
+	MenuStyle.place_hint(_hint, size)
+	if _list != null:
+		_list.layout()
 
 
-func _show_section(section: Section) -> void:
-	_section = section
+## Cambia de sección: tira lo que hubiera y arma lo nuevo. Le entra un int y
+## no un Section porque también la llaman la lista y el panel de pruebas.
+func _show_section(section: int) -> void:
+	_section = section as Section
 	for child: Node in _content.get_children():
 		_content.remove_child(child)
 		child.queue_free()
@@ -236,28 +220,28 @@ func _on_newspaper_input(event: InputEvent, index: int) -> void:
 	get_tree().change_scene_to_file(Screens.NEWSPAPER)
 
 
+## La rejilla va centrada en la mitad derecha, que es lo que deja libre la
+## columna de secciones.
 func _make_grid() -> GridContainer:
 	var grid: GridContainer = GridContainer.new()
 	grid.columns = CARD_COLUMNS
 	grid.add_theme_constant_override("h_separation", CARD_GAP)
 	grid.add_theme_constant_override("v_separation", CARD_GAP)
-	grid.position = Vector2(
-		(size.x - (CARD_SIZE.x + CARD_GAP) * CARD_COLUMNS + CARD_GAP) * 0.5, GRID_TOP)
+	var region_left: float = size.x * CONTENT_LEFT
+	var region_width: float = size.x * (CONTENT_RIGHT - CONTENT_LEFT)
+	var grid_width: float = (CARD_SIZE.x + CARD_GAP) * CARD_COLUMNS - CARD_GAP
+	grid.position = Vector2(region_left + (region_width - grid_width) * 0.5,
+		size.y * GRID_TOP)
 	_content.add_child(grid)
 	return grid
 
 
-## Una ficha: imagen arriba (o silueta), nombre, rol y una línea.
+## Una ficha: la imagen arriba (o el hueco negro si está bloqueada), el nombre,
+## el rol y una línea. Sin panel, sin borde y sin sombra.
 func _make_card(texture: Texture2D, name_text: String, role_text: String, line_text: String) -> Control:
-	var card: Panel = Panel.new()
+	var card: Control = Control.new()
 	card.custom_minimum_size = CARD_SIZE
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var box: StyleBoxFlat = StyleBoxFlat.new()
-	box.bg_color = CARD_FILL
-	box.set_border_width_all(2)
-	box.border_color = CARD_BORDER
-	box.set_corner_radius_all(3)
-	card.add_theme_stylebox_override("panel", box)
 
 	var picture: Rect2 = Rect2(Vector2(8.0, 8.0), Vector2(CARD_SIZE.x - 16.0, 132.0))
 	if texture != null:
@@ -278,17 +262,17 @@ func _make_card(texture: Texture2D, name_text: String, role_text: String, line_t
 		hole.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(hole)
 
-	var name_label: Label = _card_label(name_text, CARD_NAME_SIZE, TEXT_COLOR)
+	var name_label: Label = _card_label(name_text, CARD_NAME_SIZE, MenuStyle.TEXT)
 	name_label.position = Vector2(8.0, picture.end.y + 6.0)
 	name_label.size = Vector2(CARD_SIZE.x - 16.0, 24.0)
 	card.add_child(name_label)
 
-	var role_label: Label = _card_label(role_text, CARD_ROLE_SIZE, Color(0.7, 0.72, 0.74))
+	var role_label: Label = _card_label(role_text, CARD_ROLE_SIZE, MenuStyle.DIM)
 	role_label.position = Vector2(8.0, picture.end.y + 30.0)
 	role_label.size = Vector2(CARD_SIZE.x - 16.0, 20.0)
 	card.add_child(role_label)
 
-	var line_label: Label = _card_label(line_text, CARD_ROLE_SIZE, Color(0.62, 0.64, 0.66))
+	var line_label: Label = _card_label(line_text, CARD_ROLE_SIZE, MenuStyle.DIM)
 	line_label.position = Vector2(8.0, picture.end.y + 52.0)
 	line_label.size = Vector2(CARD_SIZE.x - 16.0, 48.0)
 	line_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -298,18 +282,25 @@ func _make_card(texture: Texture2D, name_text: String, role_text: String, line_t
 
 
 func _card_label(text: String, font_size: int, color: Color) -> Label:
-	var label: Label = Label.new()
-	label.text = text
+	var label: Label = MenuStyle.label(text, color)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", color)
 	label.clip_text = true
 	return label
 
 
 func _input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+	if key == null or not key.pressed:
+		return
+	if key.keycode == KEY_ESCAPE and not key.echo:
 		get_tree().change_scene_to_file(Screens.MAIN_MENU)
+		get_viewport().set_input_as_handled()
+		return
+	# Con los expedientes abiertos, izquierda y derecha son para pasar página:
+	# se las queda la galería, no la lista.
+	if _section == Section.DOSSIERS \
+			and key.keycode in [KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]:
+		return
+	if _list.handle_key(key):
 		get_viewport().set_input_as_handled()

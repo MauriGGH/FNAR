@@ -14,8 +14,6 @@ const MENU_CONFIRM: GDScript = preload("res://scenes/main_menu/confirm_box.gd")
 const TITLE_TEXT: String = "FIVE\nNIGHTS\nAT\nROCHA'S"
 const TEXT_COLOR: Color = Color(0.95, 0.95, 0.93)
 const DIM_COLOR: Color = Color(0.52, 0.53, 0.55)
-const MARKER: String = ">>"
-const MARKER_COLOR: Color = Color(0.98, 0.84, 0.35)
 
 ## Todo medido a 1080p y escalado con el alto de la ventana.
 const REFERENCE_HEIGHT: float = 1080.0
@@ -39,10 +37,7 @@ const WIPE_BAR_WIDTH: float = 260.0
 const WIPE_BAR_HEIGHT: float = 6.0
 const WIPE_BAR_COLOR: Color = Color(0.85, 0.25, 0.22)
 
-var _options: Array[Dictionary] = []
-var _rows: Array[Control] = []
-var _selected: int = 0
-var _marker: Label = null
+var _list: MenuList = null
 var _title: Label = null
 var _stars: StarRow = null
 var _version: Label = null
@@ -63,7 +58,6 @@ func _ready() -> void:
 	_options_panel = OptionsPanel.build(self)
 	_layout()
 	resized.connect(_layout)
-	_select(_first_enabled())
 
 
 func _font_size(base: float) -> int:
@@ -87,27 +81,21 @@ func _build_stars() -> void:
 
 func _build_options() -> void:
 	var locked: bool = not SaveGame.is_extras_unlocked()
-	_options = [
-		{"text": "Nueva partida", "enabled": true, "action": _on_new_game},
-		{"text": "Continuar — noche %d" % SaveGame.night_reached,
-			"enabled": SaveGame.has_progress(), "action": _on_continue},
-		{"text": "Custom Night", "enabled": not locked, "action": _on_custom_night},
-		{"text": "Extras", "enabled": not locked, "action": _on_extras},
-		{"text": "Opciones", "enabled": true, "action": _on_options},
-		{"text": "Salir", "enabled": true, "action": _on_quit},
-	]
-	_marker = _make_label(MARKER, OPTION_SIZE, MARKER_COLOR)
-	add_child(_marker)
-	for i: int in _options.size():
-		var entry: Dictionary = _options[i]
-		var row: Label = _make_label(str(entry["text"]), OPTION_SIZE,
-			TEXT_COLOR if bool(entry["enabled"]) else DIM_COLOR)
-		# Las filas sí reciben mouse: pasar por encima las elige.
-		row.mouse_filter = Control.MOUSE_FILTER_STOP
-		row.mouse_entered.connect(_select.bind(i))
-		row.gui_input.connect(_on_row_input.bind(i))
-		add_child(row)
-		_rows.append(row)
+	_list = MenuList.new()
+	_list.top = OPTIONS_TOP
+	_list.line_height = LINE_HEIGHT
+	_list.option_size = OPTION_SIZE
+	_list.left_margin = LEFT_MARGIN
+	_list.text_indent = TEXT_INDENT
+	add_child(_list)
+	_list.add_action("Nueva partida", _on_new_game)
+	_list.add_action("Continuar — noche %d" % SaveGame.night_reached, _on_continue,
+		SaveGame.has_progress())
+	_list.add_action("Custom Night", _on_custom_night, not locked)
+	_list.add_action("Extras", _on_extras, not locked)
+	_list.add_action("Opciones", _on_options)
+	_list.add_action("Salir", _on_quit)
+	_list.build()
 
 
 func _build_footer() -> void:
@@ -149,8 +137,6 @@ func _make_label(text: String, base_size: float, color: Color) -> Label:
 ## el tamaño de la ventana.
 func _layout() -> void:
 	var left: float = size.x * LEFT_MARGIN
-	var indent: float = size.x * TEXT_INDENT
-	var line: float = size.y * LINE_HEIGHT
 
 	if _title != null:
 		Fonts.apply(_title, Fonts.terminal(), _font_size(TITLE_SIZE))
@@ -158,15 +144,8 @@ func _layout() -> void:
 		_title.size = Vector2(size.x * 0.45, size.y * 0.34)
 	if _stars != null:
 		_stars.position = Vector2(left, size.y * STARS_TOP)
-	for i: int in _rows.size():
-		var row: Label = _rows[i] as Label
-		Fonts.apply(row, Fonts.terminal(), _font_size(OPTION_SIZE))
-		row.position = Vector2(indent, size.y * OPTIONS_TOP + float(i) * line)
-		row.size = Vector2(size.x * 0.4, line)
-	if _marker != null:
-		Fonts.apply(_marker, Fonts.terminal(), _font_size(OPTION_SIZE))
-		_marker.size = Vector2(indent - left, line)
-	_place_marker()
+	if _list != null:
+		_list.layout()
 	if _version != null:
 		Fonts.apply(_version, Fonts.terminal(), _font_size(SMALL_SIZE))
 		_version.position = Vector2(size.x * 0.02, size.y * 0.945)
@@ -177,56 +156,7 @@ func _layout() -> void:
 		_wipe_hint.size = Vector2(size.x * 0.4, size.y * 0.05)
 
 
-func _place_marker() -> void:
-	if _marker == null or _selected < 0 or _selected >= _rows.size():
-		return
-	_marker.position = Vector2(size.x * LEFT_MARGIN, _rows[_selected].position.y)
-
-
-# --- Selección ----------------------------------------------------------------
-
-func _first_enabled() -> int:
-	for i: int in _options.size():
-		if bool(_options[i]["enabled"]):
-			return i
-	return 0
-
-
-func _select(index: int) -> void:
-	if index < 0 or index >= _options.size() or not bool(_options[index]["enabled"]):
-		return
-	_selected = index
-	_place_marker()
-
-
-## Salta a la siguiente opción que se pueda usar, dando la vuelta.
-func _step(direction: int) -> void:
-	if _options.is_empty():
-		return
-	var index: int = _selected
-	for _i: int in _options.size():
-		index = posmod(index + direction, _options.size())
-		if bool(_options[index]["enabled"]):
-			_select(index)
-			return
-
-
-func _activate() -> void:
-	if _selected < 0 or _selected >= _options.size():
-		return
-	var entry: Dictionary = _options[_selected]
-	if not bool(entry["enabled"]):
-		return
-	(entry["action"] as Callable).call()
-
-
-func _on_row_input(event: InputEvent, index: int) -> void:
-	var click: InputEventMouseButton = event as InputEventMouseButton
-	if click == null or not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
-		return
-	_select(index)
-	_activate()
-
+# --- Teclas -------------------------------------------------------------------
 
 func _input(event: InputEvent) -> void:
 	if _options_panel != null and _options_panel.is_open:
@@ -234,18 +164,8 @@ func _input(event: InputEvent) -> void:
 	if _confirm != null and _confirm.is_open:
 		return
 	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo:
-		return
-	match key.keycode:
-		KEY_UP, KEY_W:
-			_step(-1)
-		KEY_DOWN, KEY_S:
-			_step(1)
-		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-			_activate()
-		_:
-			return
-	get_viewport().set_input_as_handled()
+	if key != null and key.pressed and _list.handle_key(key):
+		get_viewport().set_input_as_handled()
 
 
 # --- Borrar el progreso -------------------------------------------------------

@@ -478,8 +478,19 @@ func _build_screens_section() -> void:
 		stars.append([str(count), func() -> void: _show_menu_with_stars(count)])
 	_add_row(body, stars)
 
+	_add_label(body, "Capturas de pantalla:")
+	_add_button(body, "Capturar todas", _capture_all)
+
 	_add_button(body, "Extras con todo desbloqueado", _unlock_everything)
 	_add_button(body, "Extras con todo bloqueado", _lock_everything)
+
+
+## Recorre todas las pantallas del juego y guarda una captura de cada una. La
+## herramienta se cuelga de la raíz, así que sobrevive a los cambios de escena.
+func _capture_all() -> void:
+	close()
+	print("[capturas] carpeta: %s" % ScreenCapture.folder())
+	ScreenCapture.run(get_tree())
 
 
 ## El recibo con los números de la noche que se está jugando, para verlo sin

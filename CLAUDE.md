@@ -30,7 +30,7 @@ res://
   scripts/characters/  animatronic.gd (clase base) y un script por profe
   data/            rooms.gd (grafo de habitaciones), nights.gd (niveles por noche)
   scenes/ui/           pantalla de carga, los cuadros de estática y los shaders compartidos (scanlines, blanco y negro, bloqueado)
-  scripts/ui/          ayudantes: fonts.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd, options_panel.gd
+  scripts/ui/          ayudantes: fonts.gd, menu_style.gd, menu_list.gd, screen_fx.gd, art_gallery.gd, star_row.gd, menu_backdrop.gd, options_panel.gd, screen_capture.gd
   scripts/audio/       tone_builder.gd, los sonidos provisionales generados por código
   assets/art/backgrounds, assets/art/characters, assets/audio
   assets/art/screens/  las pantallas que son una imagen (solicitud_empleo, pago_noche) y static/
@@ -99,6 +99,7 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | −14 | sí | toda la noche; se calla con el apagón |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
+| `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
 | `cajita_musical_apagon` | `cajita_musical.ogg` | Música | −4 | no | las chispas del apagón (mismo archivo) |
@@ -240,6 +241,37 @@ Los controles **no se escriben a mano** en el recuadro: salen de `data/controls.
 mapa de entrada los que son acciones (mirar, abrir el monitor) y define **una sola vez** los que
 estaban a fuego en el código (`FLASHLIGHT_KEY`, `PAUSE_KEY`), que ahora `office.gd` y
 `pause_menu.gd` piden de ahí. Si cambias una tecla, el tutorial cambia solo.
+
+## Estilo de los menús
+
+Todos los menús son iguales por dentro y se ven igual: **negro, VT323 blanco y nada más**. Nada de
+paneles grises, bordes redondeados, sombras ni degradados. Vale para el menú principal, la pausa,
+las opciones, la Custom Night, Extras, la confirmación de borrado, el final y el game over.
+**Quedan fuera** la PC, el patch panel y las hojas (documentos, recibos y periódicos), que tienen
+su propia estética.
+
+- **`scripts/ui/menu_style.gd` (`MenuStyle`)** guarda los colores, los tamaños medidos a 1080p (que
+  se escalan con el alto), el negro de fondo, el título y el pie de pantalla, y el blip. Los
+  títulos van en VT323 grande y en **mayúsculas**, arrancando en el margen izquierdo.
+- **`scripts/ui/menu_list.gd` (`MenuList`)** es la lista de opciones de todos ellos: texto a la
+  izquierda, `>>` en la elegida, lo apagado en gris oscuro y el cursor se lo salta. Se mueve con
+  las flechas o W/S, se acepta con Enter o espacio, se sale con Esc, y **también funciona con el
+  mouse** (pasar por encima elige, clic acepta). Cada movimiento y cada aceptación suenan
+  (`menu_blip`, más agudo al aceptar).
+- **Renglones con valor:** los volúmenes de las opciones son una **barra de bloques**
+  `■■■■■■□□□□  60 %` que se mueve con izquierda y derecha o con un clic en el punto de la barra;
+  los niveles de la Custom Night son el número pelón, con los mismos controles.
+- **No hay botones con caja en ningún menú.** `scripts/ui/ui_button.gd` sigue ahí solo para lo que
+  no es menú (la PC y las tareas).
+- La pantalla de la **solicitud de empleo** y la del **recibo de pago** no entran aquí: son una
+  foto con texto encima (ver **Pantallas que son una imagen**).
+
+**Capturas de todas las pantallas:** el panel de pruebas (F1 → Pantallas → **"Capturar todas"**)
+recorre las 27 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
+guarda un PNG de cada una con `scripts/ui/screen_capture.gd`. Van a `user://capturas/`, que en
+Linux es `~/.local/share/godot/app_userdata/Five Nights at Rocha\'s/capturas/`. La herramienta se
+cuelga de la raíz del árbol, no de una escena, porque va cambiando de escena. Ojo: pasar por las
+pantallas de documentos y periódicos los deja marcados como vistos en `save.cfg`.
 
 ## Transiciones y pantallas
 

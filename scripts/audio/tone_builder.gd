@@ -54,6 +54,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return camera_static()
 		"typewriter_key":
 			return typewriter_key()
+		"menu_blip":
+			return menu_blip()
 		"phone_hang_up":
 			return phone_hang_up()
 		"far_running":
@@ -492,6 +494,23 @@ static func flashlight_click() -> AudioStreamWAV:
 	for i: int in buffer.size():
 		var t: float = float(i) / float(SAMPLE_RATE)
 		buffer[i] = randf_range(-1.0, 1.0) * exp(-CLICK_DECAY * t) * CLICK_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- Blip de menú ------------------------------------------------------------
+## Un pitido corto y seco, de los de moverse por un menú de consola vieja.
+const MENU_BLIP_LENGTH: float = 0.07
+const MENU_BLIP_HZ: float = 740.0
+const MENU_BLIP_AMPLITUDE: float = 0.4
+
+
+static func menu_blip() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(MENU_BLIP_LENGTH)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		# Entra de golpe y se apaga enseguida, para que no zumbe.
+		var envelope: float = exp(-28.0 * t) * minf(float(i) / 40.0, 1.0)
+		buffer[i] = sin(TAU * MENU_BLIP_HZ * t) * envelope * MENU_BLIP_AMPLITUDE
 	return _to_wav(buffer)
 
 
