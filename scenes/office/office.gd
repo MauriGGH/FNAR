@@ -1,10 +1,12 @@
 extends Control
 
-## La oficina. Tres vistas separadas (izquierda, centro, derecha). La cabeza
-## gira a la vista de al lado **solo con A y D o con las flechas**, con un
-## barrido de SWEEP_TIME y desenfoque horizontal; el mouse ya no mueve nada, así
-## que soltar el monitor no te deja mirando a otro lado. Cada vista es más ancha
-## que la pantalla y se deja centrada, recortando parejo a los lados.
+## La oficina. Tres vistas separadas (izquierda, centro, derecha). Todo se
+## mueve **solo con A y D o con las flechas**, nunca con el mouse: manteniendo
+## una de ellas la vista se desplaza hacia ese lado a velocidad constante (con
+## un arranque y un frenado cortos), y cuando llega al borde de la vista y
+## sigues manteniendo, la cabeza gira a la vista de al lado con el barrido de
+## SWEEP_TIME y su desenfoque. Cada vista es más ancha que la pantalla: lo que
+## sobra a los lados es ese recorrido.
 ## Las zonas de clic salen de los JSON de data/ y el acercamiento a la PC
 ## encuadra la zona monitor_screen de la vista central.
 
@@ -75,8 +77,15 @@ const MAX_URENA_PHOTOS: int = 4
 const URENA_PHOTO_ZONE: String = "urena_photo"
 
 ## Cada vista se dibuja este factor más grande que la pantalla. Lo que sobra a
-## lo ancho es el recorrido del mouse; a cambio se recorta un poco arriba y abajo.
+## lo ancho es el recorrido lateral; a cambio se recorta un poco arriba y abajo.
 const VIEW_SCALE: float = 1.18
+
+## El recorrido lateral: a cuántos píxeles por segundo se desplaza la vista
+## manteniendo A o D, y lo que tarda en arrancar y en frenar.
+const PAN_SPEED: float = 420.0
+const PAN_RAMP: float = 12.0
+## Cuánto hay que seguir manteniendo, ya tocando el borde, para que gire.
+const EDGE_HOLD_TIME: float = 0.18
 
 # Recorrido dentro de una vista.
 ## Lo que hay que aguantar en el borde, ya sin recorrido, antes de que gire.
@@ -125,9 +134,13 @@ var is_interactive: bool = true
 
 var _state: ViewState = ViewState.PANNING
 var _current_view: int = View.CENTER
-## Dónde queda el contenido de cada vista. Ya no se mueve con el mouse: cada
-## vista se deja centrada y lo que sobra a los lados se recorta.
+## Dónde queda el contenido de cada vista. Arranca centrado y se mueve con A
+## y D; el mouse no lo toca.
 var _pan_offsets: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0])
+## La velocidad de ahora mismo (se acerca suave a la que toca) y lo que lleva
+## apretado contra el borde.
+var _pan_speed: float = 0.0
+var _edge_hold: float = 0.0
 var _zones: Dictionary = {}  # id -> OfficeZone
 var _view_tween: Tween = null
 var _sweep_from: Control = null
@@ -224,7 +237,7 @@ func _update_flashlight(delta: float) -> void:
 	var allowed: bool = is_interactive and _state == ViewState.PANNING and _current_view == View.CENTER
 	var wants_on: bool = false
 	if allowed:
-		wants_on = debug_force_flashlight or Input.is_key_pressed(KEY_CTRL)
+		wants_on = debug_force_flashlight or Input.is_key_pressed(Controls.FLASHLIGHT_KEY)
 		if not wants_on and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			wants_on = zone_rect(GLASS_ZONE).has_point(center_content.get_local_mouse_position())
 
@@ -367,8 +380,10 @@ func _layout() -> void:
 	for i: int in _view_nodes.size():
 		_view_nodes[i].size = size
 		_content_nodes[i].size = content_size
-		# Centrada: cada vista es más ancha que la pantalla y se recorta parejo.
-		_pan_offsets[i] = _pan_limit() * 0.5
+		# Arranca centrada: cada vista es más ancha que la pantalla y lo que
+		# sobra a los lados es el recorrido.
+		if is_zero_approx(_pan_offsets[i]):
+			_pan_offsets[i] = _pan_limit() * 0.5
 		_apply_content_position(i)
 	_layout_zones()
 
@@ -464,8 +479,54 @@ func _layout_blackout_overlays() -> void:
 func _process(delta: float) -> void:
 	_update_shake(delta)
 	if photo_viewer != null and photo_viewer.is_open:
-		return  # Mirando la foto: la linterna no se prende.
+		return  # Mirando la foto: ni se mueve la vista ni se prende la linterna.
 	_update_flashlight(delta)
+	_update_pan(delta)
+
+
+## El recorrido lateral. Mantener A o D mueve la vista a ese lado a velocidad
+## constante, con un arranque y un frenado cortos. Al tocar el borde y seguir
+## manteniendo, la cabeza gira a la vista de al lado.
+func _update_pan(delta: float) -> void:
+	if not is_interactive or _state != ViewState.PANNING:
+		_pan_speed = 0.0
+		_edge_hold = 0.0
+		return
+	var direction: int = 0
+	if Input.is_action_pressed("turn_right"):
+		direction += 1
+	if Input.is_action_pressed("turn_left"):
+		direction -= 1
+
+	# La velocidad se acerca a la que toca en vez de saltar: eso es el arranque
+	# y el frenado. El contenido se mueve al revés que la mirada.
+	var target: float = -float(direction) * PAN_SPEED
+	_pan_speed = lerpf(_pan_speed, target, 1.0 - exp(-delta * PAN_RAMP))
+	if direction == 0:
+		_edge_hold = 0.0
+		if absf(_pan_speed) >= 1.0:
+			_move_content(delta)
+		return
+
+	# Primero se agota el recorrido de la vista; solo entonces gira la cabeza.
+	if _move_content(delta):
+		_edge_hold = 0.0
+		return
+	_edge_hold += delta
+	if _edge_hold >= EDGE_HOLD_TIME:
+		_edge_hold = 0.0
+		rotate_view(direction)
+
+
+## Mueve el contenido de la vista actual. Devuelve false si ya topó.
+func _move_content(delta: float) -> bool:
+	var before: float = _pan_offsets[_current_view]
+	var after: float = clampf(before + _pan_speed * delta, _pan_limit(), 0.0)
+	if is_equal_approx(before, after):
+		return false
+	_pan_offsets[_current_view] = after
+	_apply_content_position(_current_view)
+	return true
 
 
 ## Gira a la vista de al lado: -1 hacia la izquierda, 1 hacia la derecha.
@@ -477,6 +538,11 @@ func rotate_view(direction: int) -> void:
 		return
 
 	_state = ViewState.SWEEPING
+	_pan_speed = 0.0
+	# La vista nueva entra por el lado por el que vienes, para que el recorrido
+	# siga donde lo dejaste en vez de dar un salto.
+	_pan_offsets[target] = 0.0 if direction > 0 else _pan_limit()
+	_apply_content_position(target)
 	_sweep_direction = direction
 	_sweep_from = _view_nodes[_current_view]
 	_sweep_to = _view_nodes[target]
@@ -520,17 +586,6 @@ func set_right_view_empty(is_empty: bool) -> void:
 	right_image.texture = RIGHT_EMPTY_TEXTURE if is_empty else _right_normal_texture
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_interactive or _state != ViewState.PANNING:
-		return
-	if event.is_action_pressed("turn_left"):
-		rotate_view(-1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("turn_right"):
-		rotate_view(1)
-		get_viewport().set_input_as_handled()
-
-
 # --- Acercamiento a la PC -----------------------------------------------------
 
 ## Encuadra la pantalla del monitor y, al terminar, pide abrir la PC.
@@ -554,6 +609,7 @@ func _zoom_to_zone(zone_id: String, view: int, request: String) -> void:
 		_emit_zoom_request()
 		return
 	_state = ViewState.ZOOMING_IN
+	_pan_speed = 0.0
 	var factor: float = maxf(size.x / target.size.x, size.y / target.size.y)
 	var target_position: Vector2 = size * 0.5 - target.get_center() * factor
 	_tween_content(target_position, Vector2(factor, factor), _on_zoom_in_finished)

@@ -18,6 +18,9 @@ const BUS_AMBIENCE: String = "Ambiente"
 const BUS_EFFECTS: String = "Efectos"
 const BUS_VOICES: String = "Voces"
 const BUS_MUSIC: String = "Música"
+## Lo que se oye desde lejos, a través de las paredes: lleva reverb grande,
+## un paso bajo a 2500 Hz y un paneo que se mueve según de dónde venga.
+const BUS_DISTANT: String = "Lejos"
 
 ## Los buses que el jugador puede subir y bajar, en el orden del menú.
 const MIXER_BUSES: Array[String] = ["Master", "Música", "Efectos", "Ambiente", "Voces"]
@@ -27,6 +30,9 @@ const MUSIC_BOX: String = "cajita_musical"
 ## La misma melodía, pero para el apagón: suena una sola vez y más fuerte, porque
 ## en la oscuridad es lo único que hay. Usa el mismo archivo que la de la botarga.
 const MUSIC_BOX_BLACKOUT: String = "cajita_musical_apagon"
+## La misma melodía, pero como aviso desde la oficina: muy bajita y con eco,
+## por el bus Lejos, cuando a la botarga le queda poca cuerda.
+const MUSIC_BOX_WARNING: String = "cajita_musical_aviso"
 const TICKET: String = "ticket_nuevo"
 const SCREAM: String = "grito"
 const BUSY_TONE: String = "tono_ocupado"
@@ -50,6 +56,31 @@ const BREAKER_LEVER: String = "breaker_palanca"
 const CAMERA_STATIC: String = "estatica_camara"
 ## El clac de colgar, al acabar o silenciar una llamada.
 const PHONE_HANG_UP: String = "telefono_colgar"
+
+# --- Lo que se oye de lejos --------------------------------------------------
+const FAR_BARCOSA_RUN: String = "barcosa_corre"
+const FAR_MAMADOR_STEPS: String = "mamador_pasos"
+const FAR_URENA_BATHROOM: String = "urena_banos"
+const FAR_JUAN_KEYBOARD: String = "juan_teclado"
+const FAR_ARMANDO_MODEM: String = "armando_modem"
+const FAR_AUDEL_SPARK: String = "audel_chispa"
+const FAR_ROCHIS_CHAIR: String = "rochis_silla"
+## Los ambientales que salen solos cada tanto.
+const FAR_DOOR_SLAM: String = "lejos_portazo"
+const FAR_CHAIR_DRAG: String = "lejos_silla"
+const FAR_UPSTAIRS: String = "lejos_pasos_arriba"
+const FAR_LAUGH: String = "lejos_risa"
+const FAR_DISHES: String = "lejos_platos"
+const FAR_AMBIENT: Array[String] = [
+	"lejos_portazo", "lejos_silla", "lejos_pasos_arriba", "lejos_risa", "lejos_platos",
+]
+
+## De qué lado viene cada sonido, de -1 (izquierda) a 1 (derecha). Izquierda
+## son los cubículos y la escalera; el centro, el pasillo; la derecha, la sala
+## de servidores. Lo pone el AudioManager en el paneo del bus Lejos.
+const PAN_LEFT: float = -0.7
+const PAN_CENTER: float = 0.0
+const PAN_RIGHT: float = 0.7
 ## La voz de Rochis. No tiene provisional por código: mientras no esté grabada,
 ## el botón de la CAM 3 la dice con la síntesis de voz.
 const IMPRESSIVE: String = "es_impresionante"
@@ -156,6 +187,58 @@ const CATALOG: Dictionary = {
 		"file": "es_impresionante.ogg", "bus": "Voces",
 		"volume_db": -2.0, "generator": "",
 	},
+	"cajita_musical_aviso": {
+		"file": "cajita_musical.ogg", "bus": "Lejos",
+		"volume_db": -22.0, "generator": "music_box", "pan": PAN_RIGHT,
+	},
+	"barcosa_corre": {
+		"file": "lejos/barcosa_corre.ogg", "bus": "Lejos",
+		"volume_db": -2.0, "generator": "far_running", "pan": PAN_CENTER,
+	},
+	"mamador_pasos": {
+		"file": "lejos/mamador_pasos.ogg", "bus": "Lejos",
+		"volume_db": -3.0, "generator": "far_boots", "pan": PAN_CENTER,
+	},
+	"urena_banos": {
+		"file": "lejos/urena_banos.ogg", "bus": "Lejos",
+		"volume_db": -5.0, "generator": "far_water", "pan": PAN_CENTER,
+	},
+	"juan_teclado": {
+		"file": "lejos/juan_teclado.ogg", "bus": "Lejos",
+		"volume_db": -6.0, "generator": "far_keyboard", "pan": PAN_CENTER,
+	},
+	"armando_modem": {
+		"file": "lejos/armando_modem.ogg", "bus": "Lejos",
+		"volume_db": -5.0, "generator": "far_modem", "pan": PAN_CENTER,
+	},
+	"audel_chispa": {
+		"file": "lejos/audel_chispa.ogg", "bus": "Lejos",
+		"volume_db": -3.0, "generator": "far_spark", "pan": PAN_LEFT,
+	},
+	"rochis_silla": {
+		"file": "lejos/rochis_silla.ogg", "bus": "Lejos",
+		"volume_db": -4.0, "generator": "far_chair", "pan": PAN_LEFT,
+	},
+	"lejos_portazo": {
+		"file": "lejos/lejos_portazo.ogg", "bus": "Lejos",
+		"volume_db": -3.0, "generator": "far_door_slam", "pan": PAN_CENTER,
+	},
+	"lejos_silla": {
+		"file": "lejos/lejos_silla.ogg", "bus": "Lejos",
+		"volume_db": -5.0, "generator": "far_chair", "pan": PAN_LEFT,
+	},
+	"lejos_pasos_arriba": {
+		"file": "lejos/lejos_pasos_arriba.ogg", "bus": "Lejos",
+		"volume_db": -5.0, "generator": "far_upstairs", "pan": PAN_CENTER,
+	},
+	"lejos_risa": {
+		"file": "lejos/lejos_risa.ogg", "bus": "Lejos",
+		"volume_db": -6.0, "generator": "far_laugh", "pan": PAN_RIGHT,
+	},
+	"lejos_platos": {
+		"file": "lejos/lejos_platos.ogg", "bus": "Lejos",
+		"volume_db": -6.0, "generator": "far_dishes", "pan": PAN_RIGHT,
+	},
 	"barcosa_puerta_1": {
 		"file": "voces/barcosa_puerta_1.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
@@ -212,8 +295,9 @@ const CATALOG: Dictionary = {
 
 ## Los que suenan en bucle: el AudioManager les marca el bucle al cargarlos.
 const LOOPING: Array[String] = [
-	"cajita_musical", "despertador", "ambiente_oficina", "ambiente_pasillo",
-	"telefono_timbre", "estatica_camara",
+	"cajita_musical", "cajita_musical_aviso", "despertador", "ambiente_oficina",
+	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
+	"urena_banos", "juan_teclado", "audel_chispa",
 ]
 
 
@@ -249,3 +333,13 @@ static func generator_of(id: String) -> String:
 
 static func is_looping(id: String) -> bool:
 	return id in LOOPING
+
+
+## De qué lado viene un sonido, de -1 a 1. 0 si no lo dice.
+static func pan_of(id: String) -> float:
+	return float(entry(id).get("pan", PAN_CENTER))
+
+
+## true si ese sonido sale por el bus de los lejanos.
+static func is_distant(id: String) -> bool:
+	return bus_of(id) == BUS_DISTANT

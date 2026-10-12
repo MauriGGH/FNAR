@@ -3,6 +3,23 @@
 Todas las líneas habladas que el juego usa hoy o va a usar, para grabarlas.
 Por personaje, con el texto exacto, el archivo que el juego espera y cuándo suena.
 
+## Generar las que faltan con voz sintética
+
+Mientras no estén grabadas de verdad, `tools/generar_voces.py` las saca con
+edge-tts (y, en el caso de Rochis, pasándolas por el modelo de Applio). Lee las
+líneas de este mismo documento y de `data/voice_lines.gd`, **salta las llamadas
+de noche** y **nunca pisa un archivo que ya exista** salvo que se le pase
+`--forzar`:
+
+```
+pip install edge-tts
+python3 tools/generar_voces.py --listar     # qué haría, sin hacer nada
+python3 tools/generar_voces.py              # genera lo que falte
+```
+
+La voz de cada personaje (velocidad y tono) está en el diccionario `VOCES` del
+script, pensado para que se toque a mano.
+
 ## Cómo leer este documento
 
 Cada línea lleva una marca de estado:
@@ -286,6 +303,12 @@ Grabadas darían mucho más. **[FALTA ENGANCHAR]**
 
 | # | Texto | Archivo |
 | --- | --- | --- |
+| 1 | «HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.» | `voces/armando_frase1.ogg` |
+| 2 | «LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.» | `voces/armando_frase2.ogg` |
+| 3 | «ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.» | `voces/armando_frase3.ogg` |
+| 4 | «MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.» | `voces/armando_frase4.ogg` |
+| 5 | «AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.» | `voces/armando_frase5.ogg` |
+| 6 | «¿PENSAR? NAH, ESO ES DE BOOMERS.» | `voces/armando_frase6.ogg` |
 
 | Otros | Archivo | Cuándo | Estado |
 | --- | --- | --- | --- |

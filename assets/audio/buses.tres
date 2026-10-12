@@ -1,4 +1,18 @@
-[gd_resource type="AudioBusLayout" format=3]
+[gd_resource type="AudioBusLayout" load_steps=4 format=3]
+
+[sub_resource type="AudioEffectReverb" id="Reverb_lejos"]
+room_size = 0.9
+damping = 0.45
+spread = 1.0
+dry = 0.25
+wet = 0.75
+
+[sub_resource type="AudioEffectLowPassFilter" id="LowPass_lejos"]
+cutoff_hz = 2500.0
+resonance = 0.3
+
+[sub_resource type="AudioEffectPanner" id="Panner_lejos"]
+pan = 0.0
 
 [resource]
 bus/0/name = &"Master"
@@ -31,3 +45,15 @@ bus/4/mute = false
 bus/4/bypass_fx = false
 bus/4/volume_db = 0.0
 bus/4/send = &"Master"
+bus/5/name = &"Lejos"
+bus/5/solo = false
+bus/5/mute = false
+bus/5/bypass_fx = false
+bus/5/volume_db = -8.0
+bus/5/send = &"Ambiente"
+bus/5/effect/0/effect = SubResource("LowPass_lejos")
+bus/5/effect/0/enabled = true
+bus/5/effect/1/effect = SubResource("Reverb_lejos")
+bus/5/effect/1/enabled = true
+bus/5/effect/2/effect = SubResource("Panner_lejos")
+bus/5/effect/2/enabled = true

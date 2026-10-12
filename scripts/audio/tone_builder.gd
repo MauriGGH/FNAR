@@ -54,6 +54,28 @@ static func build(generator: String) -> AudioStreamWAV:
 			return camera_static()
 		"phone_hang_up":
 			return phone_hang_up()
+		"far_running":
+			return far_running()
+		"far_boots":
+			return far_boots()
+		"far_water":
+			return far_water()
+		"far_keyboard":
+			return far_keyboard()
+		"far_modem":
+			return far_modem()
+		"far_spark":
+			return far_spark()
+		"far_chair":
+			return far_chair()
+		"far_door_slam":
+			return far_door_slam()
+		"far_upstairs":
+			return far_upstairs()
+		"far_laugh":
+			return far_laugh()
+		"far_dishes":
+			return far_dishes()
 	return null
 
 # --- Cajita musical ----------------------------------------------------------
@@ -521,6 +543,171 @@ static func phone_hang_up() -> AudioStreamWAV:
 		_add_thud(buffer, clack, HANG_UP_HZ, 0.1, HANG_UP_AMPLITUDE, HANG_UP_DECAY, 0.7)
 	_add_bell(buffer, 0.04, HANG_UP_RING_HZ, HANG_UP_RING_PARTIALS, HANG_UP_RING_GAINS,
 		14.0, HANG_UP_LENGTH, 0.22)
+	return _to_wav(buffer)
+
+
+# --- Lo que se oye de lejos --------------------------------------------------
+# Todos salen por el bus Lejos, que ya les mete reverb grande y un paso bajo a
+# 2500 Hz. Por eso aquí se generan secos y sin graves de más: el bus hace el
+# trabajo de "esto viene de otra habitación".
+
+## Pasos rápidos que se acercan: cada vez más seguidos y más fuertes.
+const RUN_STEPS: int = 9
+const RUN_LENGTH: float = 2.1
+const RUN_HZ: float = 95.0
+
+
+static func far_running() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(RUN_LENGTH)
+	var at: float = 0.0
+	var gap: float = 0.33
+	for i: int in RUN_STEPS:
+		var near: float = float(i) / float(RUN_STEPS - 1)
+		_add_thud(buffer, at, RUN_HZ, 0.14, 0.3 + near * 0.6, 30.0, 0.5)
+		at += gap
+		gap = maxf(gap * 0.88, 0.14)   # se acerca: pisa más seguido
+	return _to_wav(buffer)
+
+
+## Botas pesadas y un radio con estática de fondo.
+const BOOTS_STEPS: Array[float] = [0.0, 0.72, 1.44, 2.16]
+const BOOTS_HZ: float = 70.0
+const RADIO_START: float = 0.9
+const RADIO_LENGTH: float = 1.1
+
+
+static func far_boots() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(2.9)
+	for at: float in BOOTS_STEPS:
+		_add_thud(buffer, at, BOOTS_HZ, 0.18, 0.75, 20.0, 0.35)
+	# El radio: ruido entrecortado, como una transmisión que no se entiende.
+	var hiss: PackedFloat32Array = _low_passed_noise(buffer.size(), 0.35)
+	var first: int = int(RADIO_START * SAMPLE_RATE)
+	for i: int in int(RADIO_LENGTH * SAMPLE_RATE):
+		var index: int = first + i
+		if index >= buffer.size():
+			break
+		var t: float = float(i) / float(SAMPLE_RATE)
+		# Se corta a trozos, como una radio con el dedo en el botón.
+		var gate: float = 1.0 if fmod(t, 0.25) < 0.17 else 0.12
+		buffer[index] += hiss[index] * gate * 0.3
+	return _to_wav(buffer)
+
+
+## Agua de lavabo: chorro continuo con borboteo.
+static func far_water() -> AudioStreamWAV:
+	var length: float = 4.0
+	var buffer: PackedFloat32Array = _buffer(length + LOOP_CROSSFADE)
+	var flow: PackedFloat32Array = _low_passed_noise(buffer.size(), 0.45)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		# El chorro no es parejo: le tiembla el caudal.
+		var wobble: float = 0.75 + 0.25 * sin(TAU * 2.7 * t) * sin(TAU * 0.9 * t)
+		buffer[i] = flow[i] * wobble * 0.6
+	return _to_wav(_seamless(buffer, length))
+
+
+## Tecleo: golpecitos secos y desiguales, en bucle.
+static func far_keyboard() -> AudioStreamWAV:
+	var length: float = 3.5
+	var buffer: PackedFloat32Array = _buffer(length + LOOP_CROSSFADE)
+	var at: float = 0.0
+	while at < length + LOOP_CROSSFADE:
+		_add_thud(buffer, at, randf_range(900.0, 1700.0), 0.03,
+			randf_range(0.25, 0.5), 220.0, 0.85)
+		at += randf_range(0.07, 0.22)
+	return _to_wav(_seamless(buffer, length))
+
+
+## Módem: el pitido de enlace y la cascada de ruido, mal sintonizado.
+static func far_modem() -> AudioStreamWAV:
+	var length: float = 2.6
+	var buffer: PackedFloat32Array = _buffer(length)
+	# Los dos tonos de negociación.
+	_add_tone(buffer, 0.0, 1062.0, 0.6, 0.3)
+	_add_tone(buffer, 0.7, 1800.0, 0.45, 0.28)
+	_add_tone(buffer, 1.2, 2225.0, 0.3, 0.25)
+	# Y el chorro de datos del final.
+	var noise: PackedFloat32Array = _low_passed_noise(buffer.size(), 0.6)
+	var first: int = int(1.5 * SAMPLE_RATE)
+	for i: int in buffer.size() - first:
+		var t: float = float(i) / float(SAMPLE_RATE)
+		buffer[first + i] += noise[first + i] * exp(-t * 1.8) * 0.5
+	return _to_wav(buffer)
+
+
+## Zumbido eléctrico y, de vez en cuando, un trueno lejano. En bucle.
+static func far_spark() -> AudioStreamWAV:
+	var length: float = 5.0
+	var buffer: PackedFloat32Array = _buffer(length + LOOP_CROSSFADE)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		# 60 Hz y su armónico, que es a lo que suena un transformador.
+		buffer[i] = (sin(TAU * 60.0 * t) * 0.5 + sin(TAU * 180.0 * t) * 0.2) * 0.35
+	# El trueno: un golpe de ruido grave que rueda.
+	var rumble: PackedFloat32Array = _low_passed_noise(buffer.size(), 0.02)
+	var first: int = int(2.2 * SAMPLE_RATE)
+	for i: int in buffer.size() - first:
+		var t: float = float(i) / float(SAMPLE_RATE)
+		buffer[first + i] += rumble[first + i] * exp(-t * 1.1) * minf(t * 6.0, 1.0) * 0.8
+	return _to_wav(_seamless(buffer, length))
+
+
+## Rechinido de silla: un chirrido que sube de tono y para en seco.
+static func far_chair() -> AudioStreamWAV:
+	var length: float = 0.8
+	var samples: int = int(length * SAMPLE_RATE)
+	var buffer: PackedFloat32Array = _buffer(length)
+	var phase: float = 0.0
+	for i: int in samples:
+		var t: float = float(i) / float(samples)
+		phase += TAU * lerpf(220.0, 520.0, t) / float(SAMPLE_RATE)
+		# El chirrido raspa: onda sucia y con ruido encima.
+		var envelope: float = sin(PI * t) * (0.6 + 0.4 * sin(TAU * 34.0 * t))
+		buffer[i] = (sin(phase) * 0.5 + randf_range(-1.0, 1.0) * 0.5) * envelope * 0.5
+	return _to_wav(buffer)
+
+
+## Portazo: un golpe seco con cola de eco (el eco lo pone el bus).
+static func far_door_slam() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(0.6)
+	_add_thud(buffer, 0.0, 58.0, 0.5, 0.95, 14.0, 0.5)
+	_add_bell(buffer, 0.0, 320.0, [1.0, 2.3] as Array[float], [1.0, 0.4] as Array[float],
+		18.0, 0.5, 0.25)
+	return _to_wav(buffer)
+
+
+## Pasos en el piso de arriba: golpes sordos sobre la losa.
+static func far_upstairs() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(2.6)
+	var at: float = 0.0
+	for i: int in 5:
+		_add_thud(buffer, at, 52.0, 0.2, randf_range(0.5, 0.85), 18.0, 0.3)
+		at += randf_range(0.42, 0.62)
+	return _to_wav(buffer)
+
+
+## Risa lejana: tres sílabas con el tono cayendo.
+const LAUGH_AT: Array[float] = [0.0, 0.26, 0.52]
+const LAUGH_HZ: Array[float] = [330.0, 300.0, 265.0]
+
+
+static func far_laugh() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(1.1)
+	for i: int in LAUGH_AT.size():
+		_add_bell(buffer, LAUGH_AT[i], LAUGH_HZ[i],
+			[1.0, 2.0, 3.0] as Array[float], [1.0, 0.5, 0.25] as Array[float],
+			11.0, 0.3, 0.45)
+	return _to_wav(buffer)
+
+
+## Platos en la cafetería: tintineos agudos, unos cuantos y desordenados.
+static func far_dishes() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(1.4)
+	for i: int in 7:
+		_add_bell(buffer, randf_range(0.0, 1.0), randf_range(1400.0, 2600.0),
+			[1.0, 2.6] as Array[float], [1.0, 0.45] as Array[float],
+			26.0, 0.35, randf_range(0.2, 0.4))
 	return _to_wav(buffer)
 
 

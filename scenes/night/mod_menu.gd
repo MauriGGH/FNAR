@@ -448,6 +448,13 @@ func _build_screens_section() -> void:
 		close()
 		DocumentScreen.show_documents(get_tree(), Documents.IDS.duplicate(), Screens.MAIN_MENU))
 
+	_add_button(body, "Ver el recuadro de controles", func() -> void:
+		close()
+		_night.controls_card.open(false))
+	_add_button(body, "Olvidar que ya vi el tutorial", func() -> void:
+		SaveGame.tutorial_seen = false
+		SaveGame.save_game())
+
 	_add_button(body, "Intro de noche", func() -> void: _go_to(Screens.NIGHT_INTRO))
 	_add_button(body, "Pantalla de carga", func() -> void:
 		close()
@@ -522,6 +529,12 @@ func _build_audio_section() -> void:
 		var sound_id: String = str(id)
 		_add_button(body, sound_id, func() -> void: AudioManager.play(sound_id))
 	_add_button(body, "Callar todo", func() -> void: AudioManager.stop_all())
+
+	_add_label(body, "Sonidos lejanos:")
+	_add_button(body, "Uno ambiental al azar", func() -> void:
+		_night.distant.play_ambient())
+	_add_button(body, "Quitar las esperas", func() -> void:
+		_night.distant.debug_clear_gaps())
 
 	_add_label(body, "Volumen de los buses:")
 	for bus: String in Sounds.MIXER_BUSES:

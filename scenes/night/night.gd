@@ -49,6 +49,8 @@ const FLASH_TIME: float = 0.28
 @onready var hallucinations: Control = $Hud/HallucinationOverlay
 @onready var call_subtitles: Control = $Hud/CallSubtitles
 @onready var voice_line: Control = $Hud/VoiceLine
+@onready var distant: Node = $DistantSounds
+@onready var controls_card: Control = $Hud/ControlsCard
 @onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
@@ -64,17 +66,30 @@ const TICKET_NOTICE: String = "[ticket nuevo: %s]"
 ## Cada cuánto se repinta el contador de tickets.
 const TICKET_REFRESH_TIME: float = 0.25
 
+## Quién suena de lejos al cambiar de cuarto. Barcosa va aparte: el suyo solo
+## cuenta cuando sale del salón B, que es cuando arranca a correr.
+const DISTANT_ON_MOVE: Dictionary = {
+	"mamador": "mamador_pasos",
+	"armando": "armando_modem",
+}
+const BARCOSA_HOME: String = "salon_b"
+
 var _animatronics: Array[Animatronic] = []
 var _debug_shown: bool = false
 var _come_trabas: ComeTrabas = null
 var _audel: Audel = null
 var _urena: Urena = null
+var _rochis: Rochis = null
 
 # Teléfono: la llamada de la noche y la de Ureña.
 var _nightly_call_left: float = 0.0
 ## Las horas a las que va a llamar esta noche, de la más temprana a la última.
 var _urena_calls_at: PackedFloat32Array = PackedFloat32Array()
 var _ticket_elapsed: float = 0.0
+## Dónde estaba cada profe la última vez, para saber cuándo se movió, y en qué
+## etapa iba Rochis, para el rechinido de su silla.
+var _last_rooms: Dictionary = {}
+var _last_rochis_stage: int = -1
 
 
 func _ready() -> void:
@@ -92,6 +107,8 @@ func _ready() -> void:
 			_come_trabas.music_stopped.connect(_on_music_box_stopped)
 		elif animatronic is Urena:
 			_urena = animatronic as Urena
+		elif animatronic is Rochis:
+			_rochis = animatronic as Rochis
 		elif animatronic is ArmandoPrompts:
 			pc_screen.set_armando(animatronic as ArmandoPrompts)
 		elif animatronic is Audel:
@@ -152,22 +169,34 @@ func _ready() -> void:
 
 	pause_menu.resumed.connect(_on_resumed)
 	pause_menu.menu_requested.connect(_on_menu_requested)
+	pause_menu.controls_requested.connect(_on_controls_requested)
 	GameManager.start_night()
 	# El panel se arma después de arrancar la noche: hasta aquí los profes no
 	# tienen ruta, y el panel la necesita para su lista de cuartos.
 	mod_menu.bind(self)
+	# El tutorial, solo la primera vez que alguien juega la noche 1.
+	if GameManager.current_night == 1 and not GameManager.is_custom_night \
+			and not SaveGame.tutorial_seen:
+		SaveGame.mark_tutorial_seen()
+		controls_card.open(true)
 	# El ambiente de la oficina y del pasillo suena toda la noche.
 	AudioManager.play_loop(Sounds.OFFICE_AMBIENCE)
 	AudioManager.play_loop(Sounds.HALLWAY_AMBIENCE)
-	# La botarga toca mientras le quede cuerda, desde el minuto uno.
-	if _come_trabas != null and _come_trabas.is_active:
-		AudioManager.play_loop(Sounds.MUSIC_BOX)
+
+
+## Desde la pausa se puede volver a ver el recuadro de controles. Ahí el juego
+## ya está pausado, así que el reloj no hace falta pararlo aparte.
+func _on_controls_requested() -> void:
+	pause_menu.close()
+	controls_card.open(false)
 
 
 ## Escape pausa la noche, salvo que ya lo esté usando otra cosa: la PC, el
 ## breaker, la sala de servidores o la foto de Ureña abierta. El reloj y los
 ## profes se detienen porque se pausa el árbol entero.
 func _escape_is_taken() -> bool:
+	if controls_card.is_open:
+		return true  # Escape cierra el recuadro, no abre la pausa.
 	if pc_screen.is_open or GameManager.is_in_server_room:
 		return true
 	if breaker_panel.visible:
@@ -237,6 +266,8 @@ func _process(delta: float) -> void:
 	_process_calls(delta)
 	_refresh_office_presence()
 	_update_glass_beams(delta)
+	_track_distant_sounds()
+	_refresh_music_box()
 	# El aviso de la cuerda se ve esté donde esté el jugador, como en FNAF 2.
 	warning_icon.set_level(0 if _come_trabas == null else _come_trabas.warning_level())
 
@@ -341,6 +372,62 @@ func _update_glass_beams(delta: float) -> void:
 			armando_at_glass = true
 		stalker.update_beam(is_lit, delta)
 	office.set_armando_at_glass(armando_at_glass)
+
+
+## La cajita de la botarga, como en FNAF 2: **solo se oye con la CAM 4 en
+## pantalla**. En la oficina no se oye nada... salvo cuando le queda poca
+## cuerda: ahí entra muy bajita y con eco por el bus Lejos, como aviso de que
+## hay que ir a dársela.
+func _refresh_music_box() -> void:
+	if _come_trabas == null or not _come_trabas.is_active:
+		AudioManager.stop(Sounds.MUSIC_BOX)
+		AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
+		return
+	var watching: bool = camera_system.is_open \
+		and camera_system.current_camera == Rooms.camera_of(ComeTrabas.ROOM)
+	if watching:
+		AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
+		AudioManager.play_loop(Sounds.MUSIC_BOX)
+		return
+	AudioManager.stop(Sounds.MUSIC_BOX)
+	# Fuera de la CAM 4 solo se oye el aviso, y solo con poca cuerda.
+	if _come_trabas.wind <= ComeTrabas.WARNING_THRESHOLD:
+		AudioManager.play_loop(Sounds.MUSIC_BOX_WARNING)
+	else:
+		AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
+
+
+## Mira quién se movió desde el cuadro anterior y suelta su sonido lejano.
+## Se hace aquí y no en cada profe para no llenarlos de señales: lo único que
+## hace falta saber es en qué cuarto están, y eso ya es público.
+func _track_distant_sounds() -> void:
+	for animatronic: Animatronic in _animatronics:
+		var slug: String = animatronic.image_slug()
+		if slug.is_empty() or not animatronic.is_active:
+			continue
+		var room: String = animatronic.current_room
+		var before: String = str(_last_rooms.get(slug, ""))
+		if before != room:
+			_last_rooms[slug] = room
+			if not before.is_empty():
+				_on_profe_moved(slug, before)
+	# Rochis no cambia de cuarto: lo que cambia es su etapa en la silla.
+	if _rochis != null and _rochis.is_active and _rochis.stage != _last_rochis_stage:
+		if _last_rochis_stage >= 0:
+			distant.play_for("rochis", Sounds.FAR_ROCHIS_CHAIR)
+		_last_rochis_stage = _rochis.stage
+	distant.refresh_room_loops(_animatronics)
+
+
+func _on_profe_moved(slug: String, from_room: String) -> void:
+	# Barcosa solo suena al salir del salón B: ahí es cuando echa a correr.
+	if slug == "barcosa":
+		if from_room == BARCOSA_HOME:
+			distant.play_for(slug, Sounds.FAR_BARCOSA_RUN, distant.RUN_CHANCE)
+		return
+	var sound_id: String = str(DISTANT_ON_MOVE.get(slug, ""))
+	if not sound_id.is_empty():
+		distant.play_for(slug, sound_id)
 
 
 func _on_hour_changed(_hour: int) -> void:
@@ -680,6 +767,7 @@ func _on_game_over(cause: String) -> void:
 ## jugador se da cuenta.
 func _on_music_box_stopped() -> void:
 	AudioManager.stop(Sounds.MUSIC_BOX)
+	AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
 
 
 ## Deja de gastar energía y congela a los profes antes de cambiar de pantalla.
@@ -690,6 +778,8 @@ func _end_night() -> void:
 	hallucinations.set_process(false)
 	call_subtitles.mute()
 	voice_line.stop()
+	distant.stop_all()
+	controls_card.close_card()
 	AudioManager.stop_all()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

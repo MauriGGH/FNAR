@@ -7,6 +7,8 @@ extends Control
 
 signal resumed()
 signal menu_requested()
+## Pidió volver a ver el recuadro de controles.
+signal controls_requested()
 
 const TITLE: String = "PAUSA"
 const TITLE_SIZE: int = 40
@@ -63,6 +65,10 @@ func _build() -> void:
 	resume.pressed.connect(close)
 	column.add_child(resume)
 
+	var controls: Button = UiButton.make("Controles")
+	controls.pressed.connect(func() -> void: controls_requested.emit())
+	column.add_child(controls)
+
 	var options: Button = UiButton.make("Opciones")
 	options.pressed.connect(func() -> void: _options.open())
 	column.add_child(options)
@@ -90,7 +96,7 @@ func _build() -> void:
 ## Escape es para cerrarlas, y de eso se encarga el propio panel.
 func _input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo or key.keycode != KEY_ESCAPE:
+	if key == null or not key.pressed or key.echo or key.keycode != Controls.PAUSE_KEY:
 		return
 	if _options != null and _options.is_open:
 		return

@@ -43,7 +43,7 @@ res://
 - **Grafo de habitaciones:** cada lugar es un id con conexiones. Los profes avanzan por rutas definidas.
 - **Animatronic (clase base):** nivel de IA 0 a 20, posición actual, ruta. Cada intervalo tiene una oportunidad de moverse: si `randi_range(1, 20) <= ai_level`, avanza. Cada profe hereda y sobrescribe solo lo que lo hace único.
 - **Sistema de cámaras:** 13 cámaras. Cada estado de una cámara es una imagen completa ya renderizada con los profes integrados (como en FNAF), por ejemplo `cam04_desplomada`, `cam04_despertando`, `cam04_vacia`; las pocas combinaciones de varios profes en la misma cámara tienen su propia imagen. Algunos estados tienen una variante rara (el profe mirando de frente, muy cerca de la cámara) que aparece de vez en cuando en lugar de la normal. Cuando un profe entra o sale de la cámara que el jugador está viendo, la imagen se cubre de estática fuerte entre 0.5 y 1 s y al aclararse ya muestra el nuevo estado. Mientras no haya imágenes, se usan etiquetas de texto.
-- **Oficina:** tres vistas fijas que se cambian **solo con A y D o con las flechas**, con un barrido de 0.35 s suave al entrar y al salir. El mouse ya no mueve la cámara, así que soltar el monitor te deja mirando donde estabas. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
+- **Oficina:** tres vistas que se mueven **solo con A y D o con las flechas**, nunca con el mouse. Mantener una desplaza la vista a ese lado a velocidad constante, con un arranque y un frenado cortos; al llegar al borde de la vista y seguir manteniendo, la cabeza gira a la de al lado con un barrido de 0.35 s. La vista nueva entra por el lado por el que vienes, para que el recorrido siga donde lo dejaste. Soltar el monitor te deja mirando donde estabas. Al frente, mampara de cristal hacia la recepción y el pasillo, con la puerta de entrada (chapa magnética) al fondo: de ahí vienen Barcosa, Mamador y Ureña. Al costado, mampara con un marco sin puerta hacia la franja de los cubículos y la escalera al techo: de ahí vienen Rochis, el Mago Eléctrico y la botarga del Come Trabas. Linterna hacia el pasillo, breaker, PC.
   Las fotos son de **1375x768** y vienen con su color y su oscuridad finales: el código **no les
   pone ningún filtro, tinte ni modulate**; el shader de vista solo hace el desenfoque del giro.
   La vista central está **a oscuras**, como el pasillo de FNAF 2: de fondo va
@@ -65,7 +65,13 @@ Todo el sonido pasa por el autoload **AudioManager**: nadie carga un archivo a m
 <archivo>, suena el provisional`). Para meter un sonido real basta con dejar el archivo con ese
 nombre en `assets/audio/`: no hay que tocar código.
 
-**Buses** (en `assets/audio/buses.tres`): Master, Ambiente, Efectos, Voces y Música. El jugador
+**Buses** (en `assets/audio/buses.tres`): Master, Ambiente, Efectos, Voces, Música y **Lejos**.
+El de Lejos es para lo que se oye a través de las paredes: manda al Ambiente con −8 dB y lleva un
+paso bajo a 2500 Hz, una reverb grande y un paneo que el AudioManager mueve según de dónde venga
+cada sonido (izquierda los cubículos y la escalera, centro el pasillo, derecha la sala de
+servidores). Como un `AudioStreamPlayer` no tiene paneo propio, el del bus se cambia justo antes
+de soltar el sonido; si dos lejanos de lados opuestos se pisaran, mandaría el último, pero son
+cosas sueltas y espaciadas. El jugador
 los sube y los baja en el menú de opciones y queda guardado en `save.cfg`. El TTS no sale por los
 buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume()` a mano.
 
@@ -128,6 +134,33 @@ corta en cualquier momento.
 La llamada de Ureña es otra cosa y sigue como estaba: conversación con respuestas, en la
 ventanita de la esquina y con síntesis de voz.
 
+## Música y sonidos lejanos
+
+**Música:** lo único con melodía es la cajita de la botarga, y funciona como en FNAF 2: **solo se
+oye con la CAM 4 en pantalla**. En la oficina no se oye... salvo cuando a la botarga le queda
+menos del 25 % de cuerda (`ComeTrabas.WARNING_THRESHOLD`): ahí entra `cajita_musical_aviso`, el
+mismo archivo a −22 dB por el bus Lejos, muy bajito y con eco, como aviso de que hay que ir a
+dársela. No hay ningún otro bucle con melodía. El zumbido de lámparas y ventilador
+(`ambiente_oficina`) se queda como estaba.
+
+**Sonidos lejanos** (`scenes/night/distant_sounds.gd`): cada profe tiene el suyo, con probabilidad
+(55 %, y 90 % el de Barcosa) y un mínimo de 6 s entre dos del mismo. Los de sitio van en bucle
+mientras el profe esté ahí.
+
+| id | Cuándo suena | Qué es |
+| --- | --- | --- |
+| `barcosa_corre` | Al salir de la CAM 10 | Pasos rápidos que se acercan |
+| `mamador_pasos` | Al cambiar de cuarto | Botas pesadas y un radio con estática |
+| `urena_banos` | En bucle, mientras está en los baños | Agua de lavabo |
+| `juan_teclado` | En bucle, en la sala de juntas | Tecleo lejano |
+| `armando_modem` | Al cambiar de cuarto | Módem negociando, distorsionado |
+| `audel_chispa` | En bucle, mientras está en el techo | Zumbido eléctrico y un trueno |
+| `rochis_silla` | Al cambiar de etapa en la silla | Rechinido de silla |
+| `lejos_portazo`, `lejos_silla`, `lejos_pasos_arriba`, `lejos_risa`, `lejos_platos` | Uno al azar cada 40 a 120 s | Ambiente de un edificio vacío |
+
+Los archivos van en `assets/audio/lejos/<id>.ogg`. Mientras no estén, suenan los provisionales de
+`tone_builder.gd`.
+
 ## Líneas sueltas de profe
 
 Frases de una sola tirada que dicen los profes en la oficina, con su **subtítulo pequeño** abajo
@@ -162,6 +195,22 @@ como override donde toca.
 | VT323 | lo que sale de una pantalla o un aparato: cámaras, PC, relojes, breaker, patch panel | OFL |
 | Special Elite | lo escrito a máquina: documentos, periódicos, causa del game over, intro de noche, 6 AM | Apache 2.0 |
 | Oswald (variable) | menús, botones y etiquetas | OFL |
+
+## Tutorial de la noche 1
+
+La primera vez que alguien juega la noche 1 sale un recuadro arriba a la izquierda con los
+controles, en VT323 sobre negro semitransparente (`scenes/night/controls_card.gd`). Se cierra con
+Esc o con la X, y se puede volver a abrir desde la pausa, con el botón **"Controles"**. Queda
+apuntado en `save.cfg` (`tutorial_seen`), así que solo sale solo una vez.
+
+**No pausa el juego** —se puede mirar y moverse con él puesto— pero la primera vez **el reloj no
+avanza** mientras esté abierto (`GameManager.set_clock_held()`), para que nadie se gaste media
+noche leyendo. Abierto desde la pausa no hace falta: ahí ya está todo parado.
+
+Los controles **no se escriben a mano** en el recuadro: salen de `data/controls.gd`, que lee del
+mapa de entrada los que son acciones (mirar, abrir el monitor) y define **una sola vez** los que
+estaban a fuego en el código (`FLASHLIGHT_KEY`, `PAUSE_KEY`), que ahora `office.gd` y
+`pause_menu.gd` piden de ahí. Si cambias una tecla, el tutorial cambia solo.
 
 ## Transiciones y pantallas
 

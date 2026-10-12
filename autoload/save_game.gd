@@ -36,6 +36,8 @@ var documents: Array[String] = []
 var nights_cleared: Array[int] = []
 ## Ganar una Custom Night con los ocho profes en 20, que vale la tercera estrella.
 var custom_mastered: bool = false
+## Si ya se enseñó el recuadro de controles de la noche 1. Solo sale una vez.
+var tutorial_seen: bool = false
 ## Los retos de Custom Night que ya se ganaron, por su id.
 var challenges_won: Array[String] = []
 
@@ -108,6 +110,14 @@ func mark_custom_mastered() -> void:
 
 
 ## Deja apuntado que se ganó un reto de Custom Night.
+## Deja apuntado que ya vio el tutorial: no vuelve a salir solo.
+func mark_tutorial_seen() -> void:
+	if tutorial_seen:
+		return
+	tutorial_seen = true
+	save_game()
+
+
 func mark_challenge_won(challenge_id: String) -> void:
 	if challenge_id.is_empty() or challenge_id in challenges_won:
 		return
@@ -186,6 +196,7 @@ func reset() -> void:
 	nights_cleared.clear()
 	custom_mastered = false
 	challenges_won.clear()
+	tutorial_seen = false
 	save_game()
 
 
@@ -200,6 +211,7 @@ func save_game() -> void:
 	file.set_value(SECTION_PROGRESS, "nights_cleared", nights_cleared)
 	file.set_value(SECTION_PROGRESS, "custom_mastered", custom_mastered)
 	file.set_value(SECTION_PROGRESS, "challenges_won", challenges_won)
+	file.set_value(SECTION_PROGRESS, "tutorial_seen", tutorial_seen)
 	file.set_value(SECTION_OPTIONS, "fullscreen", fullscreen)
 	file.set_value(SECTION_OPTIONS, "bus_volumes", bus_volumes)
 	file.save(SAVE_PATH)
@@ -220,6 +232,7 @@ func load_game() -> void:
 	nights_cleared = _to_int_array(file.get_value(SECTION_PROGRESS, "nights_cleared", []))
 	custom_mastered = bool(file.get_value(SECTION_PROGRESS, "custom_mastered", false))
 	challenges_won = _to_string_array(file.get_value(SECTION_PROGRESS, "challenges_won", []))
+	tutorial_seen = bool(file.get_value(SECTION_PROGRESS, "tutorial_seen", false))
 	fullscreen = bool(file.get_value(SECTION_OPTIONS, "fullscreen", true))
 	bus_volumes = file.get_value(SECTION_OPTIONS, "bus_volumes", {}) as Dictionary
 	GameManager.player_name = player_name

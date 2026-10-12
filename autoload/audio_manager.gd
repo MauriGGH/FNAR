@@ -36,6 +36,7 @@ func play(id: String) -> void:
 	var player: AudioStreamPlayer = _player_for(id)
 	if player == null:
 		return
+	_apply_pan(id)
 	player.play()
 
 
@@ -45,7 +46,25 @@ func play_loop(id: String) -> void:
 	var player: AudioStreamPlayer = _player_for(id)
 	if player == null or player.playing:
 		return
+	_apply_pan(id)
 	player.play()
+
+
+## Los sonidos lejanos vienen de un lado o del otro. Un AudioStreamPlayer no
+## tiene paneo propio, así que se mueve el del bus Lejos justo antes de
+## soltarlos. Si dos lejanos de lados opuestos se pisan, manda el último; como
+## son cosas sueltas y espaciadas, en la práctica no se nota.
+func _apply_pan(id: String) -> void:
+	if not Sounds.is_distant(id):
+		return
+	var index: int = AudioServer.get_bus_index(Sounds.BUS_DISTANT)
+	if index < 0:
+		return
+	for slot: int in AudioServer.get_bus_effect_count(index):
+		var panner: AudioEffectPanner = AudioServer.get_bus_effect(index, slot) as AudioEffectPanner
+		if panner != null:
+			panner.pan = Sounds.pan_of(id)
+			return
 
 
 func stop(id: String) -> void:

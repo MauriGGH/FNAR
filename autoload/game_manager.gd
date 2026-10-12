@@ -21,6 +21,9 @@ var player_name: String = PLAYER_NAME
 var current_night: int = 1
 var current_hour: int = NightConfig.START_HOUR
 var is_night_active: bool = false
+## El reloj parado sin pausar el juego: lo usa el tutorial de la noche 1, que
+## deja jugar pero no deja que se gaste la noche leyendo.
+var is_clock_held: bool = false
 var last_game_over_cause: String = ""
 ## El id del profe que te atrapó (image_slug()). Lo usa la pantalla de game over
 ## para enseñar la cámara de donde salió. Vacío si no fue nadie en concreto.
@@ -87,6 +90,13 @@ func prepare_custom_night(levels: Dictionary, challenge_id: String = "") -> void
 		else NightConfig.MAX_POWER
 
 
+## Para el reloj o lo suelta, sin tocar el resto del juego. Lo usa el recuadro
+## de controles de la noche 1: se puede mirar y moverse, pero no se gasta la
+## noche leyendo.
+func set_clock_held(held: bool) -> void:
+	is_clock_held = held
+
+
 ## true si esta Custom Night lleva los ocho profes en 20. Es lo que vale la
 ## tercera estrella del menú.
 func is_custom_night_maxed() -> bool:
@@ -110,6 +120,7 @@ func start_night(night: int = current_night) -> void:
 	current_night = night
 	current_hour = NightConfig.START_HOUR
 	_hour_elapsed = 0.0
+	is_clock_held = false
 	last_game_over_cause = ""
 	last_game_over_slug = ""
 	_hallway_holder = null
@@ -332,6 +343,9 @@ func _process(delta: float) -> void:
 		_process_ai_boosts(delta)
 		_process_tickets()
 	if not is_night_active:
+		return
+	# El tutorial de la noche 1 para el reloj sin pausar el juego.
+	if is_clock_held:
 		return
 	_hour_elapsed += delta
 	var hour_duration: float = NightConfig.hour_duration()

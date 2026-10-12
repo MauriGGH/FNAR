@@ -104,8 +104,9 @@ func _begin_sparks() -> void:
 	is_showing_sparks = true
 	_sparks_elapsed = 0.0
 	_left = _melody_length
-	# La cajita de la botarga se calla: a oscuras solo se oye esta.
+	# Las cajitas de la botarga se callan: a oscuras solo se oye esta.
 	AudioManager.stop(Sounds.MUSIC_BOX)
+	AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
 	AudioManager.play(Sounds.MUSIC_BOX_BLACKOUT)
 	sparks_started.emit()
 	queue_redraw()
