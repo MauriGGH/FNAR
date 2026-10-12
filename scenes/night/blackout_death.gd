@@ -2,8 +2,10 @@ extends Control
 
 ## La muerte por apagón. Cuando la energía llega a 0 todo se apaga y el jugador
 ## se queda a oscuras. Entre 3 y 12 s después aparecen dos chispas azules a lo
-## lejos, que parpadean al ritmo de la cajita musical: una por pulso. Cuando la
-## melodía acaba, las chispas se apagan y hay silencio total entre 2 y 5 s. Luego
+## lejos, que parpadean al ritmo de la cajita musical: una por pulso. No suena la
+## canción entera, sino **un tramo al azar** de 8 a 20 s que entra por un pulso
+## de la primera mitad y sale por otro pulso, con un fundido corto. Cuando el
+## tramo acaba, las chispas se apagan y hay silencio total entre 2 y 5 s. Luego
 ## se oyen tres pasos que se acercan, y de ahí viene el salto del Mago Eléctrico.
 ##
 ## Pasa en todas las noches, aunque el Mago esté en nivel 0: el apagón es suyo.
@@ -18,6 +20,12 @@ enum Phase { IDLE, WAITING, SPARKS, SILENCE, STEPS }
 
 const MIN_WAIT: float = 3.0
 const MAX_WAIT: float = 12.0
+## El tramo de la canción que se oye: cuánto dura, de qué parte puede salir y lo
+## que tarda en apagarse al final.
+const MIN_SEGMENT: float = 8.0
+const MAX_SEGMENT: float = 20.0
+const SEGMENT_START_RANGE: float = 0.5
+const SEGMENT_FADE: float = 0.4
 ## El silencio total después de la melodía, antes de los pasos.
 const MIN_SILENCE: float = 2.0
 const MAX_SILENCE: float = 5.0
@@ -40,14 +48,18 @@ var _sparks_elapsed: float = 0.0
 ## ritmo. Salen de `data/audio/cajita_musical_notas.json`; si no está, se usan
 ## los del provisional de ToneBuilder.
 var _pulse_times: PackedFloat32Array = PackedFloat32Array()
-var _melody_length: float = 0.0
+## El tramo que le tocó a esta partida: en qué segundo de la canción entra y en
+## qué segundo sale. Las chispas siguen los pulsos de ahí dentro.
+var _segment_start: float = 0.0
+var _segment_end: float = 0.0
+## Si todavía falta apagar la música con su fundido.
+var _fade_pending: bool = false
 
 
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pulse_times = MusicBox.pulse_times()
-	_melody_length = MusicBox.length()
 
 
 ## Empieza la cuenta a oscuras. El tiempo es al azar para que no se aprenda.
@@ -66,6 +78,7 @@ func start() -> void:
 ## Se corta: dieron las 6 AM y el jugador se salvó. Puede pasar en cualquier
 ## fase, también con la melodía ya sonando.
 func cancel() -> void:
+	_fade_pending = false
 	if is_running:
 		AudioManager.stop(Sounds.MUSIC_BOX_BLACKOUT)
 		AudioManager.stop(Sounds.FOOTSTEPS)
@@ -85,6 +98,10 @@ func _process(delta: float) -> void:
 				_begin_sparks()
 		Phase.SPARKS:
 			_sparks_elapsed += delta
+			# Al pasar el último pulso del tramo, la música se va apagando.
+			if _fade_pending and _sparks_elapsed >= _segment_length():
+				_fade_pending = false
+				AudioManager.fade_out(Sounds.MUSIC_BOX_BLACKOUT, SEGMENT_FADE)
 			queue_redraw()
 			if _left <= 0.0:
 				_begin_silence()
@@ -98,16 +115,29 @@ func _process(delta: float) -> void:
 			pass
 
 
-## Las chispas y la melodía, juntas y desde el principio de las dos.
+## Lo que dura el tramo que le tocó a esta partida.
+func _segment_length() -> float:
+	return maxf(_segment_end - _segment_start, 0.0)
+
+
+## Las chispas y el tramo de la canción, juntos: la música entra por donde
+## empieza el tramo y las chispas siguen sus pulsos.
 func _begin_sparks() -> void:
 	_phase = Phase.SPARKS
 	is_showing_sparks = true
 	_sparks_elapsed = 0.0
-	_left = _melody_length
+	var segment: Vector2 = MusicBox.random_segment(
+		MIN_SEGMENT, MAX_SEGMENT, SEGMENT_START_RANGE)
+	_segment_start = segment.x
+	_segment_end = segment.y
+	# La fase dura el tramo más el fundido, para que el último pulso se oiga
+	# entero antes de que se apague.
+	_left = _segment_length() + SEGMENT_FADE
+	_fade_pending = true
 	# Las cajitas de la botarga se callan: a oscuras solo se oye esta.
 	AudioManager.stop(Sounds.MUSIC_BOX)
 	AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
-	AudioManager.play(Sounds.MUSIC_BOX_BLACKOUT)
+	AudioManager.play_from(Sounds.MUSIC_BOX_BLACKOUT, _segment_start)
 	sparks_started.emit()
 	queue_redraw()
 
@@ -116,6 +146,7 @@ func _begin_sparks() -> void:
 func _begin_silence() -> void:
 	_phase = Phase.SILENCE
 	is_showing_sparks = false
+	_fade_pending = false
 	_left = randf_range(MIN_SILENCE, MAX_SILENCE)
 	AudioManager.stop(Sounds.MUSIC_BOX_BLACKOUT)
 	queue_redraw()
@@ -136,10 +167,19 @@ func _fire() -> void:
 	strike.emit()
 
 
-## Las chispas están encendidas si estamos dentro de la ventana de un pulso.
+## Las chispas están encendidas si estamos dentro de la ventana de un pulso del
+## tramo. Lo que se compara es el segundo de la canción por el que va, no el
+## tiempo desde que empezaron las chispas: el tramo no arranca en el 0.
 func _is_lit() -> bool:
+	var now: float = _segment_start + _sparks_elapsed
+	if now > _segment_end:
+		return false
 	for time: float in _pulse_times:
-		if _sparks_elapsed >= time and _sparks_elapsed < time + SPARK_ON_TIME:
+		if time < _segment_start:
+			continue
+		if time > _segment_end:
+			return false
+		if now >= time and now < time + SPARK_ON_TIME:
 			return true
 	return false
 
@@ -168,7 +208,8 @@ func phase_text() -> String:
 		Phase.WAITING:
 			return "a oscuras (%.1f s)" % _left
 		Phase.SPARKS:
-			return "chispas con la melodía (%.1f s)" % _left
+			return "chispas con el tramo %.1f-%.1f s de la canción (quedan %.1f s)" % [
+				_segment_start, _segment_end, _left]
 		Phase.SILENCE:
 			return "silencio (%.1f s)" % _left
 		Phase.STEPS:

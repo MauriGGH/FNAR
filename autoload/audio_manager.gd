@@ -17,9 +17,13 @@ signal bus_volume_changed(bus: String, value: float)
 ## Lo más bajo que llega el deslizador antes de callar del todo.
 const MIN_DB: float = -40.0
 
+## Lo bajo que queda un sonido al final de un fundido, antes de pararlo.
+const FADE_SILENCE_DB: float = -60.0
+
 var _players: Dictionary = {}      # id -> AudioStreamPlayer
 var _streams: Dictionary = {}      # id -> AudioStream
 var _warned: Dictionary = {}       # id -> true, para avisar una sola vez
+var _fades: Dictionary = {}        # id -> Tween del fundido que esté corriendo
 
 
 func _ready() -> void:
@@ -38,6 +42,45 @@ func play(id: String) -> void:
 		return
 	_apply_pan(id)
 	player.play()
+
+
+## Suena desde ese segundo, no desde el principio. Lo usa el apagón, que no
+## toca la canción entera sino un tramo de en medio.
+func play_from(id: String, from_position: float) -> void:
+	var player: AudioStreamPlayer = _player_for(id)
+	if player == null:
+		return
+	_stop_fade(id)
+	player.volume_db = Sounds.volume_db(id)
+	_apply_pan(id)
+	player.play(maxf(from_position, 0.0))
+
+
+## Lo baja a nada en estos segundos y lo para. Al acabar lo deja a su volumen
+## de catálogo otra vez, para que la próxima vez suene normal.
+func fade_out(id: String, seconds: float) -> void:
+	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
+	if player == null or not player.playing:
+		return
+	_stop_fade(id)
+	var tween: Tween = create_tween()
+	_fades[id] = tween
+	tween.tween_property(player, "volume_db", FADE_SILENCE_DB, maxf(seconds, 0.01))
+	tween.tween_callback(_end_fade.bind(id))
+
+
+## Corta el fundido que estuviera corriendo, sin tocar el volumen.
+func _stop_fade(id: String) -> void:
+	var tween: Tween = _fades.get(id, null) as Tween
+	if tween != null and tween.is_valid():
+		tween.kill()
+	_fades.erase(id)
+
+
+## El fundido llegó al final: parar y dejar el volumen como estaba.
+func _end_fade(id: String) -> void:
+	_fades.erase(id)
+	stop(id)
 
 
 ## Suena en bucle. Si ya estaba sonando, lo deja seguir para que no se reinicie
@@ -68,9 +111,15 @@ func _apply_pan(id: String) -> void:
 
 
 func stop(id: String) -> void:
+	_stop_fade(id)
 	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
-	if player != null and player.playing:
+	if player == null:
+		return
+	if player.playing:
 		player.stop()
+	# Si venía de un fundido, su volumen quedó por el suelo: se devuelve al del
+	# catálogo para que la próxima vez no suene callado.
+	player.volume_db = Sounds.volume_db(id)
 
 
 ## El tono de un sonido: 1.0 es el normal, menos es más grave y más lento. Lo

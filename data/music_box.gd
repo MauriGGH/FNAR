@@ -47,6 +47,40 @@ static func length() -> float:
 	return _length if _length > 0.0 else ToneBuilder.music_box_length()
 
 
+## Un tramo al azar de la canción, para el apagón: **empieza en un pulso** de la
+## primera parte (la que diga start_fraction) y **acaba en otro pulso**, el que
+## caiga más cerca de la duración que se pidió. Devuelve el principio y el final
+## en segundos. Si no hay pulsos a mano, devuelve un tramo del largo pedido
+## contado desde el principio.
+static func random_segment(min_seconds: float, max_seconds: float,
+		start_fraction: float = 0.5) -> Vector2:
+	var wanted: float = randf_range(min_seconds, max_seconds)
+	var times: PackedFloat32Array = pulse_times()
+	var total: float = length()
+	if times.size() < 2:
+		return Vector2(0.0, minf(total, wanted))
+
+	# El pulso por donde entra, de la primera parte de la canción.
+	var last_start: int = maxi(0, floori(float(times.size()) * start_fraction) - 1)
+	var from: int = randi_range(0, last_start)
+	var start: float = times[from]
+
+	# Y el pulso que cae más cerca de lo que tenía que durar.
+	var best: int = -1
+	var best_gap: float = 0.0
+	for i: int in range(from + 1, times.size()):
+		var gap: float = absf((times[i] - start) - wanted)
+		if best < 0 or gap < best_gap:
+			best = i
+			best_gap = gap
+	if best < 0:
+		return Vector2(start, minf(total, start + wanted))
+	var end: float = times[best]
+	if total > 0.0:
+		end = minf(end, total)
+	return Vector2(start, end)
+
+
 ## true si los tiempos salieron del JSON y no del provisional.
 static func has_data() -> bool:
 	_load()

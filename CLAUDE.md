@@ -394,8 +394,12 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
     secuencia de cuatro tiempos, en `blackout_death.gd`: 3 a 12 s al azar de oscuridad total;
     aparecen dos chispas azules a lo lejos que **parpadean al ritmo de la cajita musical**, una
-    por pulso (los de su JSON), mientras suena la canción entera y una sola vez —son 28 s, así que
-    es una espera larga a propósito— y la de la botarga se calla, que a oscuras solo se oye esta; al acabar la melodía, las chispas se apagan y hay **silencio total de 2 a 5 s**; luego
+    por pulso (los de su JSON), y la de la botarga se calla, que a oscuras solo se oye esta. No
+    suena la canción entera: es **un tramo al azar**, que entra por un pulso de la **primera
+    mitad** y dura entre **8 y 20 s**, acabando también en un pulso, con un fundido de 0.4 s
+    (`MusicBox.random_segment()`, y los números en `blackout_death.gd`). Las chispas siguen los
+    pulsos **de ese tramo**, no los del principio de la canción. La cajita de la CAM 4 y el aviso
+    lejano no cambian. Al acabar el tramo, las chispas se apagan y hay **silencio total de 2 a 5 s**; luego
     se oyen **tres pasos que se acercan** y, al terminar, `jumpscare_audel` con la animación de
     siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
