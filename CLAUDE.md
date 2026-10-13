@@ -154,11 +154,12 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
 | `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
-| `tic_boom_1..3`, `tic_golpe_metal`, `tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_piano`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno de los once al azar en cada uno |
+| `tic_boom_1..3`, `tic_golpe_metal`, `tic_vidrio`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_piano`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno de los diez al azar en cada uno |
+| `tic_rechinido` | `menu/tic_rechinido.ogg` | Efectos | −4 | no | **fuera del sorteo**: sonaba a puerta y en el menú no hay ninguna |
 | `estatica_inquietante` | `estatica_inquietante.ogg` | Efectos | −14 | no | de fondo en el tic «ultra» del menú |
 | `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | Efectos | −16 | no | debajo de la estática del game over (mismo archivo) |
 | `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −6 | no | pasos recorriendo el pasillo, con los demás ambientales |
-| `menu_musica_final` | `menu/menu_musica_final.ogg` | Música | −12 | sí | la música del menú principal, la única |
+| `menu_musica_final` | `menu/menu_musica_final.ogg` | Música | −4 | sí | la música del menú principal, la única |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
@@ -956,8 +957,9 @@ Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shade
 `scenes/ui/locked_art.gdshader`) y un "???" encima.
 
 **Audio del menú principal:** **una sola pista**, `assets/audio/menu/menu_musica_final.ogg`
-(64 s, con el bucle marcado en el import), en bucle por el bus Música a −12 dB, más un hilo de
-estática (`estatica_camara`, −30 dB) encima. Ya trae **el dron de voces mezclado dentro**, así que
+(64 s, con el bucle marcado en el import), en bucle por el bus Música **a −4 dB, a la par de los
+tics**, que son los efectos que suenan con ella, más un hilo de estática (`estatica_camara`,
+−30 dB) encima. Ya trae **el dron de voces mezclado dentro**, así que
 no lleva capas aparte: antes eran tres pistas a la vez y dos opciones para comparar (A y B), y
 tanto las capas como el selector se quitaron.
 
@@ -989,9 +991,11 @@ El tic dura unos **0.35 s** y va en cuatro tramos:
 | 0.15 s | **Congelado**: el profe quieto y sin desgarro, que es lo que asusta |
 | 0.05 s | Uno o dos cuadros de estática a 0.5 de opacidad, que tapan la vuelta a `menu_fondo_0` |
 
-**El golpe del tic es uno de once**, en `assets/audio/menu/`: `tic_boom_1..3`,
-`tic_golpe_metal`, `tic_vidrio`, `tic_rechinido`, `tic_raspon`, `tic_golpe_eco`,
-`tic_whoosh_golpe`, `tic_piano` y `tic_estatica`, todos a −4 dB. Se sortea uno en cada tic **sin
+**El golpe del tic es uno de diez**, en `assets/audio/menu/`: `tic_boom_1..3`,
+`tic_golpe_metal`, `tic_vidrio`, `tic_raspon`, `tic_golpe_eco`,
+`tic_whoosh_golpe`, `tic_piano` y `tic_estatica`, todos a −4 dB. `tic_rechinido`
+está fuera del sorteo: sonaba a una puerta abriéndose y en el menú no hay
+ninguna. Su archivo y su id siguen ahí, y el panel de pruebas lo puede soltar. Se sortea uno en cada tic **sin
 repetir ninguno de los dos últimos** (`Sounds.menu_tic()`), así que no se le agarra el ritmo. El
 del "ultra" es aparte: `menu_glitch_largo`, **uno de los tres booms** (`Sounds.menu_boom()`) y
 `estatica_inquietante` de fondo a −14 dB. Todos se prueban desde F1 → Audio, sueltos o sorteados

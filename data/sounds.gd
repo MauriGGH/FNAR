@@ -60,11 +60,15 @@ const FOOTSTEPS: String = "pasos_acercandose"
 ## última; LOW_HIT es la de respaldo, la única con provisional por código.
 const LOW_HIT: String = "golpe_grave"
 const LOW_HITS: Array[String] = ["golpe_grave_1", "golpe_grave_2", "golpe_grave_3"]
-## Los ocho golpes del tic del menú. En cada tic suena uno al azar, y no se
-## repite ninguno de los dos últimos: así no se le agarra el ritmo.
+## Los golpes del tic del menú. En cada tic suena uno al azar, y no se repite
+## ninguno de los dos últimos: así no se le agarra el ritmo.
+##
+## `tic_rechinido` **ya no entra en el sorteo**: sonaba a puerta abriéndose y en
+## el menú no hay ninguna puerta. Su id se queda registrado, con su archivo, por
+## si algún día le sirve a otra cosa.
 const MENU_TICS: Array[String] = [
 	"tic_boom_1", "tic_boom_2", "tic_boom_3", "tic_golpe_metal", "tic_vidrio",
-	"tic_rechinido", "tic_raspon", "tic_golpe_eco", "tic_whoosh_golpe",
+	"tic_raspon", "tic_golpe_eco", "tic_whoosh_golpe",
 	"tic_piano", "tic_estatica",
 ]
 ## Los tres booms, que son los gordos: uno de ellos acompaña al glitch largo
@@ -468,7 +472,7 @@ const CATALOG: Dictionary = {
 	"tic_rechinido": {
 		"file": "menu/tic_rechinido.ogg", "bus": "Efectos",
 		"volume_db": -4.0, "generator": "",
-		"desc": "Tic del menú: Un rechinido metálico, incómodo.",
+		"desc": "Un rechinido metálico, incómodo. Fuera del sorteo del tic: sonaba a puerta.",
 	},
 	"tic_raspon": {
 		"file": "menu/tic_raspon.ogg", "bus": "Efectos",
@@ -507,7 +511,9 @@ const CATALOG: Dictionary = {
 	},
 	"menu_musica_final": {
 		"file": "menu/menu_musica_final.ogg", "bus": "Música",
-		"volume_db": -12.0, "generator": "menu_music",
+		# A la par de los tics del menú, que son los efectos que suenan con
+		# ella: los dos a -4 dB.
+		"volume_db": -4.0, "generator": "menu_music",
 		"desc": "La música del menú principal: bucle de 64 s, con el dron de voces ya mezclado dentro.",
 	},
 	"pasos_acercandose": {
