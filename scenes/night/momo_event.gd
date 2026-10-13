@@ -7,8 +7,9 @@ extends Control
 ## lentísimo hacia él.
 ##
 ## Los tiempos salen de la canción (`momo_cancion`, 15.3 s): el screamer entra
-## en su segundo 12.10 y el susto acaba cuando acaba el audio. Si el archivo
-## faltara, se usa `Momo.FALLBACK_TIME`.
+## en su segundo 12.10, se queda **1.2 s** y con él se acaba el susto; lo que le
+## quede de canción se va en el corte a negro. Si el archivo faltara, se usa
+## `Momo.FALLBACK_TIME`.
 ##
 ## El que para el juego es el `night.gd`: esta capa solo avisa de cuándo empieza
 ## y de cuándo termina.
@@ -118,17 +119,19 @@ func _tick_song(delta: float) -> void:
 		_scream_elapsed = 0.0
 
 
-## El screamer: crece de golpe y se queda temblando y parpadeando hasta que la
-## canción se acaba.
+## El screamer: crece de golpe, tiembla y parpadea, y a los 1.2 s se corta. Un
+## golpe corto asusta más que uno que se queda mirándote.
 func _tick_scream(delta: float) -> void:
 	_song += delta
 	_scream_elapsed += delta
 	zoom_changed.emit(lerpf(Momo.ZOOM_FROM, Momo.ZOOM_TO,
 		clampf(_song / _total, 0.0, 1.0)))
-	if _song >= _total:
+	if _scream_elapsed >= Momo.SCREAMER_TIME or _song >= _total:
 		_phase = Phase.BLACK
 		_left = Momo.BLACK_TIME
 		_is_dark = true
+		# La canción se va con el negro en vez de cortarse en seco.
+		AudioManager.fade_out(Sounds.MOMO_SONG, Momo.BLACK_TIME)
 
 
 func _stop() -> void:

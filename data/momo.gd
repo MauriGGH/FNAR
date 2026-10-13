@@ -36,9 +36,13 @@ const ZOOM_TO: float = 1.06
 const ZOOM_AT: Vector2 = Vector2(0.62, 0.45)
 
 # --- El screamer --------------------------------------------------------------
-## En qué segundo de la canción entra, y de qué alto a qué alto crece (en
-## fracción del alto de la pantalla) y en cuánto tiempo.
+## En qué segundo de la canción entra y **lo que se queda en pantalla**: un
+## golpe corto, que es lo que asusta. Antes se quedaba hasta que se acababa el
+## audio (3.2 s) y se hacía largo; ahora se corta y la canción se va con él.
 const SCREAMER_AT: float = 12.10
+const SCREAMER_TIME: float = 1.2
+## De qué alto a qué alto crece (en fracción del alto de la pantalla) y en
+## cuánto tiempo.
 const SCREAMER_FROM: float = 0.6
 const SCREAMER_TO: float = 1.2
 const SCREAMER_GROW_TIME: float = 0.3

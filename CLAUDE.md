@@ -784,8 +784,8 @@ estuviera sonando **se quedan congelados donde van**, no se cortan
 | --- | --- |
 | 0.0 s | **Parpadeo de luz**: dos o tres cortes a negro de 80 ms. En el último, ya a oscuras, la vista izquierda cambia a la foto de Momo |
 | 0.0 → 15.3 s | Suena su canción. La vista **se va acercando a él**, de 1.0 a 1.06, con el pivote en su cara (x 0.62, y 0.45). **El parallax del mouse sigue funcionando**: es lo que mantiene la sensación de estar ahí |
-| 12.10 s | **El screamer** a pantalla completa sobre negro, creciendo del 60 % al 120 % del alto en 0.3 s, con temblor fuerte y parpadeo, hasta que se acaba el audio |
-| al acabar | Corte a negro de 0.3 s y vuelve la vista izquierda de siempre. **No mata, no quita energía y no mueve a nadie**: la noche sigue exactamente donde estaba |
+| 12.10 s | **El screamer** a pantalla completa sobre negro, creciendo del 60 % al 120 % del alto en 0.3 s, con temblor fuerte y parpadeo. Se queda **1.2 s** y se corta: un golpe corto asusta más que uno que se queda mirándote |
+| 13.3 s | Corte a negro de 0.3 s, con la canción yéndose en ese fundido, y vuelve la vista izquierda de siempre. **No mata, no quita energía y no mueve a nadie**: la noche sigue exactamente donde estaba |
 
 El reparto es el de siempre: `scenes/night/momo_event.gd` lleva lo que va a pantalla completa (el
 parpadeo, el screamer, el negro) y le pide a la oficina lo suyo por señales —`set_momo_active()`
