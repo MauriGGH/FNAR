@@ -138,10 +138,11 @@ func start_night(night: int = current_night) -> void:
 	patch_panel.reset_for_night()
 	is_in_server_room = false
 	is_ai_window_open = false
-	has_totem = false
+	# El tótem se gana entre noches, así que se trae del guardado.
+	has_totem = SaveGame.has_totem
 	is_rescuing = false
 	_sergio_used = false
-	totem_changed.emit(false)
+	totem_changed.emit(has_totem)
 	is_night_active = true
 	PowerManager.reset(start_power)
 	PowerManager.set_draining(true)
@@ -257,6 +258,7 @@ func _try_sergio_rescue(cause: String) -> bool:
 		return false
 	_sergio_used = true
 	has_totem = false
+	SaveGame.set_totem(false)
 	is_rescuing = true
 	totem_changed.emit(false)
 	sergio_rescued.emit(cause)
@@ -273,6 +275,7 @@ func give_totem() -> void:
 	if has_totem:
 		return
 	has_totem = true
+	SaveGame.set_totem(true)
 	totem_changed.emit(true)
 
 

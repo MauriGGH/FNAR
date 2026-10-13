@@ -892,11 +892,13 @@ func debug_sergio_rescue() -> void:
 	GameManager.trigger_game_over(cause)
 
 
-## Y el minijuego, abriendo la PC si hace falta.
-func debug_open_minigame() -> void:
-	if not pc_screen.is_open:
-		pc_screen.open()
-	pc_screen.open_minigame()
+## Y la maquinita, en el nivel que se le pida. Como es una pantalla completa,
+## al salir de ella la noche vuelve a empezar: es un botón de pruebas.
+func debug_open_minigame(level: int) -> void:
+	ArcadeScreen.pending_level = level
+	ArcadeScreen.next_scene = Screens.NIGHT
+	get_tree().paused = false
+	get_tree().change_scene_to_file(Screens.ARCADE)
 
 
 func _on_power_depleted() -> void:

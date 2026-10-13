@@ -58,6 +58,20 @@ static func build(generator: String) -> AudioStreamWAV:
 			return menu_blip()
 		"menu_music":
 			return menu_music()
+		"arcade_level1":
+			return arcade_level(1)
+		"arcade_level2":
+			return arcade_level(2)
+		"arcade_level3":
+			return arcade_level(3)
+		"arcade_jump":
+			return arcade_jump()
+		"arcade_pick":
+			return arcade_pick()
+		"arcade_boot":
+			return arcade_boot()
+		"arcade_music_box":
+			return arcade_music_box()
 		"breach":
 			return breach()
 		"phone_hang_up":
@@ -526,6 +540,128 @@ static func breach() -> AudioStreamWAV:
 			var t: float = float(i) / float(samples)
 			var envelope: float = sin(t * PI)
 			buffer[index] += randf_range(-1.0, 1.0) * envelope * BREACH_SHOUT_AMPLITUDE
+	return _to_wav(buffer)
+
+
+# --- La maquinita, en 8 bits -------------------------------------------------
+## Las melodías de los minijuegos, hechas con ondas cuadradas, que es lo que
+## suena a consola vieja. La del nivel 1 va afinada; la del 2 es la misma pero
+## **desafinada**, como una cinta que se estira; la del 3 no tiene melodía: es
+## un zumbido grave y nada más.
+const ARCADE_BEAT: float = 0.16
+const ARCADE_BASE_HZ: float = 262.0   # un do
+## La melodía, en semitonos desde la base. Son dos compases que dan la vuelta.
+const ARCADE_MELODY: Array[int] = [
+	0, 4, 7, 12, 7, 4, 0, 4,
+	5, 9, 12, 9, 5, 2, 0, -5,
+]
+## Lo que se desafina cada nivel, en semitonos.
+const ARCADE_DETUNE: Array[float] = [0.0, 0.35, 0.0]
+const ARCADE_AMPLITUDE: float = 0.3
+## El zumbido del nivel 3.
+const ARCADE_DRONE_HZ: float = 58.0
+const ARCADE_DRONE_LENGTH: float = 4.0
+
+
+## Una onda cuadrada: o arriba o abajo, nada en medio. Es el sonido de la NES.
+static func _square(phase: float) -> float:
+	return 1.0 if fmod(phase, TAU) < PI else -1.0
+
+
+static func arcade_level(level: int) -> AudioStreamWAV:
+	if level >= 3:
+		return arcade_drone()
+	var length: float = ARCADE_BEAT * float(ARCADE_MELODY.size())
+	var buffer: PackedFloat32Array = _buffer(length)
+	var detune: float = ARCADE_DETUNE[clampi(level, 1, 3) - 1]
+	for note: int in ARCADE_MELODY.size():
+		var hz: float = ARCADE_BASE_HZ * pow(2.0, (float(ARCADE_MELODY[note]) + detune) / 12.0)
+		var first: int = int(float(note) * ARCADE_BEAT * SAMPLE_RATE)
+		var samples: int = int(ARCADE_BEAT * SAMPLE_RATE)
+		for i: int in samples:
+			var index: int = first + i
+			if index >= buffer.size():
+				break
+			var t: float = float(i) / float(SAMPLE_RATE)
+			# Cada nota ataca y se apaga, para que se oigan separadas.
+			var envelope: float = minf(float(i) / 120.0, 1.0) * exp(-5.0 * t)
+			buffer[index] += _square(TAU * hz * t) * envelope * ARCADE_AMPLITUDE
+			# Y un bajo una octava abajo, a la mitad de volumen.
+			buffer[index] += _square(TAU * hz * 0.5 * t) * envelope \
+				* ARCADE_AMPLITUDE * 0.4
+	return _to_wav(buffer)
+
+
+## El zumbido del nivel 3: grave, con un batido lento que inquieta.
+static func arcade_drone() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(ARCADE_DRONE_LENGTH)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var wobble: float = 1.0 + 0.012 * sin(TAU * 0.25 * t)
+		buffer[i] = (_square(TAU * ARCADE_DRONE_HZ * wobble * t) * 0.18
+			+ sin(TAU * ARCADE_DRONE_HZ * 1.5 * t) * 0.06)
+	return _to_wav(buffer)
+
+
+## El pitido de saltar: una onda cuadrada que sube de golpe.
+static func arcade_jump() -> AudioStreamWAV:
+	var length: float = 0.12
+	var buffer: PackedFloat32Array = _buffer(length)
+	var phase: float = 0.0
+	for i: int in buffer.size():
+		var t: float = float(i) / float(length * SAMPLE_RATE)
+		phase += TAU * lerpf(300.0, 760.0, t) / float(SAMPLE_RATE)
+		buffer[i] = _square(phase) * (1.0 - t) * 0.3
+	return _to_wav(buffer)
+
+
+## Y el de recoger: dos notas cortas, de premio.
+static func arcade_pick() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(0.14)
+	for step: int in 2:
+		var hz: float = 660.0 if step == 0 else 990.0
+		var first: int = int(float(step) * 0.06 * SAMPLE_RATE)
+		var samples: int = int(0.055 * SAMPLE_RATE)
+		for i: int in samples:
+			var index: int = first + i
+			if index >= buffer.size():
+				break
+			var t: float = float(i) / float(SAMPLE_RATE)
+			buffer[index] = _square(TAU * hz * t) * exp(-22.0 * t) * 0.3
+	return _to_wav(buffer)
+
+
+## El arranque: un bip largo con su chisporroteo de estática.
+static func arcade_boot() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(0.45)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var hiss: float = randf_range(-1.0, 1.0) * exp(-9.0 * t) * 0.18
+		var beep: float = 0.0
+		if t > 0.12 and t < 0.3:
+			beep = _square(TAU * 880.0 * t) * 0.26
+		buffer[i] = hiss + beep
+	return _to_wav(buffer)
+
+
+## La cajita musical del nivel 3, pero rota: la melodía de la botarga bajada de
+## tono y con el afinado yéndose.
+static func arcade_music_box() -> AudioStreamWAV:
+	var length: float = 2.0
+	var buffer: PackedFloat32Array = _buffer(length)
+	var beat: float = 0.25
+	var notes: Array[int] = [0, 3, 7, 5, 3, 0, -2, 0]
+	for note: int in notes.size():
+		var slide: float = -1.2 * float(note) / float(notes.size())
+		var hz: float = BOX_BASE_HZ * 0.5 * pow(2.0, (float(notes[note]) + slide) / 12.0)
+		var first: int = int(float(note) * beat * SAMPLE_RATE)
+		var samples: int = int(beat * 1.6 * SAMPLE_RATE)
+		for i: int in samples:
+			var index: int = first + i
+			if index >= buffer.size():
+				break
+			var t: float = float(i) / float(SAMPLE_RATE)
+			buffer[index] += sin(TAU * hz * t) * exp(-3.0 * t) * 0.3
 	return _to_wav(buffer)
 
 

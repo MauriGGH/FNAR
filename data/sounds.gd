@@ -107,6 +107,22 @@ const FLASHLIGHT_CLICK: String = "linterna_click"
 const BREAKER_LEVER: String = "breaker_palanca"
 ## El siseo de fondo mientras el monitor está abierto.
 const CAMERA_STATIC: String = "estatica_camara"
+## La maquinita: su música por nivel (chiptune de 8 bits generado por código) y
+## sus pitidos. El nivel 3 no lleva melodía, solo un zumbido grave.
+const ARCADE_MUSIC: Array[String] = [
+	"arcade_nivel1", "arcade_nivel2", "arcade_nivel3",
+]
+const ARCADE_JUMP: String = "arcade_salto"
+const ARCADE_PICK: String = "arcade_recoge"
+const ARCADE_BOOT: String = "arcade_bip"
+const ARCADE_MUSIC_BOX: String = "arcade_cajita"
+
+
+## La música que le toca a un nivel.
+static func arcade_music(level: int) -> String:
+	return ARCADE_MUSIC[clampi(level, 1, ARCADE_MUSIC.size()) - 1]
+
+
 ## El blip de moverse por un menú y el de aceptar (el mismo, más agudo).
 const MENU_BLIP: String = "menu_blip"
 ## El golpe de una tecla de máquina de escribir, al escribir el nombre. Este es
@@ -624,6 +640,41 @@ const CATALOG: Dictionary = {
 		"volume_db": -30.0, "generator": "camera_static",
 		"desc": "Estática de televisión vieja, en bucle sin corte, suave.",
 	},
+	"arcade_nivel1": {
+		"file": "arcade_nivel1.ogg", "bus": "Música",
+		"volume_db": -12.0, "generator": "arcade_level1",
+		"desc": "Chiptune de 8 bits de la maquinita, nivel 1: alegre, de posada.",
+	},
+	"arcade_nivel2": {
+		"file": "arcade_nivel2.ogg", "bus": "Música",
+		"volume_db": -12.0, "generator": "arcade_level2",
+		"desc": "La misma idea para el nivel 2, pero ya desafinada: algo va mal.",
+	},
+	"arcade_nivel3": {
+		"file": "arcade_nivel3.ogg", "bus": "Música",
+		"volume_db": -14.0, "generator": "arcade_level3",
+		"desc": "Nivel 3: sin melodía, solo un zumbido grave que no para.",
+	},
+	"arcade_salto": {
+		"file": "arcade_salto.ogg", "bus": "Efectos",
+		"volume_db": -10.0, "generator": "arcade_jump",
+		"desc": "Pitido de 8 bits al saltar, de los que suben.",
+	},
+	"arcade_recoge": {
+		"file": "arcade_recoge.ogg", "bus": "Efectos",
+		"volume_db": -10.0, "generator": "arcade_pick",
+		"desc": "Pitido corto de 8 bits al recoger algo.",
+	},
+	"arcade_bip": {
+		"file": "arcade_bip.ogg", "bus": "Efectos",
+		"volume_db": -8.0, "generator": "arcade_boot",
+		"desc": "El bip de arranque de la maquinita, con su estática.",
+	},
+	"arcade_cajita": {
+		"file": "arcade_cajita.ogg", "bus": "Música",
+		"volume_db": -6.0, "generator": "arcade_music_box",
+		"desc": "La cajita musical distorsionada del final del nivel 3.",
+	},
 	"menu_blip": {
 		"file": "menu_blip.ogg", "bus": "Efectos",
 		"volume_db": -16.0, "generator": "menu_blip",
@@ -796,6 +847,7 @@ const LOOPING: Array[String] = [
 	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
 	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
+	"arcade_nivel1", "arcade_nivel2", "arcade_nivel3",
 	"menu_capa", "menu_capa2",
 	# El zumbido de Armando dura lo que dure su toma de pantalla.
 	"armando_glitch_bucle",

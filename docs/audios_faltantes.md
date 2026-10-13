@@ -11,7 +11,7 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **16 de 104**. Generado desde el catálogo.
+Faltan **23 de 111**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 
@@ -34,6 +34,13 @@ Faltan **16 de 104**. Generado desde el catálogo.
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | Zumbido de lámparas y ventilador de oficina, en bucle sin corte. |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | Aire de pasillo vacío de noche, en bucle sin corte, muy tenue. |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | Estática de televisión vieja, en bucle sin corte, suave. |
+| `arcade_nivel1` | `arcade_nivel1.ogg` | Música | Chiptune de 8 bits de la maquinita, nivel 1: alegre, de posada. |
+| `arcade_nivel2` | `arcade_nivel2.ogg` | Música | La misma idea para el nivel 2, pero ya desafinada: algo va mal. |
+| `arcade_nivel3` | `arcade_nivel3.ogg` | Música | Nivel 3: sin melodía, solo un zumbido grave que no para. |
+| `arcade_salto` | `arcade_salto.ogg` | Efectos | Pitido de 8 bits al saltar, de los que suben. |
+| `arcade_recoge` | `arcade_recoge.ogg` | Efectos | Pitido corto de 8 bits al recoger algo. |
+| `arcade_bip` | `arcade_bip.ogg` | Efectos | El bip de arranque de la maquinita, con su estática. |
+| `arcade_cajita` | `arcade_cajita.ogg` | Música | La cajita musical distorsionada del final del nivel 3. |
 | `menu_blip` | `menu_blip.ogg` | Efectos | Pitido corto y seco de moverse por un menú de consola vieja. |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | Golpe de una tecla de máquina de escribir. Respaldo de las tres de abajo. |
 | `urena_banos` | `lejos/urena_banos.ogg` | Lejos | Agua de lavabo corriendo, lejos, en bucle. |

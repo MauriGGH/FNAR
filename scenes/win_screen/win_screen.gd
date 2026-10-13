@@ -46,4 +46,19 @@ func _on_roll_finished() -> void:
 	NewspaperScreen.next_scene = Screens.PAYMENT
 	PaymentScreen.pending_documents = documents
 	PaymentScreen.next_scene = after
+
+	# Y de vez en cuando, antes del periódico, se mete la maquinita.
+	if _arcade_shows_up():
+		ArcadeScreen.pending_level = SaveGame.next_arcade_level()
+		ArcadeScreen.next_scene = Screens.NEWSPAPER
+		get_tree().change_scene_to_file(Screens.ARCADE)
+		return
 	LoadingScreen.go_to(get_tree(), Screens.NEWSPAPER)
+
+
+## ¿Entra la maquinita? Solo si el guardia no trae ya el tótem, porque el
+## minijuego es justo lo que se lo da; y aun así, pocas veces.
+func _arcade_shows_up() -> bool:
+	if GameManager.has_totem:
+		return false
+	return randi_range(1, 100) <= Arcade.CHANCE

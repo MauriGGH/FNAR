@@ -74,14 +74,6 @@ const PARTICLE_SPEED: float = 260.0
 const PARTICLE_GRAVITY: float = 340.0
 const PARTICLE_LIFE: float = 1.3
 
-# --- El minijuego de la maquinita ---------------------------------------------
-## Cada cuántas veces que se abre la PC aparece el ícono, y lo que se queda.
-const ARCADE_ONE_IN: int = 15
-const ARCADE_ICON_TIME: float = 1.0
-## Lo que dura el minijuego y cuántas velitas hay que atrapar.
-const GAME_TIME: float = 30.0
-const GAME_TARGET: int = 10
-
 
 static func texture(name: String) -> Texture2D:
 	return GameAssets.load_texture(ART_PATH % name)

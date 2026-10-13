@@ -425,9 +425,11 @@ func _build_events_section() -> void:
 	_add_button(body, "Probar rescate de Sergio", func() -> void:
 		close()
 		_night.debug_sergio_rescue())
-	_add_button(body, "Abrir minijuego", func() -> void:
-		close()
-		_night.debug_open_minigame())
+	for level: int in range(1, Arcade.LEVELS + 1):
+		var arcade_level: int = level
+		_add_button(body, "Abrir minijuego (nivel %d)" % arcade_level, func() -> void:
+			close()
+			_night.debug_open_minigame(arcade_level))
 
 	_add_label(body, "Tickets:")
 	_add_button(body, "Que llegue uno nuevo",

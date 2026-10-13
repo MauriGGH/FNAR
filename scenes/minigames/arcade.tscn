@@ -1,0 +1,80 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/minigames/arcade_screen.gd" id="1_arcade"]
+[ext_resource type="Shader" path="res://scenes/minigames/arcade_crt.gdshader" id="2_crt"]
+[ext_resource type="Script" path="res://scenes/ui/static_frames.gd" id="3_static"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("2_crt")
+
+[node name="Arcade" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_arcade")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Frame" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Viewport" type="SubViewportContainer" parent="Frame"]
+material = SubResource("ShaderMaterial_crt")
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 90.0
+mouse_filter = 2
+texture_filter = 1
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="Frame/Viewport"]
+handle_input_locally = false
+snap_2d_transforms_to_pixel = true
+snap_2d_vertices_to_pixel = true
+size = Vector2i(160, 90)
+render_target_update_mode = 4
+
+[node name="Boot" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_static")
+
+[node name="LevelLabel" type="Label" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -56.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.88, 0.9, 1)
+theme_override_font_sizes/font_size = 24
+text = "NIVEL 1"
+horizontal_alignment = 2

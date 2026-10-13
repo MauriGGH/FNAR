@@ -27,6 +27,7 @@ res://
   autoload/        game_manager.gd, power_manager.gd, save_game.gd, display_manager.gd, audio_manager.gd
   scenes/          main_menu, night, office, camera_system, pc_screen, game_over, win_screen
   scenes/tasks/    una escena por tarea (minijuego)
+  scenes/minigames/    la maquinita de 8 bits (arcade_screen.gd y un script por nivel)
   scripts/characters/  animatronic.gd (clase base) y un script por profe
   data/            rooms.gd (grafo de habitaciones), nights.gd (niveles por noche)
   tools/           programas de medir (capas de la oficina, caras de los expedientes) y de generar voces
@@ -128,7 +129,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (104 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (111 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -623,17 +624,13 @@ sale que la silueta pueda bajar a la misma escala y encajar al píxel.
 
 ### Cómo se consigue el tótem
 
-**Solo se puede tener uno, y dura esa noche** (al empezar una noche nueva no se arrastra):
+**Solo se puede tener uno**, y **se guarda en `save.cfg`** (`has_totem`), porque se gana entre
+noches: si no sobreviviera al cambio de pantalla, el de la maquinita se perdería antes de usarse.
+Al gastarlo en un rescate se borra del guardado.
 
 - **Al azar:** en las noches **4 a 6**, cuando vas a morir hay un **25 %** de que Sergio te
   rescate aunque no traigas nada (`Sergio.RANDOM_FROM_NIGHT`, `RANDOM_CHANCE`).
-- **El minijuego:** desde la noche 1, **1 de cada 15 veces** que abres la PC aparece **1 s** un
-  ícono de maquinita en un sitio al azar del escritorio. Si le das clic, se abre
-  `scenes/minigames/candle_catch.gd`: **30 s** para atrapar **10 velitas** con la canasta, que
-  sigue al mouse. Está dibujado por código en cuadros grandes con filtro nearest, sin arte que
-  cargar. Una **calavera no mata: resta una velita** (nunca baja de cero), así esquivar importa sin
-  que un roce te mande al principio. Si ganas, el tótem, suena `aura` y su ícono se queda en la
-  esquina del HUD. Con el tótem puesto la maquinita ya no sale.
+- **La maquinita:** ver **La maquinita (minijuegos estilo FNAF)**, abajo.
 
 ### El rescate, paso por paso
 
@@ -663,7 +660,66 @@ profe mate, el reloj se detiene y los profes se quedan quietos.
 ### En el panel de pruebas
 
 F1 → Eventos: **"Dar tótem"**, **"Probar rescate de Sergio"** (monta la escena con el primer profe
-que pueda matar) y **"Abrir minijuego"**.
+que pueda matar) y **"Abrir minijuego (nivel 1)"**, **"(nivel 2)"** y **"(nivel 3)"**. Como la
+maquinita es una pantalla completa, al salir de ella **la noche vuelve a empezar**: es un botón de
+pruebas, no un atajo del juego.
+
+## La maquinita (minijuegos estilo FNAF)
+
+Los minijuegos de 8 bits, como los de Sister Location y FNAF 3: cuentan en pixel art lo que le
+pasó a Santi, y pasarlos es lo que te da el tótem. Todo lo de diseño está en `data/arcade.gd` y las
+medidas salen de los tres fondos, que son de **160x90**.
+
+**Cuándo sale:** entre noches. Desde la noche 1, al pasar una noche hay un **30 %**
+(`Arcade.CHANCE`) de que, **después del 6 AM y antes del periódico**, entre la maquinita; **si ya
+traes el tótem, no sale**, porque es justo lo que viene a darte. Cada vez que sale juegas el
+**siguiente** nivel —1, 2, 3— y a partir de ahí salen al azar; el que toca se guarda en `save.cfg`
+(`arcade_level`) y se apunta al empezar, se gane o se pierda.
+
+**La pantalla** (`scenes/minigames/arcade.tscn`, `arcade_screen.gd`): el lienzo de 160x90 vive en un
+SubViewport y se amplía **en pasos enteros** con filtro nearest (en 1152x648 toca ×7, o sea
+1120x630, centrado), así que no se deforma ni un píxel. Encima va el shader
+`arcade_crt.gdshader`: scanlines marcadas, curvatura del tubo con las esquinas oscurecidas,
+separación de color en los bordes, un parpadeo leve y una línea de interferencia que baja cada
+3.4 s. Entra con **0.5 s de estática y un bip**; al salir, la imagen **se aplasta hasta ser una
+raya blanca y se apaga**, como una tele vieja. Abajo a la derecha, el número de nivel en VT323 (ese
+va fuera del lienzo, a tamaño de pantalla). **Esc se la salta.**
+
+**El texto de dentro del lienzo no es VT323**: es `data/arcade_font.gd`, una fuente de **3x5
+píxeles** dibujada por código letra por letra. A 10 px el rasterizador suaviza VT323 y, al ampliar
+el lienzo siete veces, ese suavizado se vuelve manchas grises ilegibles; estas letras son píxeles
+enteros. La M, la N y la W van de cuatro de ancho porque en tres no se distinguen de la H.
+
+**El arte** está en `assets/art/minijuego/`: `fondos/nivel1_posada.png`, `nivel2_bienvenida.png` y
+`nivel3_junta.png` (160x90), y los recortes en `sprites/` (santi_idle/walk1/walk2/jump,
+botarga_idle/walk1/walk2, traje_side/walk/back, alumno_1..4, vaso, termo, globo_rojo, globo_azul,
+veladora, llave, sergio, altar). **Nada se dibuja por código salvo la luz y el texto.** Cada
+recorte se pinta centrado a lo ancho y **con los pies** en su posición, así que las coordenadas del
+diseño son "dónde pisa".
+
+| Nivel | Qué se hace | Cómo acaba |
+| --- | --- | --- |
+| 1, **La posada** (`arcade_posada.gd`) | Santi cruza el patio **saltando entre tres mesas** (flechas o WASD, espacio o arriba para saltar) y junta los **8 vasitos**; contador "VASOS 3/8". Caerse no castiga: se vuelve a subir. | Con los ocho, el **termo** verde-naranja; al tocarlo aparece el hombre de traje a su lado, **1 s congelado** y Santi ya es la botarga. |
+| 2, **La bienvenida** (`arcade_bienvenida.gd`) | La botarga **reparte 5 globos**: se toma uno en la carpa, se lleva al alumno y se vuelve. **Al volver por el siguiente, el alumno al que ya le diste desaparece** y el hombre de traje está un poco más cerca (`SUIT_STEPS`). | Al quinto no queda ninguno y él está pegado a la botarga. |
+| 3, **La junta** (`arcade_junta.gd`) | La botarga camina **solo a la derecha** detrás del traje. Las luces del techo parpadean y en la pared aparece y desaparece **"AYÚDANOS"**. **No tiene reloj: aquí no se pierde.** | La puerta de la sala se abre, entran los dos, se cierra, la pantalla **se pone roja** y suena la cajita musical distorsionada 2 s. |
+
+**Perder:** los niveles 1 y 2 tienen **60 s** (`Arcade.TIME_LIMIT`, con la cuenta arriba a la
+derecha). Si se acaban, el rótulo pasa a "SE ACABO EL TIEMPO", corte a estática, **no hay tótem** y
+sigue el periódico.
+
+**El final** (`arcade_ending.gd`), después de cualquier nivel pasado: negro con el **haz de luz**,
+el altar de la Virgen al centro, **Sergio de silueta** a un lado y Santi al otro, y
+**"TOMA. TE VA A HACER FALTA."** escribiéndose letra por letra. Suena `aura` y **te queda el
+tótem**, con su ícono en la esquina del HUD. Los recortes de Sergio y de Santi son siluetas casi
+negras, así que el código pinta **un charco de luz elíptico** alrededor del altar
+(`GLOW_CENTER`, `GLOW_RADIUS`, `GLOW_ALPHA`, calculado una vez como imagen para que no se le vea
+ninguna arista): es contra esa luz que se recortan.
+
+**El sonido es chiptune generado por código** (`ToneBuilder`, ondas cuadradas): `arcade_nivel1`
+alegre, `arcade_nivel2` la misma melodía **desafinada** 0.35 de semitono, y `arcade_nivel3` **sin
+melodía, solo un zumbido grave**; más `arcade_salto`, `arcade_recoge`, `arcade_bip` (el arranque) y
+`arcade_cajita`. Si algún día hay archivos de verdad con esos nombres en `assets/audio/`, entran
+solos como cualquier otro id del catálogo.
 
 ## Jumpscares
 

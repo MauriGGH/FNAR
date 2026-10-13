@@ -16,6 +16,9 @@ const SECTION_PROGRESS: String = "progreso"
 const SECTION_UNLOCKS: String = "desbloqueos"
 const SECTION_OPTIONS: String = "opciones"
 
+## Pasado este nivel de maquinita ya se vieron los tres y salen al azar.
+const ARCADE_RANDOM_FROM: int = Arcade.LEVELS + 1
+
 ## El volumen de arranque de cada bus, antes de que el jugador toque nada.
 const DEFAULT_BUS_VOLUME: float = 0.8
 
@@ -40,6 +43,13 @@ var custom_mastered: bool = false
 var tutorial_seen: bool = false
 ## Los retos de Custom Night que ya se ganaron, por su id.
 var challenges_won: Array[String] = []
+## El nivel de la maquinita que toca la próxima vez que salga. Va 1, 2, 3 y de
+## ahí en adelante se queda en ARCADE_RANDOM_FROM, que quiere decir "ya los
+## viste los tres, ahora salen al azar".
+var arcade_level: int = 1
+## Si el guardia se quedó con el tótem. Se gana entre noches, así que tiene que
+## sobrevivir al cambio de pantalla; lo lee GameManager al empezar la noche.
+var has_totem: bool = false
 
 ## Opciones. La pantalla completa la pone y la lee DisplayManager.
 var fullscreen: bool = true
@@ -110,6 +120,27 @@ func mark_night_cleared(night: int) -> void:
 
 func has_cleared_night(night: int) -> bool:
 	return night in nights_cleared
+
+
+## El nivel que toca jugar ahora en la maquinita.
+func next_arcade_level() -> int:
+	if arcade_level < ARCADE_RANDOM_FROM:
+		return arcade_level
+	return randi_range(1, Arcade.LEVELS)
+
+
+## Jugó un nivel: la próxima vez le toca el siguiente.
+func advance_arcade_level() -> void:
+	arcade_level = mini(arcade_level + 1, ARCADE_RANDOM_FROM)
+	save_game()
+
+
+## Guarda si trae el tótem encima.
+func set_totem(carried: bool) -> void:
+	if has_totem == carried:
+		return
+	has_totem = carried
+	save_game()
 
 
 ## Ganó una Custom Night con todo en 20.
@@ -208,6 +239,8 @@ func reset() -> void:
 	custom_mastered = false
 	challenges_won.clear()
 	tutorial_seen = false
+	arcade_level = 1
+	has_totem = false
 	save_game()
 
 
@@ -223,6 +256,8 @@ func save_game() -> void:
 	file.set_value(SECTION_PROGRESS, "custom_mastered", custom_mastered)
 	file.set_value(SECTION_PROGRESS, "challenges_won", challenges_won)
 	file.set_value(SECTION_PROGRESS, "tutorial_seen", tutorial_seen)
+	file.set_value(SECTION_PROGRESS, "arcade_level", arcade_level)
+	file.set_value(SECTION_PROGRESS, "has_totem", has_totem)
 	file.set_value(SECTION_OPTIONS, "fullscreen", fullscreen)
 	file.set_value(SECTION_OPTIONS, "bus_volumes", bus_volumes)
 	file.set_value(SECTION_OPTIONS, "menu_music_b", menu_music_b)
@@ -245,6 +280,9 @@ func load_game() -> void:
 	custom_mastered = bool(file.get_value(SECTION_PROGRESS, "custom_mastered", false))
 	challenges_won = _to_string_array(file.get_value(SECTION_PROGRESS, "challenges_won", []))
 	tutorial_seen = bool(file.get_value(SECTION_PROGRESS, "tutorial_seen", false))
+	arcade_level = clampi(int(file.get_value(SECTION_PROGRESS, "arcade_level", 1)),
+		1, ARCADE_RANDOM_FROM)
+	has_totem = bool(file.get_value(SECTION_PROGRESS, "has_totem", false))
 	fullscreen = bool(file.get_value(SECTION_OPTIONS, "fullscreen", true))
 	bus_volumes = file.get_value(SECTION_OPTIONS, "bus_volumes", {}) as Dictionary
 	menu_music_b = bool(file.get_value(SECTION_OPTIONS, "menu_music_b", true))
