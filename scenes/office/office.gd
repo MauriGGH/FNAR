@@ -48,6 +48,10 @@ const CENTER_DARK: String = "res://assets/art/office/oficina_centro_oscura"
 const CENTER_LIT: String = "res://assets/art/office/oficina_centro"
 const CENTER_DARK_CLOSED: String = "res://assets/art/office/oficina_centro_oscura_cerrada"
 const CENTER_LIT_CLOSED: String = "res://assets/art/office/oficina_centro_cerrada"
+## El shader de las vistas: lo único que hace es el desenfoque del giro. Se le
+## pone también al tótem de la mesa, para que no se quede nítido mientras todo
+## lo demás se mueve.
+const VIEW_SHADER: String = "res://scenes/office/office_view.gdshader"
 const BLACKOUT_OVERLAY: GDScript = preload("res://scenes/office/blackout_overlay.gd")
 const FLASHLIGHT_OVERLAY: GDScript = preload("res://scenes/office/flashlight_overlay.gd")
 const PHONE_LIGHT: GDScript = preload("res://scenes/office/phone_light.gd")
@@ -226,6 +230,7 @@ var _view_nodes: Array[Control] = []
 var _content_nodes: Array[Control] = []
 var _right_normal_texture: Texture2D = null
 var _momo_layer: TextureRect = null
+var _totem_layer: TextureRect = null
 
 
 func _ready() -> void:
@@ -250,6 +255,7 @@ func _ready() -> void:
 	_build_ticket_envelope()
 	_build_photo_viewer()
 	_build_momo()
+	_build_totem()
 	_build_blackout_overlays()
 	_build_flashlight()
 	_build_beam_widgets()
@@ -421,6 +427,56 @@ func set_locked(locked: bool) -> void:
 		_swallow_click = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 
 
+# --- El tótem sobre el escritorio ---------------------------------------------
+
+## Mientras se trae encima, el tótem se ve de pie sobre la mesa. Cuelga del
+## Content de la vista central, como todo lo demás, así que se mueve con el
+## mismo parallax, se desenfoca con el giro y se apaga con el apagón sin que
+## haya que tocarlo aparte. Va **encima de todo**: es lo que está más cerca.
+func _build_totem() -> void:
+	_totem_layer = TextureRect.new()
+	_totem_layer.name = "Totem"
+	_totem_layer.texture = Sergio.texture(Sergio.TOTEM_ICON)
+	_totem_layer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_totem_layer.stretch_mode = TextureRect.STRETCH_SCALE
+	# Es pixel art, como el del rescate: nada de suavizado.
+	_totem_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_totem_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_totem_layer.modulate = Sergio.TOTEM_DESK_LIGHT
+	_totem_layer.visible = false
+	if ResourceLoader.exists(VIEW_SHADER):
+		var material: ShaderMaterial = ShaderMaterial.new()
+		material.shader = load(VIEW_SHADER)
+		_totem_layer.material = material
+	center_content.add_child(_totem_layer)
+	_layout_totem()
+
+
+## Lo coloca donde apoya, con el alto medido y guardando la forma del recorte.
+func _layout_totem() -> void:
+	if _totem_layer == null:
+		return
+	var content: Vector2 = center_content.size
+	var height: float = content.y * Sergio.TOTEM_DESK_HEIGHT
+	var texture: Texture2D = _totem_layer.texture
+	var ratio: float = 1.0
+	if texture != null and texture.get_height() > 0:
+		ratio = float(texture.get_width()) / float(texture.get_height())
+	var box: Vector2 = Vector2(height * ratio, height)
+	_totem_layer.size = box
+	# El punto medido es donde se apoya: el centro de su base.
+	_totem_layer.position = Vector2(
+		content.x * Sergio.TOTEM_DESK_AT.x - box.x * 0.5,
+		content.y * Sergio.TOTEM_DESK_AT.y - box.y)
+
+
+## Lo enseña o lo esconde. Lo pide el night.gd con la señal del GameManager, la
+## misma que enciende su ícono en la esquina del HUD.
+func set_totem_on_desk(carried: bool) -> void:
+	if _totem_layer != null:
+		_totem_layer.visible = carried
+
+
 # --- El susto de Momo ---------------------------------------------------------
 
 ## Su foto es del tamaño de la vista y va **encima de todo lo de la izquierda**:
@@ -475,6 +531,7 @@ func _layout() -> void:
 		_content_nodes[i].size = content_size
 		_apply_content_position(i)
 	_layout_zones()
+	_layout_totem()
 
 
 ## Lo más negativo que puede valer el recorrido horizontal de una vista.

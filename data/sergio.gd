@@ -57,6 +57,27 @@ const BEAM_FADE: float = 0.35
 const BEAM_COLOR: Color = Color(1.0, 1.0, 0.96)
 const BEAM_ALPHA: float = 0.5
 
+# --- El tótem sobre el escritorio ---------------------------------------------
+## Mientras el guardia lo trae encima, el tótem **se ve de verdad en la
+## oficina**: de pie sobre la mesa, entre la tabla de las hojas y el teléfono.
+## El sitio y el tamaño **no se adivinan**: están medidos sobre
+## `oficina_centro_oscura.jpeg` (1375x768) buscando el hueco de mesa que queda
+## libre y que no se sale por abajo con el recorrido del mouse, y van
+## normalizados para que valgan a cualquier resolución.
+##
+## Donde apoya (el centro de su base, x 712 y 676 de la foto) y lo que mide de
+## alto (70 px, poco más que una de las tazas). **La y no puede bajar de ahí**:
+## la vista se dibuja al 112 %, así que de la foto solo se ve de 0.054 a 0.946
+## de alto, y lo último que queda por encima de la barra de cámaras es 0.88.
+const TOTEM_DESK_AT: Vector2 = Vector2(712.0 / 1375.0, 676.0 / 768.0)
+const TOTEM_DESK_HEIGHT: float = 70.0 / 768.0
+## La oficina está a oscuras y el recorte viene a pleno brillo, así que hay que
+## bajarlo al de la habitación o parece una calcomanía encendida: con esto su
+## halo dorado (230 de 255) queda en 30, que es el brillo medio que tienen las
+## tazas y el teléfono en esa misma foto. El tinte es frío, como la luz del
+## monitor, que es la única que le da.
+const TOTEM_DESK_LIGHT: Color = Color(0.101, 0.111, 0.13)
+
 # --- El tótem, al estilo de Minecraft ----------------------------------------
 ## A qué parte del alto de la pantalla llega, y los tiempos de cada paso.
 const TOTEM_HEIGHT: float = 0.45

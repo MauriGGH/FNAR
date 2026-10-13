@@ -635,6 +635,26 @@ El rescate: si te van a matar y traes el tótem —o si tienes suerte en las noc
 baja y te salva. **Ya está programado.** Los números de diseño están todos en `data/sergio.gd`, y
 las medidas que salen del arte se midieron sobre los propios PNG, no se adivinaron.
 
+**El tótem se ve en la oficina.** Mientras lo traes encima está **de pie sobre el escritorio**, en
+la vista central, entre la tabla de las hojas y el teléfono; y además su ícono sigue en la esquina
+del HUD, que es lo único que se ve desde las otras vistas o con la PC abierta. Las dos cosas las
+enciende la misma señal, `GameManager.totem_changed`.
+
+No hace falta arte nueva: es el mismo recorte `totem_virgen_icono.png`, colgado del `Content` de la
+vista central, así que **se mueve con el mismo parallax**, se desenfoca con el giro y se apaga con
+el apagón sin tratarlo aparte. El sitio y el tamaño están **medidos sobre
+`oficina_centro_oscura.jpeg`** y viven en `data/sergio.gd`: apoya en x 0.518, y 0.880 y mide 0.091
+de alto (70 px de la foto, poco más que una de las tazas). **La y no puede bajar de ahí**: la vista
+se dibuja al 112 %, de la foto solo se ve de 0.054 a 0.946 de alto, y más abajo lo taparía la barra
+de cámaras.
+
+El recorte viene a pleno brillo y la oficina está a oscuras, así que se baja con
+`TOTEM_DESK_LIGHT`, que también está medido: deja su halo dorado (230 de 255) en 30, el mismo
+brillo que tienen las tazas y el teléfono en esa foto, con un tinte frío como la luz del monitor.
+Para que ese `modulate` llegue, `office_view.gdshader` se trae el del nodo desde el `vertex` (al
+escribir `COLOR` en el `fragment` se perdía); las fotos van en blanco, así que a ellas no les
+cambia nada.
+
 **El arte** está en `assets/art/extras/sergio/`: `centro_sergio.png` (1375x768, la capa de la vista
 central), `sergio_silueta.png` (176x297), `totem_virgen.png` (401x622) y
 `totem_virgen_icono.png` (100x155). Su figura mide **170x291 px en las dos imágenes**, y de ahí

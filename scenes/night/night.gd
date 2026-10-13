@@ -884,10 +884,13 @@ func _on_sergio_left() -> void:
 	GameManager.end_rescue()
 
 
-## El ícono del tótem en la esquina del HUD: solo cuando se trae encima.
+## El tótem, cuando se trae encima: de pie sobre el escritorio de la oficina y,
+## además, su ícono en la esquina del HUD, que es lo único que se ve desde las
+## otras vistas o con la PC abierta.
 func _on_totem_changed(has_it: bool) -> void:
 	if totem_icon != null:
 		totem_icon.visible = has_it
+	office.set_totem_on_desk(has_it)
 
 
 # --- El susto de Momo ---------------------------------------------------------
