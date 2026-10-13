@@ -11,7 +11,7 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **23 de 111**. Generado desde el catálogo.
+Faltan **23 de 107**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 

@@ -63,23 +63,26 @@ func _ready() -> void:
 	_options_panel.closed.connect(_show_list)
 	_layout()
 	resized.connect(_layout)
-	# El menú tiene su propio ambiente: la pista principal, sus dos capas de
-	# ambiente encima (las tres a la vez) y un hilo de estática.
-	AudioManager.play_loop(Sounds.menu_music())
-	for layer: String in Sounds.menu_layers():
-		AudioManager.play_loop(layer)
+	# El menú tiene su propio ambiente: **una sola pista** (ya trae el dron de
+	# voces mezclado) y un hilo de estática encima. Entra con un fundido de
+	# medio segundo y **desde donde se quedó**, así que volver de Extras o de
+	# las opciones no la reinicia.
+	AudioManager.play_loop_faded(Sounds.MENU_MUSIC, Sounds.MENU_MUSIC_FADE_IN,
+		_music_position)
 	AudioManager.play_loop(Sounds.CAMERA_STATIC)
 
 
 ## Al salir del menú se lleva su audio con él, que si no se cuela en la noche.
-## Al salir se callan las dos opciones y sus capas, no solo la que estaba
-## puesta: si se cambió de opción sin salir del menú, la otra podría seguir.
+## Antes de callarla se apunta por dónde iba: al volver sigue desde ahí.
 func _exit_tree() -> void:
-	for id: String in [Sounds.MENU_MUSIC, Sounds.MENU_MUSIC_B]:
-		AudioManager.stop(id)
-	for layer: String in Sounds.MENU_LAYERS + Sounds.MENU_LAYERS_B:
-		AudioManager.stop(layer)
+	_music_position = AudioManager.playback_position(Sounds.MENU_MUSIC)
+	AudioManager.stop(Sounds.MENU_MUSIC)
 	AudioManager.stop(Sounds.CAMERA_STATIC)
+
+
+## Por dónde iba la música la última vez que se salió del menú. Es `static`
+## para que sobreviva al cambio de escena: ir a Extras y volver no la reinicia.
+static var _music_position: float = 0.0
 
 
 func _font_size(base: float) -> int:

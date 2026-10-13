@@ -114,6 +114,22 @@ cosas sueltas y espaciadas. El jugador
 los sube y los baja en el menú de opciones y queda guardado en `save.cfg`. El TTS no sale por los
 buses, así que quien habla multiplica su volumen por `AudioManager.voice_volume()` a mano.
 
+**Dos efectos de la misma secuencia nunca suenan a la vez.** Un susto, un rescate o una
+irrupción son **secuencias** (`Sounds.SEQUENCES`: `susto`, `rescate`, `momo`, `apagon`): el
+siguiente **espera la señal `finished` del anterior**, no un tiempo apuntado a mano, y al empezar
+una se calla lo que quede sonando de ella. Lo lleva el AudioManager con tres llamadas:
+
+- `begin_sequence(nombre)` — arranca: calla sus sonidos y tira su cola.
+- `play_in_sequence(nombre, id, al_acabar, desde)` — suena ya, o espera su turno si hay otro de la
+  misma en el aire. `al_acabar` es un `Callable`, que es como la imagen se engancha al sonido (el
+  negro de la irrupción de Mamador se levanta con el `finished` de su audio, no a los 0.8 s).
+- `sequence_busy(nombre)` — ¿sigue sonando algo de ella? Lo pregunta quien tiene que aguantar una
+  imagen: la oscuridad del apagón no pasa a la cajita musical hasta que se acaba `apagon_frase`.
+
+Los gritos entran en la secuencia `susto` por su prefijo, sin listarlos uno a uno. Gracias a esto
+el grito de un jumpscare ya no se pisa con la estática del game over, ni el golpe de WASTED con la
+irrupción.
+
 **Los ruidos no se leen.** Mientras un sonido no esté grabado, el juego **no** escribe
 "[pasos corriendo]" en pantalla: esos avisos van por `NoticeBanner.show_sound()`, que solo los
 saca por consola y nada más cuando el panel de pruebas está encendido (`DebugKeys.is_enabled()`).
@@ -129,7 +145,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (111 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
+**El catálogo** (107 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
 mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
@@ -142,9 +158,7 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `estatica_inquietante` | `estatica_inquietante.ogg` | Efectos | −14 | no | de fondo en el tic «ultra» del menú |
 | `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | Efectos | −16 | no | debajo de la estática del game over (mismo archivo) |
 | `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −6 | no | pasos recorriendo el pasillo, con los demás ambientales |
-| `menu_musica_b` | `menu_musica_b.ogg` | Música | −12 | sí | la otra música del menú (opción B, la de fábrica) |
-| `menu_capa`, `menu_capa2` | `menu_capa.ogg`, `menu_capa2.ogg` | Música | −22 / −24 | sí | las capas de ambiente del menú (opción A) |
-| `menu_capa2_b` | `menu_capa2.ogg` | Música | −16 | sí | el mismo dron de voces, más arriba, para la opción B |
+| `menu_musica_final` | `menu/menu_musica_final.ogg` | Música | −12 | sí | la música del menú principal, la única |
 | `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
@@ -176,11 +190,12 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `llamada_juguete` | `llamadas/llamada_juguete.ogg` | Voces | 0 | no | la otra llamada rara, desde la noche 2 |
 | `descarga_pararrayos` | `descarga_pararrayos.ogg` | Efectos | −3 | no | la descarga que tumba los patch cords |
 | `cortaso` | `cortaso.ogg` | Efectos | −2 | no | el Mago entrando a la oficina |
-| `rosa_suspenso`, `rosa_aire`, `aura` | `extras/<id>.ogg` | Música | −4 / −6 | no | el rescate de Sergio (todavía sin programar) |
+| `sergio_rescate` | `extras/sergio_rescate.ogg` | Música | −2 | no | el rescate de Sergio entero, 13.3 s |
+| `aura` | `extras/aura.ogg` | Música | −6 | no | el tótem al pasar un nivel de la maquinita |
+| `momo_cancion` | `extras/momo_cancion.ogg` | Música | 0 | no | el susto de Momo, 15.3 s, con su grito al final |
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
 | `ninos_yay` | `ninos_yay.ogg` | Efectos | −3 | no | los niños al entrar el 6; solo se usa si no está grabado el despertador |
-| `menu_musica` | `menu_musica.ogg` | Música | −14 | sí | música de fondo del menú principal |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 (si no, la voz sintética) |
 | `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
 | `telefono_colgar` | `telefono_colgar.ogg` | Efectos | −6 | no | al acabar o silenciar una llamada |
@@ -560,7 +575,9 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible. Con la linterna muerta **el pasillo se queda a oscuras**: no hay cono, no se ve quién está en el cristal y no se le pueden contar destellos a nadie. Eso es parte del castigo.
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
     secuencia de cuatro tiempos, en `blackout_death.gd`. Justo al apagarse todo, antes de la
-    oscuridad, suena `apagon_frase`; después, 3 a 12 s al azar de oscuridad total;
+    oscuridad, suena `apagon_frase`; después, 3 a 12 s al azar de oscuridad total, **que se
+    estiran si hace falta hasta que la frase termine de decirse** (son 6.4 s y el azar puede dar
+    3: son de la misma secuencia y no se enciman);
     a lo lejos en el pasillo, al fondo del cristal, se encienden y se apagan **un par de ojos**
     al ritmo de la cajita musical, uno por pulso (los de su JSON), como la cara de Freddy en
     FNAF 1: chiquitos, blanco azulados y con un brillo muy leve, y **no se ve nada más**. La
@@ -639,28 +656,35 @@ si entra, no hay game over y la noche sigue. Vale para cualquier profe **menos M
 final es la pantalla de WASTED y no se interrumpe. Mientras corre, `is_rescuing` evita que otro
 profe mate, el reloj se detiene y los profes se quedan quietos.
 
+**Todo el rescate va pegado a una sola pista**, `extras/sergio_rescate.ogg` (13.3 s), que lleva
+dentro el suspenso, el aire del haz y el aura del tótem. La escena se cuelga de sus tiempos
+(`Sergio.RESCUE_BEAM_AT` 3.5 s y `RESCUE_TOTEM_AT` 8.5 s) y **acaba cuando acaba el audio**: ahí
+sigue la noche. Antes eran tres sonidos sueltos (`rosa_suspenso`, `rosa_aire` y `aura`) que se
+encimaban entre ellos; esos ids ya no se usan aquí y `aura` se quedó solo para la maquinita.
+
 1. **El susto congelado** (`scenes/night/sergio_rescue.gd`): el **primer cuadro** del jumpscare que
-   iba a matarte —su variante `_a`— quieto y en blanco y negro, **3 s**, con `rosa_suspenso`.
+   iba a matarte —su variante `_a`— quieto y en blanco y negro, hasta el segundo **3.5**.
 2. **La bajada** (`scenes/office/sergio_arrival.gd`, en la vista central, que se fuerza): el susto
    se desvanece, suena `rosa_aire` y un **haz de luz blanca** baja sobre la recepción (44 tiras con
    su degradado, para que no se vean escalones). Dentro del haz, `sergio_silueta.png` aparece por
    encima del borde y **desciende flotando 1.5 s** con un vaivén que se va calmando, hasta el sitio
    exacto donde está Sergio en la capa; al llegar, **se funde en 0.3 s** con `centro_sergio.png`,
    que se queda mientras corre el tótem.
-3. **El tótem**, como el de Minecraft y con filtro nearest: aparece chiquito al centro, **crece con
+3. **El tótem**, a los **8.5 s**, como el de Minecraft y con filtro nearest: aparece chiquito al centro, **crece con
    un rebote** hasta el **45 % del alto** (0.35 s), **tiembla 1.2 s**, y **gira sobre su eje
    vertical** (la escala X de 1 a −1 y de vuelta, **dos veces**) mientras se encoge y sale volando
    hacia arriba (0.9 s). Todo el rato suelta **70 partículas cuadradas** verdes y amarillas que
-   salen del centro y caen. Suena `aura`.
-4. **Lo que queda:** Sergio se desvanece (0.6 s), el profe que iba a matarte **vuelve al principio
+   salen del centro y caen.
+4. **Lo que queda:** Sergio se desvanece (0.6 s) mientras suena la cola de la música; al acabarse
+   el audio, el profe que iba a matarte **vuelve al principio
    de su ruta** (`Animatronic.go_home()`, que Barcosa y los del cristal sobrescriben para soltar el
    pasillo y poner su susto a cero), **pierdes el tótem**, **recuperas 10 % de energía** y
    **Sergio no vuelve esa noche**.
 
 ### En el panel de pruebas
 
-F1 → Eventos: **"Dar tótem"**, **"Probar rescate de Sergio"** (monta la escena con el primer profe
-que pueda matar) y **"Abrir minijuego (nivel 1)"**, **"(nivel 2)"** y **"(nivel 3)"**. Como la
+F1 → Eventos: **"Probar Momo"**, **"Dar tótem"**, **"Probar rescate de Sergio"** (monta la escena
+con el primer profe que pueda matar) y **"Abrir minijuego (nivel 1)"**, **"(nivel 2)"** y **"(nivel 3)"**. Como la
 maquinita es una pantalla completa, al salir de ella **la noche vuelve a empezar**: es un botón de
 pruebas, no un atajo del juego.
 
@@ -721,6 +745,37 @@ melodía, solo un zumbido grave**; más `arcade_salto`, `arcade_recoge`, `arcade
 `arcade_cajita`. Si algún día hay archivos de verdad con esos nombres en `assets/audio/`, entran
 solos como cualquier otro id del catálogo.
 
+## Momo
+
+El susto que **no mata**. Sale al girar a la **vista izquierda**, desde la **noche 2**, **una vez
+por noche como mucho** y con un **6 %** cada vez que la cabeza llega ahí (`data/momo.gd`). No entra
+si ya hay otro susto en curso (un jumpscare, el apagón, un rescate de Sergio). El arte es
+`assets/art/extras/momo/momo_izquierda.png` (1375x768, la misma composición que la vista izquierda
+pero a oscuras, con luz de luna) y `momo_screamer.png`.
+
+**El juego se para por completo** mientras dura: el reloj, la IA de los profes, el consumo de
+energía y los controles —no se gira, no se abre nada, no se pausa—. El ambiente y la llamada que
+estuviera sonando **se quedan congelados donde van**, no se cortan
+(`AudioManager.set_paused_except()`), y al acabar siguen. Lo único que se oye es
+`extras/momo_cancion.ogg` (15.3 s).
+
+| Momento | Qué pasa |
+| --- | --- |
+| 0.0 s | **Parpadeo de luz**: dos o tres cortes a negro de 80 ms. En el último, ya a oscuras, la vista izquierda cambia a la foto de Momo |
+| 0.0 → 15.3 s | Suena su canción. La vista **se va acercando a él**, de 1.0 a 1.06, con el pivote en su cara (x 0.62, y 0.45). **El parallax del mouse sigue funcionando**: es lo que mantiene la sensación de estar ahí |
+| 12.10 s | **El screamer** a pantalla completa sobre negro, creciendo del 60 % al 120 % del alto en 0.3 s, con temblor fuerte y parpadeo, hasta que se acaba el audio |
+| al acabar | Corte a negro de 0.3 s y vuelve la vista izquierda de siempre. **No mata, no quita energía y no mueve a nadie**: la noche sigue exactamente donde estaba |
+
+El reparto es el de siempre: `scenes/night/momo_event.gd` lleva lo que va a pantalla completa (el
+parpadeo, el screamer, el negro) y le pide a la oficina lo suyo por señales —`set_momo_active()`
+pone su foto como una capa más del `Content` de la vista izquierda, así que se mueve con el mismo
+parallax sin tocar nada, y `set_momo_zoom()` la acerca—. El `night.gd` es quien tira el dado (con
+la señal `view_changed` de la oficina) y quien para y suelta el juego. Para que no se pueda tocar
+nada sin matar el parallax, la oficina tiene `set_locked()`, que bloquea el giro, los clics y la
+linterna pero **deja el recorrido del mouse vivo**.
+
+Se prueba desde F1 → Eventos → **"Probar Momo"**.
+
 ## Jumpscares
 
 Las imágenes están en `assets/art/jumpscares/`: `jumpscare_<id>.png` y `jumpscare_<id>_a.png` para barcosa, urena, rochis, juan, armando, cometrabas y audel, más `audel_susto` y `mamador_militares`.
@@ -738,11 +793,11 @@ Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 
 | Cuándo | Qué pasa |
 | --- | --- |
-| −0.8 s | **La irrupción**: pantalla en negro, `mamador_brecha` (la puerta derribada y los gritos del operativo) y un flash blanco de un cuadro. Solo la lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
+| antes | **La irrupción**: pantalla en negro, `mamador_brecha` (la puerta derribada y los gritos del operativo) y un flash blanco de un cuadro. **Dura lo que dure su audio** (3.8 s), porque lo que sigue arranca con su señal `finished`, no con un tiempo apuntado. Solo la lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
 | 0.0 s | `jumpscare_mamador_militares` a pantalla completa, con un zoom de 1.0 a 1.08 que no para en toda la secuencia |
-| 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo; suena `wasted` |
+| 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo |
 | 1.2 s | Entra una franja negra (alfa 0.55) de lado a lado, centrada, de alto 16 % de la pantalla, con fade de 0.3 s |
-| 1.2 s | Encima, "WASTED" en `assets/fonts/pricedown.otf`, rojo #C21E1E con contorno negro, escalando de 1.15 a 1.0 en 0.25 s |
+| 1.2 s | Encima, "WASTED" en `assets/fonts/pricedown.otf`, rojo #C21E1E con contorno negro, escalando de 1.15 a 1.0 en 0.25 s, **y con él el golpe de `wasted`**: nunca cae encima de la irrupción |
 | 2.2 s | Debajo de la franja, el texto de abajo en la misma fuente, blanco con contorno, al 40 % del tamaño de WASTED |
 | 5.2 s | Pasa a la pantalla de game over normal, con su causa |
 
@@ -900,23 +955,20 @@ la Custom Night.
 Lo bloqueado se muestra con su propia imagen muy oscurecida y desenfocada (shader
 `scenes/ui/locked_art.gdshader`) y un "???" encima.
 
-**Audio del menú principal:** tres pistas a la vez, todas en bucle por el bus Música, más un hilo
-de estática (`estatica_camara`, −30 dB). Hay **dos opciones de música para comparar**, y la que
-está puesta se guarda en `save.cfg` (`menu_music_b`); se cambia desde F1 → Audio y **de fábrica
-viene la B**:
+**Audio del menú principal:** **una sola pista**, `assets/audio/menu/menu_musica_final.ogg`
+(64 s, con el bucle marcado en el import), en bucle por el bus Música a −12 dB, más un hilo de
+estática (`estatica_camara`, −30 dB) encima. Ya trae **el dron de voces mezclado dentro**, así que
+no lleva capas aparte: antes eran tres pistas a la vez y dos opciones para comparar (A y B), y
+tanto las capas como el selector se quitaron.
 
-| Opción | Pista | Capas encima |
-| --- | --- | --- |
-| A | `menu_musica`, 5:46, −12 dB | `menu_capa` −22 dB y `menu_capa2` −24 dB |
-| **B** (la de fábrica) | `menu_musica_b`, 98 s, −12 dB | `menu_capa` −22 dB y `menu_capa2_b` **−16 dB** |
+Entra con un **fundido de 0.5 s** y **no se reinicia al volver**: al salir del menú se apunta por
+dónde iba (`main_menu.gd`, en una variable `static`, que sobrevive al cambio de escena) y al
+entrar se retoma desde ahí. Las opciones son una capa de la misma pantalla, así que ni se tocan; de
+Extras se vuelve y la música sigue donde se quedó. Los tics van encima, igual que antes.
 
-La B es más corta y deja silencios, así que el **dron de voces va mucho más arriba** (es el mismo
-archivo que `menu_capa2`, con otro volumen) para que esos huecos nunca queden vacíos. Al salir del
-menú se callan las dos opciones y todas sus capas, no solo la que estaba puesta.
-
-La pista de la opción A es **«Halloween Atmosphere 2024» de Sascha Ende (ende.app), con licencia
-CC BY 4.0**, que pide nombrar al autor: el crédito sale escrito en la pantalla de **Extras**, y el
-texto vive en `Extras.MUSIC_CREDIT`.
+El crédito de **«Halloween Atmosphere 2024» de Sascha Ende (ende.app), CC BY 4.0** se queda escrito
+en Extras (`Extras.MUSIC_CREDIT`): la pista suelta ya no está, pero por si la mezcla final la lleva
+dentro, la atribución no cuesta nada y no se quita a la ligera.
 
 **Fondo de los menús (`scripts/ui/menu_backdrop.gd`):** de fondo va siempre
 `assets/art/menu/menu_fondo_0.png`, con líneas de escaneo suaves y un poco de estática. Encima, el

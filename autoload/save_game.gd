@@ -55,9 +55,6 @@ var has_totem: bool = false
 var fullscreen: bool = true
 ## El volumen de cada bus de audio, de 0 a 1. Lo pone y lo lee AudioManager.
 var bus_volumes: Dictionary = {}
-## Qué música del menú está puesta: true es la opción B, la de fábrica. Está
-## para poder comparar las dos sin tocar código.
-var menu_music_b: bool = true
 
 
 func _ready() -> void:
@@ -85,14 +82,6 @@ func set_bus_volume(bus: String, value: float) -> void:
 	if is_equal_approx(bus_volume(bus), clamped):
 		return
 	bus_volumes[bus] = clamped
-	save_game()
-
-
-## Cambia de música del menú y lo guarda.
-func set_menu_music_b(use_b: bool) -> void:
-	if menu_music_b == use_b:
-		return
-	menu_music_b = use_b
 	save_game()
 
 
@@ -260,7 +249,6 @@ func save_game() -> void:
 	file.set_value(SECTION_PROGRESS, "has_totem", has_totem)
 	file.set_value(SECTION_OPTIONS, "fullscreen", fullscreen)
 	file.set_value(SECTION_OPTIONS, "bus_volumes", bus_volumes)
-	file.set_value(SECTION_OPTIONS, "menu_music_b", menu_music_b)
 	file.save(SAVE_PATH)
 	changed.emit()
 
@@ -285,7 +273,6 @@ func load_game() -> void:
 	has_totem = bool(file.get_value(SECTION_PROGRESS, "has_totem", false))
 	fullscreen = bool(file.get_value(SECTION_OPTIONS, "fullscreen", true))
 	bus_volumes = file.get_value(SECTION_OPTIONS, "bus_volumes", {}) as Dictionary
-	menu_music_b = bool(file.get_value(SECTION_OPTIONS, "menu_music_b", true))
 	GameManager.player_name = player_name
 
 

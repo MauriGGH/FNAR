@@ -420,6 +420,10 @@ func _build_events_section() -> void:
 		close()
 		_night.camera_system.play_glimpse(AmbientEvents.glimpse_state()))
 
+	_add_button(body, "Probar Momo", func() -> void:
+		close()
+		_night.start_momo())
+
 	_add_label(body, "Sergio y el tótem:")
 	_add_button(body, "Dar tótem", func() -> void: GameManager.give_totem())
 	_add_button(body, "Probar rescate de Sergio", func() -> void:
@@ -611,19 +615,9 @@ func _build_audio_section() -> void:
 		print("[audio] faltan %d de %d; la lista quedó en %s" % [
 			MissingAudioReport.missing_ids().size(), Sounds.CATALOG.size(), path]))
 
-	_add_label(body, "Música del menú (se guarda en save.cfg):")
-	var music_label: Label = _add_label(body, _menu_music_text())
-	_add_row(body, [
-		["A", func() -> void:
-			SaveGame.set_menu_music_b(false)
-			music_label.text = _menu_music_text()
-			_play_menu_music()],
-		["B", func() -> void:
-			SaveGame.set_menu_music_b(true)
-			music_label.text = _menu_music_text()
-			_play_menu_music()],
-	])
-	_add_button(body, "Callar la música del menú", _stop_menu_music)
+	_add_label(body, "Música del menú (una sola pista, en bucle):")
+	_add_button(body, "Ponerla con su fundido", _play_menu_music)
+	_add_button(body, "Callarla", _stop_menu_music)
 
 	_add_label(body, "Golpes del tic del menú (uno por tic, sin repetir):")
 	for id: String in Sounds.MENU_TICS:
@@ -692,26 +686,14 @@ func _build_audio_section() -> void:
 		])
 
 
-## Qué opción de música del menú está puesta ahora.
-func _menu_music_text() -> String:
-	return "Puesta: %s (%s)" % ["B" if SaveGame.menu_music_b else "A",
-		Sounds.menu_music()]
-
-
-## Suelta la música del menú aquí mismo, para poder comparar las dos sin salir
-## de la noche. Primero se calla la otra, que si no se enciman.
+## Suelta la música del menú aquí mismo, con su fundido, para poder oírla sin
+## salir de la noche.
 func _play_menu_music() -> void:
-	_stop_menu_music()
-	AudioManager.play_loop(Sounds.menu_music())
-	for layer: String in Sounds.menu_layers():
-		AudioManager.play_loop(layer)
+	AudioManager.play_loop_faded(Sounds.MENU_MUSIC, Sounds.MENU_MUSIC_FADE_IN)
 
 
 func _stop_menu_music() -> void:
-	for id: String in [Sounds.MENU_MUSIC, Sounds.MENU_MUSIC_B]:
-		AudioManager.stop(id)
-	for layer: String in Sounds.MENU_LAYERS + Sounds.MENU_LAYERS_B:
-		AudioManager.stop(layer)
+	AudioManager.stop(Sounds.MENU_MUSIC)
 
 
 # --- Retos de Custom Night ----------------------------------------------------

@@ -108,8 +108,11 @@ func play(jumpscare_id: String, caption: String = "") -> void:
 	_zoom = ZOOM_FROM
 	_flash_left = FLASH_FRAMES
 	_set_phase(Phase.FIRST, FIRST_FRAME_TIME)
-	# El grito va siempre, y a todo volumen: la estática sola no asusta.
-	AudioManager.play(Sounds.scream_for(jumpscare_id))
+	# El grito va siempre, y a todo volumen: la estática sola no asusta. Entra
+	# como secuencia, así que calla lo que quedara de un susto anterior y la
+	# estática del game over esperará a que acabe.
+	AudioManager.begin_sequence(Sounds.SEQ_SCARE)
+	AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.scream_for(jumpscare_id))
 
 
 ## Mamador no salta: su final es la pantalla de WASTED, que vive aparte. Aquí
@@ -136,7 +139,8 @@ func play_scare() -> void:
 	_zoom = ZOOM_FROM
 	_flash_left = 0
 	_set_phase(Phase.SCARE_BLACK, SCARE_BLACK_TIME)
-	AudioManager.play(Sounds.scream_for(SCARE_ID))
+	AudioManager.begin_sequence(Sounds.SEQ_SCARE)
+	AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.scream_for(SCARE_ID))
 
 
 func _texture(name: String) -> Texture2D:

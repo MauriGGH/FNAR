@@ -74,6 +74,10 @@ static func build(generator: String) -> AudioStreamWAV:
 			return arcade_music_box()
 		"breach":
 			return breach()
+		"rescue":
+			return rescue()
+		"momo_song":
+			return momo_song()
 		"phone_hang_up":
 			return phone_hang_up()
 		"far_running":
@@ -523,6 +527,65 @@ const BREACH_HIT_HZ: float = 65.0
 const BREACH_SHOUTS: Array[float] = [0.18, 0.42, 0.7, 0.95]
 const BREACH_SHOUT_LENGTH: float = 0.22
 const BREACH_SHOUT_AMPLITUDE: float = 0.45
+
+
+# --- El rescate de Sergio y la canción de Momo --------------------------------
+## Las dos son pistas largas con sus momentos marcados. Estos provisionales no
+## imitan la música: solo ponen algo en cada tiempo para poder probar la escena
+## con los archivos de verdad fuera.
+const RESCUE_LENGTH: float = 13.3
+const RESCUE_PAD_HZ: Array[float] = [98.0, 146.8, 196.0]
+const MOMO_LENGTH: float = 15.3
+const MOMO_BEAT: float = 0.42
+const MOMO_BASE_HZ: float = 523.0
+const MOMO_NOTES: Array[int] = [0, 4, 7, 4, 0, -3, 0, 4]
+
+
+## El rescate: un acorde que se sostiene, un golpe de aire a los 3.5 s y un
+## brillo que crece desde los 8.5 s, que es cuando entra el tótem.
+static func rescue() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(RESCUE_LENGTH)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var value: float = 0.0
+		for hz: float in RESCUE_PAD_HZ:
+			value += sin(TAU * hz * t) * 0.12
+		# El aire del haz.
+		if t >= Sergio.RESCUE_BEAM_AT and t < Sergio.RESCUE_BEAM_AT + 1.2:
+			var air: float = (t - Sergio.RESCUE_BEAM_AT) / 1.2
+			value += randf_range(-1.0, 1.0) * sin(air * PI) * 0.3
+		# Y el aura del tótem, que se abre y se queda.
+		if t >= Sergio.RESCUE_TOTEM_AT:
+			var up: float = minf((t - Sergio.RESCUE_TOTEM_AT) / 0.6, 1.0)
+			value += sin(TAU * 784.0 * t) * 0.1 * up
+			value += sin(TAU * 1046.0 * t) * 0.07 * up
+		buffer[i] = value * 0.6
+	return _to_wav(buffer)
+
+
+## La de Momo: una melodía de cajita que se va desafinando, y al llegar al
+## screamer todo se convierte en ruido.
+static func momo_song() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(MOMO_LENGTH)
+	var notes: int = int(Momo.SCREAMER_AT / MOMO_BEAT)
+	for note: int in notes:
+		var sour: float = -2.5 * float(note) / float(maxi(notes - 1, 1))
+		var step: int = MOMO_NOTES[note % MOMO_NOTES.size()]
+		var hz: float = MOMO_BASE_HZ * pow(2.0, (float(step) + sour) / 12.0)
+		var first: int = int(float(note) * MOMO_BEAT * SAMPLE_RATE)
+		var samples: int = int(MOMO_BEAT * 1.4 * SAMPLE_RATE)
+		for i: int in samples:
+			var index: int = first + i
+			if index >= buffer.size():
+				break
+			var t: float = float(i) / float(SAMPLE_RATE)
+			buffer[index] += sin(TAU * hz * t) * exp(-3.5 * t) * 0.28
+	# El grito del final: ruido de banda ancha hasta que se acaba.
+	var scream_at: int = int(Momo.SCREAMER_AT * SAMPLE_RATE)
+	for i: int in range(scream_at, buffer.size()):
+		var t: float = float(i - scream_at) / float(SAMPLE_RATE)
+		buffer[i] += randf_range(-1.0, 1.0) * minf(t / 0.1, 1.0) * 0.45
+	return _to_wav(buffer)
 
 
 static func breach() -> AudioStreamWAV:

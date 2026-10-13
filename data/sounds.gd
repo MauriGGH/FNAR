@@ -47,26 +47,12 @@ const ALARM: String = "despertador"
 const SCHOOL_BELL: String = "campana_escuela"
 ## Los niños gritando "¡yeeey!" al acabarse las campanadas de las 6 AM.
 const CHILDREN_CHEER: String = "ninos_yay"
-## La música del menú principal: una pista en bucle y, encima, dos capas de
-## ambiente más bajas. Las tres suenan a la vez.
-##
-## Hay **dos opciones para comparar**, y la que está puesta se guarda en
-## save.cfg (`menu_music_b`). La **B es la que viene de fábrica**: su pista es
-## más corta y deja silencios, así que el dron de voces (`menu_capa2_b`) va
-## bastante más arriba para que esos huecos no queden vacíos.
-const MENU_MUSIC: String = "menu_musica"
-const MENU_MUSIC_B: String = "menu_musica_b"
-const MENU_LAYERS: Array[String] = ["menu_capa", "menu_capa2"]
-const MENU_LAYERS_B: Array[String] = ["menu_capa", "menu_capa2_b"]
-
-
-## La pista y las capas de la opción que esté puesta.
-static func menu_music() -> String:
-	return MENU_MUSIC_B if SaveGame.menu_music_b else MENU_MUSIC
-
-
-static func menu_layers() -> Array[String]:
-	return MENU_LAYERS_B if SaveGame.menu_music_b else MENU_LAYERS
+## La música del menú principal: **una sola pista en bucle**, de 64 s. Ya trae
+## mezclado el dron de voces, así que no lleva ninguna capa encima ni hay nada
+## que elegir: antes eran tres pistas a la vez y dos opciones para comparar.
+const MENU_MUSIC: String = "menu_musica_final"
+## Lo que tarda en entrar al abrir el menú.
+const MENU_MUSIC_FADE_IN: float = 0.5
 ## Y la de Extras y la Custom Night, también en bucle.
 const EXTRAS_MUSIC: String = "extras_musica"
 const FOOTSTEPS: String = "pasos_acercandose"
@@ -88,6 +74,54 @@ const MENU_TIC_BOOMS: Array[String] = ["tic_boom_1", "tic_boom_2", "tic_boom_3"]
 const UNEASY_STATIC: String = "estatica_inquietante"
 ## La misma, más bajita, debajo de la estática de la pantalla de game over.
 const UNEASY_STATIC_GAME_OVER: String = "estatica_inquietante_gameover"
+# --- Secuencias de efectos ----------------------------------------------------
+## Un susto, un rescate o una irrupción son **secuencias**: sus sonidos van uno
+## detrás de otro y **nunca se enciman**. Quien las pide no apunta tiempos a
+## mano: el AudioManager encola el siguiente y lo suelta cuando el anterior
+## termina de verdad (su señal `finished`). Y al empezar una secuencia se calla
+## lo que haya quedado sonando de ella, para que un susto nuevo no se mezcle
+## con los restos del anterior.
+const SEQ_SCARE: String = "susto"
+const SEQ_RESCUE: String = "rescate"
+const SEQ_MOMO: String = "momo"
+const SEQ_BLACKOUT: String = "apagon"
+
+## Qué sonidos forman cada una. Los gritos no se listan: son muchos (uno por
+## profe y tres de reserva) y entran por su prefijo en `sequence_of()`.
+const SEQUENCES: Dictionary = {
+	SEQ_SCARE: [
+		"wasted", "mamador_brecha", "estatica_inquietante_gameover", "cortaso",
+	],
+	SEQ_RESCUE: ["sergio_rescate"],
+	SEQ_MOMO: ["momo_cancion"],
+	SEQ_BLACKOUT: ["apagon_frase", "cajita_musical_apagon", "pasos_acercandose"],
+}
+
+## Los ids de cada secuencia, resueltos del catálogo una sola vez.
+static var _sequence_ids: Dictionary = {}
+
+
+## A qué secuencia pertenece un sonido, o "" si va por su cuenta.
+static func sequence_of(id: String) -> String:
+	for name: Variant in SEQUENCES:
+		if id in (SEQUENCES[name] as Array):
+			return str(name)
+	return SEQ_SCARE if id.begins_with("grito") else ""
+
+
+## Todos los ids de una secuencia, gritos incluidos.
+static func sequence_ids(sequence: String) -> Array[String]:
+	if _sequence_ids.is_empty():
+		for id: Variant in CATALOG:
+			var name: String = sequence_of(str(id))
+			if name.is_empty():
+				continue
+			if not _sequence_ids.has(name):
+				_sequence_ids[name] = [] as Array[String]
+			(_sequence_ids[name] as Array[String]).append(str(id))
+	return _sequence_ids.get(sequence, [] as Array[String])
+
+
 ## Cuando uno de los del cristal se va con el cuarto destello.
 const GLASS_REPEL: String = "se_aleja"
 ## Ambiente, en bucle toda la noche.
@@ -160,14 +194,15 @@ const LIGHTNING: String = "descarga_pararrayos"
 ## El cortaso: el Mago entrando a la oficina a dejarla sin linterna.
 const CORTASO: String = "cortaso"
 
-## El rescate de Sergio, que todavía no está hecho: los ids quedan registrados
-## para que el día que se programe solo haya que pedirlos.
-## - ROSE_SUSPENSE: al congelarse el susto.
-## - ROSE_AIR: con el destello blanco y el tótem.
-## - AURA: al terminar, y también al ganar el tótem en el minijuego.
-const ROSE_SUSPENSE: String = "rosa_suspenso"
-const ROSE_AIR: String = "rosa_aire"
+## El rescate de Sergio es **una sola pista de 13.3 s** que lleva dentro todo:
+## el suspenso del congelado, el aire del haz y el aura del tótem. La escena se
+## cuelga de sus tiempos (ver `Sergio.RESCUE_*`), así que no hay nada que
+## encimar. Antes eran tres sonidos sueltos y se pisaban.
+const SERGIO_RESCUE: String = "sergio_rescate"
+## El aura sigue en pie, pero solo para el final del minijuego de la maquinita.
 const AURA: String = "aura"
+## Y la canción de Momo, con su grito al final.
+const MOMO_SONG: String = "momo_cancion"
 
 # --- Lo que se oye de lejos --------------------------------------------------
 const FAR_BARCOSA_RUN: String = "barcosa_corre"
@@ -465,30 +500,15 @@ const CATALOG: Dictionary = {
 		"volume_db": -16.0, "generator": "camera_static",
 		"desc": "La misma estática, más bajita, debajo de la de la pantalla de game over (mismo archivo).",
 	},
-	"menu_musica": {
-		"file": "menu_musica.ogg", "bus": "Música",
+	"momo_cancion": {
+		"file": "extras/momo_cancion.ogg", "bus": "Música",
+		"volume_db": 0.0, "generator": "momo_song",
+		"desc": "La cancioncita de Momo, 15 s: dulce al principio y rota al final, con su grito.",
+	},
+	"menu_musica_final": {
+		"file": "menu/menu_musica_final.ogg", "bus": "Música",
 		"volume_db": -12.0, "generator": "menu_music",
-		"desc": "La pista principal del menú, en bucle (5:46). Es «Halloween Atmosphere 2024» de Sascha Ende, CC BY 4.0.",
-	},
-	"menu_capa": {
-		"file": "menu_capa.ogg", "bus": "Música",
-		"volume_db": -22.0, "generator": "",
-		"desc": "Primera capa de ambiente encima de la música del menú, en bucle sin corte.",
-	},
-	"menu_capa2": {
-		"file": "menu_capa2.ogg", "bus": "Música",
-		"volume_db": -24.0, "generator": "",
-		"desc": "El dron de voces del menú, muy bajito, en bucle sin corte. Es el de la opción A.",
-	},
-	"menu_capa2_b": {
-		"file": "menu_capa2.ogg", "bus": "Música",
-		"volume_db": -16.0, "generator": "",
-		"desc": "El mismo dron de voces, bastante más arriba: con la opción B tapa los silencios de la pista (mismo archivo).",
-	},
-	"menu_musica_b": {
-		"file": "menu_musica_b.ogg", "bus": "Música",
-		"volume_db": -12.0, "generator": "menu_music",
-		"desc": "La otra música del menú (opción B, la de fábrica): bucle de 98 s, con silencios que tapa el dron de voces.",
+		"desc": "La música del menú principal: bucle de 64 s, con el dron de voces ya mezclado dentro.",
 	},
 	"pasos_acercandose": {
 		"file": "pasos_acercandose.ogg", "bus": "Efectos",
@@ -615,20 +635,15 @@ const CATALOG: Dictionary = {
 		"volume_db": 0.0, "generator": "",
 		"desc": "Número equivocado, ya con efecto de teléfono. Entra una vez por noche entre la 1 y las 5 AM.",
 	},
-	"rosa_suspenso": {
-		"file": "extras/rosa_suspenso.ogg", "bus": "Música",
-		"volume_db": -4.0, "generator": "",
-		"desc": "Rescate de Sergio (sin programar): el suspenso de cuando el susto se congela.",
-	},
-	"rosa_aire": {
-		"file": "extras/rosa_aire.ogg", "bus": "Música",
-		"volume_db": -4.0, "generator": "",
-		"desc": "Rescate de Sergio (sin programar): el golpe de aire del destello blanco y el tótem.",
+	"sergio_rescate": {
+		"file": "extras/sergio_rescate.ogg", "bus": "Música",
+		"volume_db": -2.0, "generator": "rescue",
+		"desc": "El rescate de Sergio completo, 13.3 s: suspenso, el aire del haz a los 3.5 s y el aura del tótem a los 8.5 s.",
 	},
 	"aura": {
 		"file": "extras/aura.ogg", "bus": "Música",
 		"volume_db": -6.0, "generator": "",
-		"desc": "Rescate de Sergio (sin programar): el aura del final, y también al ganar el tótem en el minijuego.",
+		"desc": "El aura del tótem al ganar un nivel de la maquinita.",
 	},
 	"mamador_brecha": {
 		"file": "mamador_brecha.ogg", "bus": "Efectos",
@@ -844,11 +859,10 @@ const CATALOG: Dictionary = {
 
 ## Los que suenan en bucle: el AudioManager les marca el bucle al cargarlos.
 const LOOPING: Array[String] = [
-	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica",
+	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica_final",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
 	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
 	"arcade_nivel1", "arcade_nivel2", "arcade_nivel3",
-	"menu_capa", "menu_capa2",
 	# El zumbido de Armando dura lo que dure su toma de pantalla.
 	"armando_glitch_bucle",
 	# Los pasos de Barcosa suenan toda su carrera, así que van en bucle.

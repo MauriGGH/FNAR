@@ -89,8 +89,8 @@ func start() -> void:
 func cancel() -> void:
 	_fade_pending = false
 	if is_running:
-		AudioManager.stop(Sounds.MUSIC_BOX_BLACKOUT)
-		AudioManager.stop(Sounds.FOOTSTEPS)
+		# Se calla la secuencia entera: la frase, la cajita y los pasos.
+		AudioManager.begin_sequence(Sounds.SEQ_BLACKOUT)
 	is_running = false
 	is_showing_sparks = false
 	_phase = Phase.IDLE
@@ -103,7 +103,9 @@ func _process(delta: float) -> void:
 	_left -= delta
 	match _phase:
 		Phase.WAITING:
-			if _left <= 0.0:
+			# La oscuridad aguanta hasta que se acabe la frase del apagón: dos
+			# cosas de la misma secuencia no suenan a la vez.
+			if _left <= 0.0 and not AudioManager.sequence_busy(Sounds.SEQ_BLACKOUT):
 				_begin_eyes()
 		Phase.EYES:
 			_eyes_elapsed += delta
@@ -146,7 +148,8 @@ func _begin_eyes() -> void:
 	# Las cajitas de la botarga se callan: a oscuras solo se oye esta.
 	AudioManager.stop(Sounds.MUSIC_BOX)
 	AudioManager.stop(Sounds.MUSIC_BOX_WARNING)
-	AudioManager.play_from(Sounds.MUSIC_BOX_BLACKOUT, _segment_start)
+	AudioManager.play_in_sequence(Sounds.SEQ_BLACKOUT, Sounds.MUSIC_BOX_BLACKOUT,
+		Callable(), _segment_start)
 	eyes_opened.emit()
 	queue_redraw()
 
@@ -168,7 +171,7 @@ func _begin_steps() -> void:
 	# verdad; si no está, lo que dure el provisional.
 	var steps: float = AudioManager.length(Sounds.FOOTSTEPS)
 	_left = steps if steps > 0.0 else ToneBuilder.footsteps_length()
-	AudioManager.play(Sounds.FOOTSTEPS)
+	AudioManager.play_in_sequence(Sounds.SEQ_BLACKOUT, Sounds.FOOTSTEPS)
 
 
 func _fire() -> void:
@@ -223,7 +226,9 @@ func debug_skip_to_eyes() -> void:
 func phase_text() -> String:
 	match _phase:
 		Phase.WAITING:
-			return "a oscuras (%.1f s)" % _left
+			# Puede quedarse en cero esperando a que acabe la frase, así que no
+			# se enseña en negativo.
+			return "a oscuras (%.1f s)" % maxf(_left, 0.0)
 		Phase.EYES:
 			return "ojos con el tramo %.1f-%.1f s de la canción (quedan %.1f s)" % [
 				_segment_start, _segment_end, _left]

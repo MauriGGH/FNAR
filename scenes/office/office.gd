@@ -22,6 +22,10 @@ signal breaker_requested()
 signal server_room_requested()
 signal phone_requested()
 ## La linterna se prendió o se apagó de verdad.
+## Cambió de vista. La escucha el night.gd, que es quien tira el dado de Momo
+## cada vez que la cabeza llega a la vista izquierda.
+signal view_changed(view: int)
+
 signal flashlight_changed(is_on: bool)
 ## Se intentó prender pero el cortaso de Audel la dejó muerta.
 signal flashlight_failed()
@@ -154,6 +158,10 @@ enum View { LEFT, CENTER, RIGHT }
 
 var is_door_closed: bool = false
 var is_interactive: bool = true
+## Con el candado puesto no se gira ni se toca nada, pero **el parallax del
+## mouse sigue**: es lo que mantiene la sensación de estar ahí. Lo usa el susto
+## de Momo, que deja la vista izquierda tomada mientras suena su canción.
+var is_locked: bool = false
 
 var _state: ViewState = ViewState.PANNING
 var _current_view: int = View.CENTER
@@ -217,6 +225,7 @@ var _shake_left: float = 0.0
 var _view_nodes: Array[Control] = []
 var _content_nodes: Array[Control] = []
 var _right_normal_texture: Texture2D = null
+var _momo_layer: TextureRect = null
 
 
 func _ready() -> void:
@@ -240,6 +249,7 @@ func _ready() -> void:
 	_build_labels()
 	_build_ticket_envelope()
 	_build_photo_viewer()
+	_build_momo()
 	_build_blackout_overlays()
 	_build_flashlight()
 	_build_beam_widgets()
@@ -260,7 +270,8 @@ func _ready() -> void:
 ## cristal, y solo sirve mirando al frente. El cono sigue al mouse: el pasillo
 ## está a oscuras y solo se ve lo que queda dentro del haz.
 func _update_flashlight(delta: float) -> void:
-	var allowed: bool = is_interactive and _state == ViewState.PANNING and _current_view == View.CENTER
+	var allowed: bool = is_interactive and not is_locked \
+		and _state == ViewState.PANNING and _current_view == View.CENTER
 	# El clic heredado de la pantalla que se acaba de cerrar no cuenta.
 	if _swallow_click and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_swallow_click = false
@@ -401,6 +412,48 @@ func _refresh_urena_photos() -> void:
 ## El night.gd apaga la interacción mientras las cámaras están arriba: así ni se
 ## gira la cabeza ni se prende la linterna desde detrás del monitor. Al volver,
 ## la vista es la misma que se dejó.
+## El susto de Momo: no se gira ni se toca nada, pero la vista sigue
+## respondiendo al mouse. Al soltarlo, el clic que venga se ignora hasta que se
+## levante el botón, igual que al volver de una pantalla acercada.
+func set_locked(locked: bool) -> void:
+	is_locked = locked
+	if not locked:
+		_swallow_click = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+
+
+# --- El susto de Momo ---------------------------------------------------------
+
+## Su foto es del tamaño de la vista y va **encima de todo lo de la izquierda**:
+## sustituye lo que hubiera ahí (los recortes de los profes, las etiquetas) sin
+## tocarlo, y como cuelga del mismo Content se mueve con el mismo parallax.
+func _build_momo() -> void:
+	_momo_layer = TextureRect.new()
+	_momo_layer.name = "Momo"
+	_momo_layer.texture = Momo.texture(Momo.VIEW_IMAGE)
+	_momo_layer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_momo_layer.stretch_mode = TextureRect.STRETCH_SCALE
+	_momo_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_momo_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_momo_layer.visible = false
+	left_content.add_child(_momo_layer)
+
+
+## Pone o quita su foto. Al quitarla, la vista vuelve a estar como estaba y el
+## acercamiento se deshace.
+func set_momo_active(active: bool) -> void:
+	if _momo_layer != null:
+		_momo_layer.visible = active
+	if not active:
+		set_momo_zoom(Momo.ZOOM_FROM)
+
+
+## Lo acercada que va la vista izquierda. El pivote es el punto donde está
+## Momo, así que se acerca **a él** y no al centro de la foto.
+func set_momo_zoom(amount: float) -> void:
+	left_content.pivot_offset = left_content.size * Momo.ZOOM_AT
+	left_content.scale = Vector2.ONE * amount
+
+
 func set_interactive(interactive: bool) -> void:
 	is_interactive = interactive
 	# Al volver de una pantalla acercada, el botón del mouse puede seguir
@@ -560,7 +613,9 @@ func _update_pan(delta: float) -> void:
 	# el parallax siguiera escribiendo la posición, se pelearían.
 	if _state != ViewState.PANNING:
 		return
-	var wanted: Vector2 = _wanted_pan() if is_interactive else Vector2.ZERO
+	# Con el candado el parallax sigue: lo que se bloquea es girar y tocar.
+	var wanted: Vector2 = _wanted_pan() if (is_interactive or is_locked) \
+		else Vector2.ZERO
 	var eased: float = 1.0 - exp(-delta * PAN_SMOOTHING)
 	var before: Vector2 = _pan[_current_view]
 	for i: int in _content_nodes.size():
@@ -643,6 +698,7 @@ func _on_sweep_finished(target: int) -> void:
 	_current_view = target
 	_set_blur(0.0)
 	_state = ViewState.PANNING
+	view_changed.emit(_current_view)
 
 
 ## El desenfoque se pide en píxeles de pantalla; los shaders lo quieren en
@@ -706,7 +762,7 @@ func set_right_view_empty(is_empty: bool) -> void:
 ## Un toque de A o D (o de las flechas) cambia a la vista de al lado. El mouse
 ## no cambia de vista nunca: solo mueve la que ya está puesta.
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_interactive or _state != ViewState.PANNING:
+	if not is_interactive or is_locked or _state != ViewState.PANNING:
 		return
 	if event.is_action_pressed("turn_left"):
 		rotate_view(-1)
@@ -835,6 +891,8 @@ func set_zones_visible(is_visible: bool) -> void:
 
 
 func _on_zone_clicked(zone_id: String) -> void:
+	if is_locked:
+		return  # Con el susto de Momo encima no se abre nada.
 	match zone_id:
 		"monitor":
 			zoom_to_pc()

@@ -13,6 +13,9 @@ extends Node
 
 ## Cambió el volumen de un bus. Lo escucha el menú de opciones.
 signal bus_volume_changed(bus: String, value: float)
+## Se acabó un sonido de los de una sola vez (los bucles no terminan solos). Es
+## lo que encadena las secuencias, y lo puede escuchar quien quiera.
+signal sound_finished(id: String)
 
 ## Lo más bajo que llega el deslizador antes de callar del todo.
 const MIN_DB: float = -40.0
@@ -29,6 +32,13 @@ var _fades: Dictionary = {}        # id -> Tween del fundido que esté corriendo
 ## es lo que arruina el ambiente: hay que poder callarlos todos de golpe sin
 ## cortar los sonidos de una sola vez (un grito, un golpe) que estén en el aire.
 var _loops: Dictionary = {}        # id -> true mientras ese bucle esté puesto
+## Lo que espera su turno en cada secuencia: nombre -> [{id, from}]. Dos
+## efectos de la misma secuencia **nunca** suenan a la vez: el siguiente entra
+## cuando el anterior acaba de verdad.
+var _queued: Dictionary = {}
+## Lo que hay que llamar cuando termine un sonido: id -> Callable. Así la
+## imagen se encadena con el sonido y no con un tiempo apuntado a mano.
+var _after: Dictionary = {}
 
 
 func _ready() -> void:
@@ -45,8 +55,95 @@ func play(id: String) -> void:
 	var player: AudioStreamPlayer = _player_for(id)
 	if player == null:
 		return
+	_stop_fade(id)
+	player.stream_paused = false
+	player.volume_db = Sounds.volume_db(id)
 	_apply_pan(id)
 	player.play()
+
+
+# --- Secuencias ---------------------------------------------------------------
+
+## Arranca una secuencia (un susto, un rescate, una irrupción): calla lo que
+## quede sonando de ella y tira su cola. Un susto nuevo no se mezcla con los
+## restos del anterior.
+func begin_sequence(sequence: String) -> void:
+	_queued.erase(sequence)
+	for id: String in Sounds.sequence_ids(sequence):
+		_after.erase(id)
+		if is_playing(id):
+			stop(id)
+
+
+## Suena dentro de una secuencia. Si hay otro de la misma en el aire, este
+## **espera su turno** y entra en cuanto el otro termine; si no, suena ya.
+## `then` se llama al acabar este, para encadenar lo que venga después.
+func play_in_sequence(sequence: String, id: String, then: Callable = Callable(),
+		from_position: float = 0.0) -> void:
+	if then.is_valid():
+		_after[id] = then
+	else:
+		_after.erase(id)
+	if _sequence_playing(sequence).is_empty():
+		_play_entry(id, from_position)
+		return
+	if not _queued.has(sequence):
+		_queued[sequence] = []
+	(_queued[sequence] as Array).append({"id": id, "from": from_position})
+
+
+## ¿Sigue sonando, o esperando, algo de esta secuencia? Lo pregunta quien tiene
+## que aguantar una imagen hasta que el audio acabe.
+func sequence_busy(sequence: String) -> bool:
+	return not _sequence_playing(sequence).is_empty() or _queued.has(sequence)
+
+
+## Cuál de los sonidos de la secuencia está sonando ahora, si alguno.
+func _sequence_playing(sequence: String) -> String:
+	for id: String in Sounds.sequence_ids(sequence):
+		if is_playing(id):
+			return id
+	return ""
+
+
+## Suelta el siguiente de la cola, si queda alguno.
+func _advance_sequence(sequence: String) -> void:
+	if sequence.is_empty() or not _queued.has(sequence):
+		return
+	var queue: Array = _queued[sequence] as Array
+	if queue.is_empty():
+		_queued.erase(sequence)
+		return
+	var entry: Dictionary = queue.pop_front()
+	if queue.is_empty():
+		_queued.erase(sequence)
+	_play_entry(str(entry["id"]), float(entry["from"]))
+
+
+## Un sonido de la cola. Si ni archivo ni provisional existen no se puede
+## esperar su final, así que lo que venía detrás se llama de inmediato.
+func _play_entry(id: String, from_position: float) -> void:
+	if _player_for(id) == null:
+		_run_after.call_deferred(id)
+		return
+	if from_position > 0.0:
+		play_from(id, from_position)
+	else:
+		play(id)
+
+
+## Se acabó un sonido: lo que esperaba por él se entera.
+func _on_player_finished(id: String) -> void:
+	_run_after(id)
+	sound_finished.emit(id)
+	_advance_sequence(Sounds.sequence_of(id))
+
+
+func _run_after(id: String) -> void:
+	var callback: Callable = _after.get(id, Callable()) as Callable
+	_after.erase(id)
+	if callback.is_valid():
+		callback.call()
 
 
 ## Suena desde ese segundo, no desde el principio. Lo usa el apagón, que no
@@ -88,6 +185,38 @@ func _end_fade(id: String) -> void:
 	stop(id)
 
 
+## Como play_loop, pero entrando con un fundido y, si se le pide, desde un
+## segundo concreto. Lo usa la música del menú: al volver de Extras retoma
+## donde iba en vez de empezar otra vez.
+func play_loop_faded(id: String, seconds: float, from_position: float = 0.0) -> void:
+	var player: AudioStreamPlayer = _player_for(id)
+	if player == null:
+		return
+	_stop_fade(id)
+	_loops[id] = true
+	player.stream_paused = false
+	_apply_pan(id)
+	player.play(maxf(from_position, 0.0))
+	player.volume_db = FADE_SILENCE_DB
+	var tween: Tween = create_tween()
+	_fades[id] = tween
+	tween.tween_property(player, "volume_db", Sounds.volume_db(id),
+		maxf(seconds, 0.01))
+	# Un fundido de entrada no para nada al acabar: solo deja de estar en curso.
+	tween.tween_callback(_stop_fade.bind(id))
+
+
+## Congela todo lo que esté sonando menos los ids que se le digan, **sin perder
+## la posición**: al soltarlo, cada cosa sigue donde iba. Lo usa el evento de
+## Momo, que para el juego entero y deja solo su canción.
+func set_paused_except(keep: Array[String], paused: bool) -> void:
+	for id: Variant in _players:
+		var player: AudioStreamPlayer = _players[id] as AudioStreamPlayer
+		if player == null:
+			continue
+		player.stream_paused = paused and not (str(id) in keep)
+
+
 ## Suena en bucle. Si ya estaba sonando, lo deja seguir para que no se reinicie
 ## a cada rato. Queda apuntado en el registro hasta que alguien lo pare.
 func play_loop(id: String) -> void:
@@ -121,14 +250,19 @@ func _apply_pan(id: String) -> void:
 func stop(id: String) -> void:
 	_stop_fade(id)
 	_loops.erase(id)
+	# Cortarlo a mano no dispara su `finished`, así que lo que esperaba detrás
+	# se descarta: si no, se quedaría colgado para siempre.
+	_after.erase(id)
 	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
 	if player == null:
 		return
 	if player.playing:
 		player.stop()
+	player.stream_paused = false
 	# Si venía de un fundido, su volumen quedó por el suelo: se devuelve al del
 	# catálogo para que la próxima vez no suene callado.
 	player.volume_db = Sounds.volume_db(id)
+	_advance_sequence(Sounds.sequence_of(id))
 
 
 ## El tono de un sonido: 1.0 es el normal, menos es más grave y más lento. Lo
@@ -147,6 +281,10 @@ func is_playing(id: String) -> bool:
 ## Calla todo. Lo usan los cambios de pantalla, para que nada se arrastre de una
 ## escena a la siguiente.
 func stop_all() -> void:
+	# Las colas se tiran primero: si no, cada stop() soltaría el siguiente de
+	# su secuencia y el sonido se colaría en la pantalla nueva.
+	_queued.clear()
+	_after.clear()
 	for id: Variant in _players:
 		stop(str(id))
 
@@ -240,6 +378,7 @@ func _player_for(id: String) -> AudioStreamPlayer:
 	player.bus = Sounds.bus_of(id)
 	player.volume_db = Sounds.volume_db(id)
 	player.process_mode = Node.PROCESS_MODE_ALWAYS
+	player.finished.connect(_on_player_finished.bind(id))
 	add_child(player)
 	_players[id] = player
 	return player

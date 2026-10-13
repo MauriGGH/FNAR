@@ -50,7 +50,9 @@ func _ready() -> void:
 	_build_list()
 	_static_layer = ScreenFx.add_static(self, STATIC_HEAVY)
 	# Debajo de la estática que se ve, la que se oye.
-	AudioManager.play(Sounds.UNEASY_STATIC_GAME_OVER)
+	# Debajo de la estática visual, pero **esperando su turno**: si el grito del
+	# susto o el golpe de WASTED siguen sonando, entra cuando acaben.
+	AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.UNEASY_STATIC_GAME_OVER)
 	# Los textos se arman en la escena, así que hay que subirlos por encima de
 	# la imagen y de la estática.
 	for node_name: String in ["TitleLabel", "CauseLabel"]:

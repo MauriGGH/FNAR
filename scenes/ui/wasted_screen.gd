@@ -5,18 +5,21 @@ extends Control
 ## va a usar la tarea de la baraja; lo único que cambia entre las dos es el
 ## texto de abajo, que se pasa como parámetro.
 ##
-## El game over de Mamador entra además con una **irrupción**: 0.8 s de pantalla
-## negra con el ruido de la puerta derribada y los gritos del operativo, y un
-## flash blanco de un cuadro. La tarea de la baraja no la lleva: se pide con el
+## El game over de Mamador entra además con una **irrupción**: pantalla negra
+## con el ruido de la puerta derribada y los gritos del operativo, y un flash
+## blanco de un cuadro. La tarea de la baraja no la lleva: se pide con el
 ## parámetro `breach`.
 ##
-## La secuencia, en orden:
+## **El negro dura exactamente lo que dura su audio**, no un tiempo apuntado
+## aquí: la cuenta de abajo arranca con la señal `finished` de `mamador_brecha`,
+## así que nada de la secuencia se encima con nada.
+##
+## La secuencia, en orden (desde que se levanta el negro):
 ##   0.0  la imagen a pantalla completa, con un zoom lento que no para en toda
 ##        la secuencia (1.0 a 1.08)
-##   0.4  se va a blanco y negro en 0.8 s y baja un poco de brillo; suena el
-##        golpe de `wasted`
+##   0.4  se va a blanco y negro en 0.8 s y baja un poco de brillo
 ##   1.2  entra la franja negra del centro, de lado a lado
-##   1.2  encima, "WASTED" escalando de 1.15 a 1.0
+##   1.2  encima, "WASTED" escalando de 1.15 a 1.0, **con el golpe de `wasted`**
 ##   2.2  debajo de la franja, el texto que se le haya pasado
 ##   5.2  avisa de que terminó
 ##
@@ -30,8 +33,6 @@ const GREYSCALE_SHADER: String = "res://scenes/ui/greyscale.gdshader"
 const IMAGE_PATH: String = "res://assets/art/jumpscares/jumpscare_%s"
 
 # --- La irrupción de antes ---------------------------------------------------
-## Lo que dura el negro con el ruido del operativo, antes de la imagen.
-const BREACH_TIME: float = 0.8
 ## El flash blanco dura un solo cuadro, como el del jumpscare.
 const BREACH_FLASH_FRAMES: int = 1
 
@@ -160,8 +161,6 @@ func play(image_id: String, bottom_text: String, breach: bool = false) -> void:
 		return
 	is_playing = true
 	visible = true
-	if breach:
-		_play_breach()
 	_picture.texture = GameAssets.load_texture(IMAGE_PATH % image_id)
 	_subtitle.text = bottom_text
 	_layout()
@@ -173,43 +172,59 @@ func play(image_id: String, bottom_text: String, breach: bool = false) -> void:
 	_subtitle.modulate.a = 0.0
 	_set_grey(0.0, 0.0)
 
+	# Esta pantalla es un susto: sus sonidos van uno detrás de otro y lo que
+	# quedara sonando de otro se calla aquí.
+	AudioManager.begin_sequence(Sounds.SEQ_SCARE)
+	if breach:
+		_play_breach()
+		return
+	_start_body()
+
+
+## La cuenta de siempre, ya sin negro delante.
+func _start_body() -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_tween = create_tween()
 	_tween.set_parallel(true)
-	# Con la irrupción puesta, todo lo demás arranca cuando se levanta el negro.
-	var start: float = BREACH_TIME if breach else 0.0
 	# El zoom corre por debajo de todo lo demás, de principio a fin.
-	_tween.tween_property(_picture, "scale", Vector2.ONE * ZOOM_TO, TOTAL_TIME) \
-		.set_delay(start)
+	_tween.tween_property(_picture, "scale", Vector2.ONE * ZOOM_TO, TOTAL_TIME)
 	# A los 0.4 s, a blanco y negro.
 	_tween.tween_method(_set_grey_amount, 0.0, 1.0, DESATURATE_TIME) \
-		.set_delay(start + DESATURATE_AT)
-	_tween.tween_callback(func() -> void: AudioManager.play(Sounds.WASTED)) \
-		.set_delay(start + DESATURATE_AT)
-	# A los 1.2 s, la franja y el título.
-	_tween.tween_property(_band, "modulate:a", 1.0, BAND_FADE).set_delay(start + BAND_AT)
-	_tween.tween_property(_title, "modulate:a", 1.0, BAND_FADE).set_delay(start + BAND_AT)
+		.set_delay(DESATURATE_AT)
+	# A los 1.2 s, la franja y el título. **El golpe de WASTED entra aquí**,
+	# con el texto: si sonara antes se encimaría con la irrupción.
+	_tween.tween_property(_band, "modulate:a", 1.0, BAND_FADE).set_delay(BAND_AT)
+	_tween.tween_property(_title, "modulate:a", 1.0, BAND_FADE).set_delay(BAND_AT)
 	_tween.tween_method(_set_title_scale, TITLE_POP_FROM, 1.0, TITLE_POP_TIME) \
-		.set_delay(start + BAND_AT).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		.set_delay(BAND_AT).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tween.tween_callback(func() -> void:
+		AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.WASTED)) \
+		.set_delay(BAND_AT)
 	# A los 2.2 s, el texto de abajo.
 	_tween.tween_property(_subtitle, "modulate:a", 1.0, SUBTITLE_FADE) \
-		.set_delay(start + SUBTITLE_AT)
+		.set_delay(SUBTITLE_AT)
 	# Y al final, avisa.
-	_tween.tween_callback(_on_finished).set_delay(start + TOTAL_TIME)
+	_tween.tween_callback(_on_finished).set_delay(TOTAL_TIME)
 
 
-## Los 0.8 s de antes: todo negro, el ruido del operativo y un flash blanco de
-## un cuadro. Al acabarse, el negro se quita y debajo ya está la imagen.
+## El negro de antes: el ruido del operativo y un flash blanco de un cuadro.
+## **Dura lo que dure el audio**: cuando se acaba, el negro se quita y arranca
+## lo demás, así que el golpe de WASTED nunca cae encima de la irrupción.
 func _play_breach() -> void:
 	_breach.visible = true
 	_flash.visible = true
 	_flash_left = BREACH_FLASH_FRAMES
 	set_process(true)
-	AudioManager.play(Sounds.MAMADOR_BREACH)
-	var breach_tween: Tween = create_tween()
-	breach_tween.tween_interval(BREACH_TIME)
-	breach_tween.tween_callback(func() -> void: _breach.visible = false)
+	AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.MAMADOR_BREACH,
+		_end_breach)
+
+
+func _end_breach() -> void:
+	if not is_playing:
+		return
+	_breach.visible = false
+	_start_body()
 
 
 ## Lo único que necesita _process es apagar el flash al cuadro siguiente.

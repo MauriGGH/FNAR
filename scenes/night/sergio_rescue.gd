@@ -5,19 +5,28 @@ extends Control
 ## van a pantalla completa:
 ##
 ##   1. **El susto congelado**: el primer cuadro del jumpscare que iba a
-##      matarte, quieto y en blanco y negro, 3 s con `rosa_suspenso`.
+##      matarte, quieto y en blanco y negro.
 ##   2. **El tótem**, al estilo del de Minecraft: crece de golpe con un rebote,
 ##      tiembla, gira sobre su eje y sale volando mientras suelta partículas
-##      cuadradas verdes y amarillas. Suena `aura`.
+##      cuadradas verdes y amarillas.
 ##
 ## Lo de en medio —el haz de luz y Sergio bajando— lo dibuja la oficina
 ## (`scenes/office/sergio_arrival.gd`), porque va en su vista central. Esta capa
-## se lo pide y espera. Los números están en `data/sergio.gd`.
+## se lo pide y espera.
+##
+## **Todo va pegado a una sola pista**, `sergio_rescate`: el congelado hasta los
+## 3.5 s, el haz ahí, el tótem a los 8.5 s y, cuando el audio se acaba, la noche
+## sigue. Antes eran tres sonidos sueltos que acabaron encimándose; ahora no hay
+## nada que sincronizar a mano más que estos tres números, que están en
+## `data/sergio.gd`.
 
 ## Terminó todo: la noche puede seguir.
 signal finished()
 ## Se acabó el congelado: que la oficina traiga a Sergio.
 signal sergio_requested()
+## El tótem acabó de girar: que la oficina lo despida, mientras suena la cola
+## de la música.
+signal totem_done()
 
 const GREYSCALE_SHADER: String = "res://scenes/ui/greyscale.gdshader"
 const JUMPSCARE_PATH: String = "res://assets/art/jumpscares/jumpscare_%s"
@@ -25,7 +34,7 @@ const JUMPSCARE_PATH: String = "res://assets/art/jumpscares/jumpscare_%s"
 ## cuando baja Sergio.
 const UNFREEZE_TIME: float = 0.45
 
-enum Phase { IDLE, FREEZE, WAITING, TOTEM }
+enum Phase { IDLE, FREEZE, WAITING, TOTEM, TAIL }
 
 var is_playing: bool = false
 
@@ -35,6 +44,10 @@ var _elapsed: float = 0.0
 var _totem_elapsed: float = 0.0
 var _totem: Texture2D = null
 var _particles: Array[Dictionary] = []
+## Lo que dura la pista, que es lo que dura el rescate.
+var _total: float = Sergio.RESCUE_FALLBACK_TIME
+## Lo que lleva la escena desde que arrancó, para ir cuadrando los tiempos.
+var _clock: float = 0.0
 
 @onready var _frozen: TextureRect = TextureRect.new()
 
@@ -72,12 +85,18 @@ func play(jumpscare_id: String) -> void:
 	visible = true
 	_phase = Phase.FREEZE
 	_elapsed = 0.0
+	_clock = 0.0
 	_particles.clear()
 	_frozen.texture = _scare_texture(jumpscare_id)
 	_frozen.visible = _frozen.texture != null
 	_frozen.modulate.a = 1.0
 	set_process(true)
-	AudioManager.play(Sounds.ROSE_SUSPENSE)
+	# La pista del rescate es una y manda ella: la escena se cuelga de sus
+	# tiempos. Como secuencia, calla cualquier resto de un rescate anterior.
+	var length: float = AudioManager.length(Sounds.SERGIO_RESCUE)
+	_total = length if length > 0.0 else Sergio.RESCUE_FALLBACK_TIME
+	AudioManager.begin_sequence(Sounds.SEQ_RESCUE)
+	AudioManager.play_in_sequence(Sounds.SEQ_RESCUE, Sounds.SERGIO_RESCUE)
 	queue_redraw()
 
 
@@ -89,9 +108,10 @@ func _scare_texture(jumpscare_id: String) -> Texture2D:
 	return first if first != null else GameAssets.load_texture(JUMPSCARE_PATH % jumpscare_id)
 
 
-## La oficina avisa de que Sergio ya llegó: entra el tótem.
+## Entra el tótem. Lo pide el reloj de la pista, a los 8.5 s: para entonces
+## Sergio ya bajó (el haz entra a los 3.5 y la bajada dura 1.8).
 func start_totem() -> void:
-	if not is_playing:
+	if not is_playing or _phase == Phase.TOTEM:
 		return
 	_phase = Phase.TOTEM
 	_elapsed = 0.0
@@ -99,29 +119,34 @@ func start_totem() -> void:
 	# El susto deja de verse: lo que importa ahora es el tótem.
 	_frozen.visible = false
 	_spawn_particles()
-	AudioManager.play(Sounds.AURA)
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
 	_elapsed += delta
+	_clock += delta
 	match _phase:
 		Phase.FREEZE:
-			if _elapsed >= Sergio.FREEZE_TIME:
+			if _clock >= Sergio.RESCUE_BEAM_AT:
 				_phase = Phase.WAITING
 				_elapsed = 0.0
 				# El susto se va: lo que sigue pasa en la oficina y hay que
 				# poder verla.
 				create_tween().tween_property(_frozen, "modulate:a", 0.0,
 					UNFREEZE_TIME)
-				AudioManager.play(Sounds.ROSE_AIR)
 				sergio_requested.emit()
 		Phase.WAITING:
-			pass
+			if _clock >= Sergio.RESCUE_TOTEM_AT:
+				start_totem()
 		Phase.TOTEM:
 			_totem_elapsed += delta
 			_update_particles(delta)
 			if _totem_elapsed >= _totem_total():
+				# El tótem ya voló: Sergio se despide mientras suena la cola.
+				_phase = Phase.TAIL
+				totem_done.emit()
+		Phase.TAIL:
+			if _clock >= _total:
 				_stop()
 		Phase.IDLE:
 			set_process(false)

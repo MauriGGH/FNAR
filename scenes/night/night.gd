@@ -78,6 +78,7 @@ const DISTANT_WITH_MOVE: Dictionary = {
 }
 const BARCOSA_HOME: String = "salon_b"
 const SERGIO_RESCUE: GDScript = preload("res://scenes/night/sergio_rescue.gd")
+const MOMO_EVENT: GDScript = preload("res://scenes/night/momo_event.gd")
 ## Lo que mide el ícono del tótem en la esquina del HUD.
 const TOTEM_ICON_SIZE: Vector2 = Vector2(52.0, 80.0)
 
@@ -105,6 +106,9 @@ var _nightly_call_left: float = 0.0
 var _mencho_call_at: float = -1.0
 ## De quién te salvó Sergio, para mandarlo a su sitio al acabar.
 var _rescued_from: String = ""
+var momo_event: MomoEvent = null
+## Momo sale una vez por noche como mucho.
+var _momo_used: bool = false
 var sergio_rescue: SergioRescue = null
 var totem_icon: TextureRect = null
 var _random_call_id: String = ""
@@ -126,6 +130,7 @@ func _ready() -> void:
 	AudioManager.stop_all()
 	_style_hud()
 	_build_sergio_rescue()
+	_build_momo()
 	_animatronics = _collect_animatronics()
 	for animatronic: Animatronic in _animatronics:
 		# Los ruidos de los profes son apaños de audio, no avisos: no se leen.
@@ -204,6 +209,7 @@ func _ready() -> void:
 	pc_screen.armando_won.connect(_on_armando_won)
 
 	GameManager.ticket_arrived.connect(_on_ticket_arrived)
+	office.view_changed.connect(_on_view_changed)
 	GameManager.night_started.connect(_on_night_started)
 	GameManager.hour_changed.connect(_on_hour_changed)
 	GameManager.night_won.connect(_on_night_won)
@@ -248,6 +254,8 @@ func _escape_is_taken() -> bool:
 		return true
 	if breaker_panel.visible:
 		return true
+	if momo_event != null and momo_event.is_playing:
+		return true  # Con Momo en pantalla no se puede ni pausar.
 	return office.photo_viewer != null and office.photo_viewer.is_open
 
 
@@ -316,9 +324,10 @@ func _build_sergio_rescue() -> void:
 	sergio_rescue.name = "SergioRescue"
 	hud.add_child(sergio_rescue)
 	sergio_rescue.sergio_requested.connect(_on_sergio_requested)
-	sergio_rescue.finished.connect(_on_totem_finished)
-	office.sergio.arrived.connect(sergio_rescue.start_totem)
-	office.sergio.finished.connect(_on_sergio_left)
+	# El tótem y el final los manda el reloj de la pista del rescate, no la
+	# oficina: ella solo dibuja el haz y a Sergio cuando se le pide.
+	sergio_rescue.totem_done.connect(_on_totem_finished)
+	sergio_rescue.finished.connect(_on_sergio_left)
 
 	totem_icon = TextureRect.new()
 	totem_icon.name = "TotemIcon"
@@ -373,6 +382,7 @@ func _collect_animatronics() -> Array[Animatronic]:
 
 func _on_night_started(night: int) -> void:
 	night_label.text = "NOCHE %d" % night
+	_momo_used = false
 	# La pista de cómo salir de las pantallas acercadas vuelve a salir una vez
 	# por noche, en cada una.
 	ExitHint.reset()
@@ -386,6 +396,10 @@ func _on_night_started(night: int) -> void:
 ## dibuja el recorte; si no, se queda la etiqueta de texto de siempre.
 func _process(delta: float) -> void:
 	pause_menu.blocked = _escape_is_taken()
+	# Con el susto de Momo encima el juego entero está parado: aquí no corre
+	# nada, ni el teléfono, ni los tickets, ni los sonidos lejanos.
+	if momo_event != null and momo_event.is_playing:
+		return
 	_refresh_tickets(delta)
 	_process_calls(delta)
 	_refresh_office_presence()
@@ -757,6 +771,8 @@ func _on_answer_given(kind: int) -> void:
 func _on_camera_bar_hovered() -> void:
 	if GameManager.is_in_server_room:
 		return
+	if momo_event != null and momo_event.is_playing:
+		return
 	camera_system.toggle()
 
 
@@ -849,13 +865,14 @@ func _on_sergio_requested() -> void:
 	office.sergio.play()
 
 
-## El tótem terminó de girar: Sergio se desvanece.
+## El tótem terminó de girar: Sergio se desvanece mientras suena la cola de la
+## música.
 func _on_totem_finished() -> void:
 	office.sergio.fade_out()
 
 
-## Y con Sergio ya ido, se reparte lo que deja: el profe a su sitio, energía de
-## vuelta y la noche otra vez en marcha.
+## Se acabó la pista del rescate: se reparte lo que deja Sergio —el profe a su
+## sitio, energía de vuelta— y la noche sigue donde estaba.
 func _on_sergio_left() -> void:
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_process(true)
@@ -871,6 +888,72 @@ func _on_sergio_left() -> void:
 func _on_totem_changed(has_it: bool) -> void:
 	if totem_icon != null:
 		totem_icon.visible = has_it
+
+
+# --- El susto de Momo ---------------------------------------------------------
+
+func _build_momo() -> void:
+	momo_event = MOMO_EVENT.new()
+	momo_event.name = "MomoEvent"
+	$Hud.add_child(momo_event)
+	momo_event.view_requested.connect(func() -> void: office.set_momo_active(true))
+	momo_event.zoom_changed.connect(office.set_momo_zoom)
+	momo_event.finished.connect(_on_momo_finished)
+
+
+## Cada vez que la cabeza llega a una vista se tira el dado: si es la izquierda,
+## es de noche 2 o más alta, no ha salido ya esta noche y no hay ningún susto en
+## curso, Momo tiene un 6 % de aparecer.
+func _on_view_changed(view: int) -> void:
+	if view != office.View.LEFT or _momo_used:
+		return
+	if GameManager.current_night < Momo.FROM_NIGHT:
+		return
+	if not _is_calm():
+		return
+	if randi_range(1, 100) > Momo.CHANCE:
+		return
+	start_momo()
+
+
+## ¿Está todo tranquilo? Con otro susto encima, Momo no entra: dos sustos a la
+## vez no se entienden y además se pelearían por el audio.
+func _is_calm() -> bool:
+	if momo_event.is_playing or jumpscare.is_playing:
+		return false
+	if blackout_death.is_running or sergio_rescue.is_playing:
+		return false
+	return GameManager.is_night_active and not GameManager.is_rescuing
+
+
+## Momo toma la vista izquierda: **el juego se para por completo** y solo se oye
+## su canción. Al acabar sigue todo donde estaba, sin muerte y sin coste.
+func start_momo() -> void:
+	if momo_event.is_playing:
+		return
+	_momo_used = true
+	camera_system.close()
+	pc_screen.close()
+	GameManager.set_clock_held(true)
+	PowerManager.set_draining(false)
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_process(false)
+	phone_call.set_process(false)
+	office.set_locked(true)
+	# El ambiente y la llamada se quedan quietos donde iban, no se cortan.
+	AudioManager.set_paused_except([Sounds.MOMO_SONG], true)
+	momo_event.play()
+
+
+func _on_momo_finished() -> void:
+	office.set_momo_active(false)
+	office.set_locked(false)
+	AudioManager.set_paused_except([], false)
+	for animatronic: Animatronic in _animatronics:
+		animatronic.set_process(true)
+	phone_call.set_process(true)
+	PowerManager.set_draining(true)
+	GameManager.set_clock_held(false)
 
 
 ## Para el panel de pruebas: monta el rescate con el primer profe activo que
@@ -907,7 +990,11 @@ func _on_power_depleted() -> void:
 	camera_system.close()
 	pc_screen.close()
 	# Lo que se oye justo al apagarse todo, antes de que empiece la oscuridad.
-	AudioManager.play(Sounds.BLACKOUT_LINE)
+	# La frase abre la secuencia del apagón: la oscuridad no pasa a la cajita
+	# musical hasta que se acaba de decir (son 6 s y la oscuridad puede durar
+	# solo 3, así que antes se encimaban).
+	AudioManager.begin_sequence(Sounds.SEQ_BLACKOUT)
+	AudioManager.play_in_sequence(Sounds.SEQ_BLACKOUT, Sounds.BLACKOUT_LINE)
 	blackout_death.start()
 
 
