@@ -677,21 +677,21 @@ si entra, no hay game over y la noche sigue. Vale para cualquier profe **menos M
 final es la pantalla de WASTED y no se interrumpe. Mientras corre, `is_rescuing` evita que otro
 profe mate, el reloj se detiene y los profes se quedan quietos.
 
-**Todo el rescate va pegado a una sola pista**, `extras/sergio_rescate.ogg` (13.3 s), que lleva
+**Todo el rescate va pegado a una sola pista**, `extras/sergio_rescate.ogg` (18.8 s), que lleva
 dentro el suspenso, el aire del haz y el aura del tótem. La escena se cuelga de sus tiempos
-(`Sergio.RESCUE_BEAM_AT` 3.5 s y `RESCUE_TOTEM_AT` 8.5 s) y **acaba cuando acaba el audio**: ahí
+(`Sergio.RESCUE_BEAM_AT` 6 s y `RESCUE_TOTEM_AT` 14 s) y **acaba cuando acaba el audio**: ahí
 sigue la noche. Antes eran tres sonidos sueltos (`rosa_suspenso`, `rosa_aire` y `aura`) que se
 encimaban entre ellos; esos ids ya no se usan aquí y `aura` se quedó solo para la maquinita.
 
 1. **El susto congelado** (`scenes/night/sergio_rescue.gd`): el **primer cuadro** del jumpscare que
-   iba a matarte —su variante `_a`— quieto y en blanco y negro, hasta el segundo **3.5**.
+   iba a matarte —su variante `_a`— quieto y en blanco y negro, hasta el segundo **6**.
 2. **La bajada** (`scenes/office/sergio_arrival.gd`, en la vista central, que se fuerza): el susto
    se desvanece, suena `rosa_aire` y un **haz de luz blanca** baja sobre la recepción (44 tiras con
    su degradado, para que no se vean escalones). Dentro del haz, `sergio_silueta.png` aparece por
    encima del borde y **desciende flotando 1.5 s** con un vaivén que se va calmando, hasta el sitio
    exacto donde está Sergio en la capa; al llegar, **se funde en 0.3 s** con `centro_sergio.png`,
    que se queda mientras corre el tótem.
-3. **El tótem**, a los **8.5 s**, como el de Minecraft y con filtro nearest: aparece chiquito al centro, **crece con
+3. **El tótem**, a los **14 s**, como el de Minecraft y con filtro nearest: aparece chiquito al centro, **crece con
    un rebote** hasta el **45 % del alto** (0.35 s), **tiembla 1.2 s**, y **gira sobre su eje
    vertical** (la escala X de 1 a −1 y de vuelta, **dos veces**) mientras se encoge y sale volando
    hacia arriba (0.9 s). Todo el rato suelta **70 partículas cuadradas** verdes y amarillas que
@@ -712,59 +712,132 @@ pruebas, no un atajo del juego.
 ## La maquinita (minijuegos estilo FNAF)
 
 Los minijuegos de 8 bits, como los de Sister Location y FNAF 3: cuentan en pixel art lo que le
-pasó a Santi, y pasarlos es lo que te da el tótem. Todo lo de diseño está en `data/arcade.gd` y las
-medidas salen de los tres fondos, que son de **160x90**.
+pasó a Santi, y pasarlos es lo que te da el tótem. Todo lo de diseño está en `data/arcade.gd` y
+las medidas salen de los tres fondos, que son de **160x90**.
 
 **Cuándo sale:** entre noches. Desde la noche 1, al pasar una noche hay un **30 %**
 (`Arcade.CHANCE`) de que, **después del 6 AM y antes del periódico**, entre la maquinita; **si ya
 traes el tótem, no sale**, porque es justo lo que viene a darte. Cada vez que sale juegas el
 **siguiente** nivel —1, 2, 3— y a partir de ahí salen al azar; el que toca se guarda en `save.cfg`
-(`arcade_level`) y se apunta al empezar, se gane o se pierda.
+(`arcade_level`). **Perder no hace avanzar**: `advance_arcade_level()` se llama al terminar el
+final del altar, no al empezar, así que la próxima vez te toca **el mismo nivel** hasta pasarlo.
 
-**La pantalla** (`scenes/minigames/arcade.tscn`, `arcade_screen.gd`): el lienzo de 160x90 vive en un
-SubViewport y se amplía **en pasos enteros** con filtro nearest (en 1152x648 toca ×7, o sea
-1120x630, centrado), así que no se deforma ni un píxel. Encima va el shader
-`arcade_crt.gdshader`: scanlines marcadas, curvatura del tubo con las esquinas oscurecidas,
-separación de color en los bordes, un parpadeo leve y una línea de interferencia que baja cada
-3.4 s. Entra con **0.5 s de estática y un bip**; al salir, la imagen **se aplasta hasta ser una
-raya blanca y se apaga**, como una tele vieja. Abajo a la derecha, el número de nivel en VT323 (ese
-va fuera del lienzo, a tamaño de pantalla). **Esc se la salta.**
+### Las reglas que comparten los tres
 
-**El texto de dentro del lienzo no es VT323**: es `data/arcade_font.gd`, una fuente de **3x5
-píxeles** dibujada por código letra por letra. A 10 px el rasterizador suaviza VT323 y, al ampliar
-el lienzo siete veces, ese suavizado se vuelve manchas grises ilegibles; estas letras son píxeles
-enteros. La M, la N y la W van de cuatro de ancho porque en tres no se distinguen de la H.
+- **Tres vidas**, dibujadas como corazones de píxeles arriba a la izquierda. El contador del
+  objetivo va **arriba al centro** ("VASOS 7/15") y el reloj **arriba a la derecha**, en rojo
+  cuando quedan menos de 20 s.
+- **150 s por nivel** (`Arcade.TIME_LIMITS`). Hubo un rato en que el 2 necesitó 210, pero eso era
+  un síntoma, no el problema: lo que no dejaba acabarlo eran los globos que reventaban en cada
+  viaje. Arreglado eso se pasa de sobra.
+- **Al cobrar un golpe**: parpadeo, **1 s de invencibilidad** (para que un roce no cueste dos
+  vidas) y una vida menos, con su sonido `arcade_golpe`.
+- **Con 0 vidas o sin tiempo**: "GAME OVER" en la fuente de 3x5 a triple tamaño
+  (`arcade_over.gd`), estática, la tele se apaga y sigue el periódico **sin tótem**.
+- **Los niveles tienen scroll horizontal**: miden de cuatro a cinco pantallas
+  (`Arcade.WORLD_SCREENS`) y la cámara va centrada en Santi. El fondo es una sola foto de 160x90,
+  así que **se repite** a lo largo del mundo; las mesas de cada repetición sirven de plataforma.
+  `ArcadeLevel._paint()` dibuja en **coordenadas del mundo**: la cámara ya está puesta.
+- Lo que el arte no tiene —el piso de arriba, las escaleras, los huecos, las piñatas, los
+  ventiladores, las macetas, las sillas— lo dibuja el código con rectángulos, en los colores del
+  propio fondo. Los sprites de `assets/art/minijuego/sprites/` se usan tal cual.
 
-**El arte** está en `assets/art/minijuego/`: `fondos/nivel1_posada.png`, `nivel2_bienvenida.png` y
-`nivel3_junta.png` (160x90), y los recortes en `sprites/` (santi_idle/walk1/walk2/jump,
-botarga_idle/walk1/walk2, traje_side/walk/back, alumno_1..4, vaso, termo, globo_rojo, globo_azul,
-veladora, llave, sergio, altar). **Nada se dibuja por código salvo la luz y el texto.** Cada
-recorte se pinta centrado a lo ancho y **con los pies** en su posición, así que las coordenadas del
-diseño son "dónde pisa".
+**La física, de una vez para los tres** (`WALK_SPEED` 56, `JUMP_SPEED` 112, `GRAVITY` 260): el
+salto sube **24 px** y alcanza **40 px** de largo. De ahí salen las reglas de la geometría —ningún
+hueco pasa de 18 px, ningún escalón sube más de 12— y por eso los peldaños **se encabalgan**: con
+peldaños estrechos y sueltos, un salto a toda velocidad se pasaba de largo y no había manera de
+subir.
 
-| Nivel | Qué se hace | Cómo acaba |
-| --- | --- | --- |
-| 1, **La posada** (`arcade_posada.gd`) | Santi cruza el patio **saltando entre tres mesas** (flechas o WASD, espacio o arriba para saltar) y junta los **8 vasitos**; contador "VASOS 3/8". Caerse no castiga: se vuelve a subir. | Con los ocho, el **termo** verde-naranja; al tocarlo aparece el hombre de traje a su lado, **1 s congelado** y Santi ya es la botarga. |
-| 2, **La bienvenida** (`arcade_bienvenida.gd`) | La botarga **reparte 5 globos**: se toma uno en la carpa, se lleva al alumno y se vuelve. **Al volver por el siguiente, el alumno al que ya le diste desaparece** y el hombre de traje está un poco más cerca (`SUIT_STEPS`). | Al quinto no queda ninguno y él está pegado a la botarga. |
-| 3, **La junta** (`arcade_junta.gd`) | La botarga camina **solo a la derecha** detrás del traje. Las luces del techo parpadean y en la pared aparece y desaparece **"AYÚDANOS"**. **No tiene reloj: aquí no se pierde.** | La puerta de la sala se abre, entran los dos, se cierra, la pantalla **se pone roja** y suena la cajita musical distorsionada 2 s. |
+### Nivel 1, "La posada" (plataformas)
 
-**Perder:** los niveles 1 y 2 tienen **60 s** (`Arcade.TIME_LIMIT`, con la cuenta arriba a la
-derecha). Si se acaban, el rótulo pasa a "SE ACABO EL TIEMPO", corte a estática, **no hay tótem** y
-sigue el periódico.
+Cinco pantallas, **dos pisos**: el patio de abajo —con las tres mesas de la foto como escalón— y un
+entarimado arriba al que se sube por **escaleras de tres peldaños**. Hay que juntar **15 vasitos**
+repartidos entre los dos pisos y, con los quince, tomar el termo del final; ahí aparece el hombre de
+traje, la pantalla se queda quieta un segundo y Santi ya es la botarga, igual que antes.
 
-**El final** (`arcade_ending.gd`), después de cualquier nivel pasado: negro con el **haz de luz**,
-el altar de la Virgen al centro, **Sergio de silueta** a un lado y Santi al otro, y
-**"TOMA. TE VA A HACER FALTA."** escribiéndose letra por letra. Suena `aura` y **te queda el
-tótem**, con su ícono en la esquina del HUD. Los recortes de Sergio y de Santi son siluetas casi
-negras, así que el código pinta **un charco de luz elíptico** alrededor del altar
-(`GLOW_CENTER`, `GLOW_RADIUS`, `GLOW_ALPHA`, calculado una vez como imagen para que no se le vea
-ninguna arista): es contra esa luz que se recortan.
+- **Los huecos del piso** (cinco) te tiran: una vida y **reapareces en la última plataforma en la
+  que estabas a salvo** (`_safe_at`, que se apunta en cada aterrizaje firme). Van **debajo del
+  entarimado**, nunca en su punta, para que bajarse de una tabla no sea una caída segura.
+- **Tres alumnos borrachos** patrullan de un lado a otro, cada uno en un tramo **entre dos escaleras
+  y sin huecos debajo**: patrullar al pie de una escalera era injusto (cada vez que bajas de un
+  peldaño caes encima de uno) y sobre un hueco se les veía caminar por el aire. Su alcance en
+  vertical es corto (`HIT_RANGE`, 10 px) justo para que subirse a un peldaño sirva de algo.
+- **Dos piñatas** se columpian **a la altura de la cabeza del que va por el patio de abajo**: ahí
+  está la gracia de pasar por debajo en el mal momento. Se esquivan esperando o saltándolas; desde
+  el piso de arriba no alcanzan.
+- **Charcos de ponche**: al pisarlos, el agarre se va al suelo un segundo (`SLIP_GRIP` contra
+  `NORMAL_GRIP`) y Santi sigue de largo.
+
+### Nivel 2, "La bienvenida" (entregas con persecución)
+
+**Cuatro pantallas, el más corto de los tres a propósito.** Se recoge un globo en el puesto de la
+izquierda y se lleva a uno de los **ocho alumnos**; **solo se puede cargar uno**, así que cada
+entrega son dos viajes. El alumno desaparece al recibirlo.
+
+Ese "dos viajes por entrega" es lo que manda en la medida del nivel: con los alumnos repartidos por
+cinco pantallas salían **99 s de caminata perfecta**, que no caben en los 150 s del reloj en cuanto
+fallas una vez. Por eso van juntos, de x 96 a x 474: **75 s** de caminata limpia, y la partida sale
+en unos dos minutos con los rodeos.
+
+- **Los ventiladores del techo** (tres) revientan el globo si saltas debajo. No quitan vida: te
+  hacen volver por otro. Van **entre alumno y alumno**, nunca encima de uno, y **el primer tramo
+  saliendo del puesto va limpio**: acorralarte donde entregas, o en la única salida, no te dejaba
+  más opción que reventar el globo. Con seis aspas el nivel era ir y venir sin avanzar nunca.
+- **Desde la cuarta entrega** el hombre de traje aparece por el borde que ella deja atrás y la
+  persigue, más rápido con cada entrega. Si la toca, una vida y vuelve al borde.
+- **Nunca corre más que ella** (50 contra 56) y, sobre todo, **en el aire no la toca**: saltarle por
+  encima es la salida, porque cada vuelta al puesto es pasarle por delante. La regla es esa, sin
+  umbrales de altura: con cualquier margen en píxeles te pillaba en el despegue o en el aterrizaje.
+  Además lleva **0.3 s de gracia al aterrizar** (`LAND_GRACE`) y él **se queda 2.5 s en el borde**
+  tras pillarla (`SUIT_RECOVER`): sin lo primero te cazaba al caer al otro lado, y sin lo segundo
+  volvía derecho a por ti y te quitaba las tres vidas en el mismo metro cuadrado, porque al puesto
+  hay que volver siempre.
+- **El salto hay que elegirlo**, y ahí está el nudo del nivel: el arco mide 48 px, así que saltarle
+  por encima **pegado a un ventilador te mete el arco entero debajo del aspa** y el globo revienta
+  igual. Lo que funciona es retroceder —él te sigue— hasta que los dos estéis en claro y brincarle
+  ahí. Por eso las aspas son tres y no seis, y por eso el primer tramo va limpio.
+
+### Nivel 3, "La junta" (sigilo)
+
+Cinco pantallas de pasillo, en tres partes seguidas.
+
+**A, seguirlo** (unos 60 s): el de traje camina despacio y cada tanto se para y voltea, avisando con
+los **ojos rojos 0.6 s antes**. Si al voltear te ve **en movimiento** a menos de 40 px, una vida.
+Te salva **quedarte quieto**, o estar detrás de una maceta, una columna o un marco de puerta
+(`L3_COVER`). Si te quedas **más de una pantalla atrás durante 3 s**, sale "LO PERDISTE" y también
+cuesta una vida; mientras tanto **él te espera**, que si no se iría solo.
+
+**B, la oscuridad** (desde `L3_DARK_FROM`): se va la luz y solo se ve un círculo alrededor de Santi
+—recortado fila por fila sobre el negro— y la **veladora** del fondo parpadeando. Hay huecos que
+solo se ven de cerca, y en medio la **botarga tirada** con su "AYÚDANOS".
+
+**C, el escape**: la puerta de la sala se cierra, un segundo de rojo y el de traje viene **rápido**.
+Hay que volver por el pasillo **saltando las sillas tiradas**, que son lo que te puede costar la
+carrera: él va a 52 y tú a 56, así que solo te alcanza si tropiezas. La música **sube de tono**
+(`ESCAPE_PITCH`, 1.35), que es lo único que cambia de tempo en todo el juego. Si te alcanza no es un
+rasguño: **se pierde la vida entera y se repite la parte C** desde el principio —ese es el
+checkpoint—; si era la última, se acabó. Llegando al final del pasillo entra el final del altar.
+
+### El final y la comprobación
+
+**El final** (`arcade_ending.gd`) no cambia: negro con el haz de luz, el altar al centro, Sergio de
+silueta a un lado y Santi al otro, y **"TOMA. TE VA A HACER FALTA."** escribiéndose letra por letra.
+Suena `aura` y **te queda el tótem**.
 
 **El sonido es chiptune generado por código** (`ToneBuilder`, ondas cuadradas): `arcade_nivel1`
-alegre, `arcade_nivel2` la misma melodía **desafinada** 0.35 de semitono, y `arcade_nivel3` **sin
-melodía, solo un zumbido grave**; más `arcade_salto`, `arcade_recoge`, `arcade_bip` (el arranque) y
-`arcade_cajita`. Si algún día hay archivos de verdad con esos nombres en `assets/audio/`, entran
-solos como cualquier otro id del catálogo.
+alegre, `arcade_nivel2` la misma melodía **desafinada**, y `arcade_nivel3` **sin melodía, solo un
+zumbido grave**; más `arcade_salto`, `arcade_recoge`, `arcade_golpe`, `arcade_bip` (el arranque) y
+`arcade_cajita`.
+
+**El texto de dentro del lienzo no es VT323**: es `data/arcade_font.gd`, una fuente de **3x5
+píxeles** dibujada por código. A 10 px el rasterizador suaviza VT323 y, al ampliar el lienzo siete
+veces, ese suavizado se vuelve manchas grises ilegibles.
+
+**Que se pueden pasar está comprobado con un bot**: un script de pruebas lee el estado del nivel y
+manda teclas con `Input.parse_input_event`, como una persona. Es lo que destapó que las escaleras
+no llegaban a ninguna tabla y que un vasito estaba dentro de un hueco. En el panel de pruebas,
+F1 → Eventos tiene **"Abrir minijuego (nivel 1/2/3)"** y **"Nivel 3 parte C"**, que entra directo
+a la persecución.
 
 ## Momo
 

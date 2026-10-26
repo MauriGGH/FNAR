@@ -980,8 +980,9 @@ func debug_sergio_rescue() -> void:
 
 ## Y la maquinita, en el nivel que se le pida. Como es una pantalla completa,
 ## al salir de ella la noche vuelve a empezar: es un botón de pruebas.
-func debug_open_minigame(level: int) -> void:
+func debug_open_minigame(level: int, part_c: bool = false) -> void:
 	ArcadeScreen.pending_level = level
+	ArcadeScreen.pending_part_c = part_c
 	ArcadeScreen.next_scene = Screens.NIGHT
 	get_tree().paused = false
 	get_tree().change_scene_to_file(Screens.ARCADE)

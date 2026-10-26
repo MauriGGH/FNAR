@@ -32,13 +32,13 @@ const RANDOM_CHANCE: int = 25
 ## Lo que se recupera de energía al usar el tótem.
 const POWER_BACK: float = 10.0
 
-## **El rescate va pegado a su pista** (`sergio_rescate`, 13.3 s): estos son los
+## **El rescate va pegado a su pista** (`sergio_rescate`, 18.8 s): estos son los
 ## segundos del audio en los que entra cada cosa, no tiempos inventados. El
 ## congelado dura hasta el haz, y cuando el audio se acaba la noche sigue. Si
 ## el archivo faltara, se usa el largo de respaldo.
-const RESCUE_BEAM_AT: float = 3.5
-const RESCUE_TOTEM_AT: float = 8.5
-const RESCUE_FALLBACK_TIME: float = 13.3
+const RESCUE_BEAM_AT: float = 6.0
+const RESCUE_TOTEM_AT: float = 14.0
+const RESCUE_FALLBACK_TIME: float = 18.8
 
 ## Los tramos que dibuja la oficina: la bajada de la silueta, el fundido a
 ## Sergio y lo que se queda él antes de irse.

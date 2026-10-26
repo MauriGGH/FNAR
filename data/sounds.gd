@@ -151,6 +151,7 @@ const ARCADE_MUSIC: Array[String] = [
 	"arcade_nivel1", "arcade_nivel2", "arcade_nivel3",
 ]
 const ARCADE_JUMP: String = "arcade_salto"
+const ARCADE_HURT: String = "arcade_golpe"
 const ARCADE_PICK: String = "arcade_recoge"
 const ARCADE_BOOT: String = "arcade_bip"
 const ARCADE_MUSIC_BOX: String = "arcade_cajita"
@@ -675,6 +676,11 @@ const CATALOG: Dictionary = {
 		"file": "arcade_nivel3.ogg", "bus": "Música",
 		"volume_db": -14.0, "generator": "arcade_level3",
 		"desc": "Nivel 3: sin melodía, solo un zumbido grave que no para.",
+	},
+	"arcade_golpe": {
+		"file": "arcade_golpe.ogg", "bus": "Efectos",
+		"volume_db": -6.0, "generator": "arcade_hurt",
+		"desc": "Golpe de 8 bits al perder una vida: un zumbido que baja de tono.",
 	},
 	"arcade_salto": {
 		"file": "arcade_salto.ogg", "bus": "Efectos",

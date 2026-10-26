@@ -12,8 +12,10 @@ extends Control
 ## change_scene_to_file no deja pasar datos.
 static var pending_level: int = 1
 static var next_scene: String = Screens.NEWSPAPER
+## Solo para el panel de pruebas: arrancar el nivel 3 en su persecución.
+static var pending_part_c: bool = false
 
-enum Step { BOOT, PLAYING, ENDING, SHUTDOWN }
+enum Step { BOOT, PLAYING, ENDING, OVER, SHUTDOWN }
 
 const LEVEL_SCRIPTS: Array[GDScript] = [
 	preload("res://scenes/minigames/arcade_posada.gd"),
@@ -21,10 +23,10 @@ const LEVEL_SCRIPTS: Array[GDScript] = [
 	preload("res://scenes/minigames/arcade_junta.gd"),
 ]
 const ENDING_SCRIPT: GDScript = preload("res://scenes/minigames/arcade_ending.gd")
+const OVER_SCRIPT: GDScript = preload("res://scenes/minigames/arcade_over.gd")
 
-## El cartel del nivel abajo a la derecha y el de "se acabó".
+## El cartel del nivel, abajo a la derecha.
 const LEVEL_LABEL: String = "NIVEL %d"
-const LOST_TEXT: String = "SE ACABO EL TIEMPO"
 
 @onready var container: SubViewportContainer = $Frame/Viewport
 @onready var viewport: SubViewport = $Frame/Viewport/SubViewport
@@ -36,6 +38,7 @@ var _elapsed: float = 0.0
 var _level: int = 1
 var _playing: ArcadeLevel = null
 var _won: bool = false
+var _left: bool = false
 
 
 func _ready() -> void:
@@ -100,9 +103,11 @@ func _start_level() -> void:
 	_playing.won.connect(_on_level_won)
 	_playing.lost.connect(_on_level_lost)
 	_playing.start(_level)
+	# El panel de pruebas puede pedir el nivel 3 directo en su persecución.
+	if pending_part_c and _playing is ArcadeJunta:
+		(_playing as ArcadeJunta).start_at_escape()
+	pending_part_c = false
 	AudioManager.play_loop(Sounds.arcade_music(_level))
-	# "Cada vez que sale, el siguiente": se apunta al empezar, se gane o no.
-	SaveGame.advance_arcade_level()
 
 
 ## Lo logró: música fuera y entra el final del altar.
@@ -120,16 +125,25 @@ func _on_level_won() -> void:
 	_playing = ending
 
 
-## Se acabó el tiempo: corte a negro con estática y ni tótem ni nada.
+## Se quedó sin vidas o sin tiempo: "GAME OVER" con su estática, y **el nivel
+## no avanza**: la próxima vez que salga la maquinita toca el mismo.
 func _on_level_lost() -> void:
 	AudioManager.stop(Sounds.arcade_music(_level))
-	level_label.text = LOST_TEXT
-	ScreenFx.set_static_strength(static_layer, 0.85)
-	_shutdown()
+	ScreenFx.set_static_strength(static_layer, 0.5)
+	_step = Step.OVER
+	_elapsed = 0.0
+	_playing.queue_free()
+	var over: ArcadeOver = OVER_SCRIPT.new()
+	over.name = "Over"
+	viewport.add_child(over)
+	over.ready_to_close.connect(_shutdown)
+	_playing = null
 
 
 func _on_ending_done() -> void:
 	GameManager.give_totem()
+	# Pasado el nivel, y solo entonces, la próxima vez toca el siguiente.
+	SaveGame.advance_arcade_level()
 	_shutdown()
 
 
@@ -141,6 +155,9 @@ func _shutdown() -> void:
 
 
 func _leave() -> void:
+	if _left:
+		return  # Una sola vez: _process sigue llamando mientras no cambie la escena.
+	_left = true
 	AudioManager.stop_all_loops()
 	get_tree().change_scene_to_file(next_scene)
 
@@ -149,7 +166,7 @@ func _leave() -> void:
 func _input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key != null and key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
-		if _playing != null:
-			_playing.is_running = false
+		if _playing != null and _playing is ArcadeLevel:
+			(_playing as ArcadeLevel).is_running = false
 		_shutdown()
 		get_viewport().set_input_as_handled()

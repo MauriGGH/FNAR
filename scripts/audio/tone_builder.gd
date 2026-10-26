@@ -66,6 +66,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return arcade_level(3)
 		"arcade_jump":
 			return arcade_jump()
+		"arcade_hurt":
+			return arcade_hurt()
 		"arcade_pick":
 			return arcade_pick()
 		"arcade_boot":
@@ -533,7 +535,7 @@ const BREACH_SHOUT_AMPLITUDE: float = 0.45
 ## Las dos son pistas largas con sus momentos marcados. Estos provisionales no
 ## imitan la música: solo ponen algo en cada tiempo para poder probar la escena
 ## con los archivos de verdad fuera.
-const RESCUE_LENGTH: float = 13.3
+const RESCUE_LENGTH: float = 18.8
 const RESCUE_PAD_HZ: Array[float] = [98.0, 146.8, 196.0]
 const MOMO_LENGTH: float = 15.3
 const MOMO_BEAT: float = 0.42
@@ -675,6 +677,18 @@ static func arcade_jump() -> AudioStreamWAV:
 		var t: float = float(i) / float(length * SAMPLE_RATE)
 		phase += TAU * lerpf(300.0, 760.0, t) / float(SAMPLE_RATE)
 		buffer[i] = _square(phase) * (1.0 - t) * 0.3
+	return _to_wav(buffer)
+
+
+## El de perder una vida: una onda cuadrada que se desploma de tono.
+static func arcade_hurt() -> AudioStreamWAV:
+	var length: float = 0.35
+	var buffer: PackedFloat32Array = _buffer(length)
+	var phase: float = 0.0
+	for i: int in buffer.size():
+		var t: float = float(i) / float(length * SAMPLE_RATE)
+		phase += TAU * lerpf(420.0, 90.0, t * t) / float(SAMPLE_RATE)
+		buffer[i] = _square(phase) * (1.0 - t) * 0.32
 	return _to_wav(buffer)
 
 
