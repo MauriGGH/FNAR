@@ -4,3 +4,6 @@
 
 # Escenas temporales de prueba (se crean y borran en cada verificación).
 scratch_test/
+
+# Builds de exportación (se suben al release, no al repo).
+builds/

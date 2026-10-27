@@ -420,11 +420,14 @@ func _build_placeholder(id: String) -> AudioStream:
 	return built
 
 
+## El aviso de que un sonido falta es para quien programa, no para quien juega:
+## se queda en el editor y no se imprime en el juego exportado.
 func _warn_once(id: String, message: String) -> void:
 	if _warned.has(id):
 		return
 	_warned[id] = true
-	print("[audio] %s: %s" % [id, message])
+	if OS.has_feature("editor"):
+		print("[audio] %s: %s" % [id, message])
 
 
 ## El bucle se marca distinto según de dónde venga el audio.

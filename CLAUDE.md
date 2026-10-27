@@ -11,6 +11,41 @@ El documento de diseño completo lo tiene el equipo; este archivo resume lo nece
 - Desarrollo en Linux; la exportación principal es Windows (.exe), Linux opcional.
 - El usuario es principiante en desarrollo de videojuegos: explica brevemente lo que haces y por qué, y dile cómo probarlo en Godot.
 
+## Exportación
+
+La versión va en `application/config/version` de `project.godot` y se ve abajo a
+la izquierda del menú principal. Los presets están en `export_presets.cfg`:
+**Windows Desktop** (`FiveNightsAtRochas.exe`, x86_64) y **Linux**
+(`FiveNightsAtRochas.x86_64`), los dos a `builds/<version>/`, que no se sube al
+repo.
+
+```
+godot --headless --export-release "Windows Desktop" builds/<version>/FiveNightsAtRochas.exe
+godot --headless --export-release "Linux" builds/<version>/FiveNightsAtRochas.x86_64
+```
+
+**Los .json y los .txt no son recursos.** Las zonas de la oficina, el minimapa,
+los campos de las pantallas, los tiempos de la cajita musical, los subtítulos de
+las llamadas y las licencias de las fuentes se leen con `FileAccess`, así que
+`export_filter="all_resources"` **no los mete en el .pck**: van aparte, por
+`include_filter="*.json,*.txt"`. Si faltan, el juego arranca pero la oficina se
+queda sin zonas de clic y las llamadas sin subtítulos. `docs/`, `tools/`,
+`art_refs/` y `builds/` se quedan fuera por `exclude_filter` (y los dos últimos
+ya tienen `.gdignore`, así que el editor ni los ve).
+
+**Las plantillas de exportación** se instalan desde el editor (Editor →
+Administrar plantillas de exportación → Descargar e instalar) o a mano, dejando
+el contenido del `.tpz` de esa versión exacta en
+`~/.local/share/godot/export_templates/4.7.2.stable/`. Sin ellas el export falla
+con "No export template found".
+
+**Ni el panel de pruebas ni el modo prueba salen nunca en un build.**
+`NightConfig.debug_enabled()` y `test_mode()` piden además
+`OS.has_feature("editor")`, que es false en el ejecutable exportado: ahí no
+responde F1, no se pintan las zonas de clic y las horas duran sus 75 s, pase lo
+que pase con las constantes. El aviso de consola de un audio que falta
+(`[audio] …`) también se queda en el editor.
+
 ## Convenciones de código
 
 - GDScript con tipado estático (`var energia: float = 100.0`, `func avanzar() -> void:`).

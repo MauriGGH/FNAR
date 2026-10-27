@@ -7,19 +7,33 @@ extends RefCounted
 
 # --- Interruptores de desarrollo ---------------------------------------------
 # Los dos únicos que hay que mover para pasar de "probando" a "jugando".
-# Para la versión que les pases a tus amigos, los dos en false.
 #
 # TEST_MODE acorta la noche: cada hora dura TEST_HOUR_DURATION (10 s) en vez
 # de HOUR_DURATION (75 s), así una noche entera cabe en un minuto. El consumo
 # de energía NO cambia: se mide siempre contra los 75 s, así que en modo
 # prueba la energía parece durar más porque la noche pasa más rápido.
 #
-# DEBUG_KEYS enciende todas las teclas de data/debug_keys.gd: F3 (la ayuda,
-# las zonas de clic y el estado de los profes), F8 (energía infinita) y las
-# que mandan a cada profe a su posición de ataque. En false no responde
-# ninguna, ni siquiera F3, así que no hay manera de ver nada de depuración.
+# DEBUG_KEYS enciende el panel de pruebas (F1) y, con él, las zonas de clic
+# pintadas, el estado de cada profe y todos los botones que fuerzan sucesos.
+#
+# **Ninguno de los dos funciona en el juego exportado.** Se preguntan siempre
+# por `debug_enabled()` y `test_mode()`, que además piden
+# `OS.has_feature("editor")`: en el .exe eso es false, así que ni F1 responde,
+# ni se pintan zonas, ni las horas duran 10 s, pase lo que pase con las
+# constantes. Así se puede desarrollar con el panel puesto sin miedo a que se
+# vaya en un release.
 const TEST_MODE: bool = false
-const DEBUG_KEYS: bool = true
+const DEBUG_KEYS: bool = false
+
+
+## true si el panel de pruebas está disponible: solo dentro del editor.
+static func debug_enabled() -> bool:
+	return DEBUG_KEYS and OS.has_feature("editor")
+
+
+## true si las horas van cortas: también solo dentro del editor.
+static func test_mode() -> bool:
+	return TEST_MODE and OS.has_feature("editor")
 
 const HOUR_DURATION: float = 75.0
 const TEST_HOUR_DURATION: float = 10.0
@@ -164,10 +178,11 @@ static func cortaso_cooldown() -> float:
 
 ## Cuánto dura una hora de juego en segundos reales. Solo para el reloj.
 static func hour_duration() -> float:
-	# El panel de pruebas puede forzarlas cortas sin tocar la constante.
-	if GameManager.force_short_hours:
+	# El panel de pruebas puede forzarlas cortas sin tocar la constante, pero
+	# ese panel no existe fuera del editor.
+	if GameManager.force_short_hours and debug_enabled():
 		return TEST_HOUR_DURATION
-	return TEST_HOUR_DURATION if TEST_MODE else HOUR_DURATION
+	return TEST_HOUR_DURATION if test_mode() else HOUR_DURATION
 
 
 ## Los segundos contra los que se mide el consumo de energía. A diferencia de

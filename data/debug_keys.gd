@@ -6,7 +6,8 @@ extends RefCounted
 ## que acordarse de ninguna combinación.
 ##
 ## El interruptor vive en NightConfig, junto a TEST_MODE. Con
-## NightConfig.DEBUG_KEYS en false ni F1 responde y el panel no existe.
+## NightConfig.DEBUG_KEYS en false ni F1 responde y el panel no existe, y en el
+## juego exportado está apagado siempre, aunque la constante esté en true.
 
 ## La tecla que abre y cierra el panel de pruebas.
 const TOGGLE_KEY: Key = KEY_F1
@@ -14,7 +15,7 @@ const TOGGLE_KEY: Key = KEY_F1
 
 ## true si el panel de pruebas está disponible en esta compilación.
 static func is_enabled() -> bool:
-	return NightConfig.DEBUG_KEYS
+	return NightConfig.debug_enabled()
 
 
 ## true si el evento es F1 y la depuración está encendida.
