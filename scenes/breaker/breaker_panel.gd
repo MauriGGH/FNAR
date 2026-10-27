@@ -318,7 +318,9 @@ func _draw_lamp(center: Vector2, color: Color, intensity: float) -> void:
 ## La línea de estado: deja ver la cuenta de los 3 s y la de los 10 s.
 func _draw_status(plate: Rect2) -> void:
 	var font: Font = Fonts.terminal()
-	var text: String = "LISTO"
+	# En reposo no pone nada: los dos focos (ENERGIA y CORTE) ya dicen cómo
+	# está el tablero. Solo se escribe lo que es una cuenta atrás.
+	var text: String = ""
 	var color: Color = ENGRAVED
 	if PowerManager.is_blackout:
 		text = "SIN CORRIENTE  %.1f s" % (PowerManager.blackout_progress() * NightConfig.BLACKOUT_TIME)

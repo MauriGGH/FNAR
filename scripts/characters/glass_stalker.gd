@@ -106,12 +106,6 @@ func needs_flashlight(zone_id: String) -> bool:
 	return zone_id == GLASS_ZONE
 
 
-func zone_presence(zone_id: String) -> String:
-	if zone_id != GLASS_ZONE or _state != State.AT_GLASS:
-		return ""
-	return glass_presence() if PowerManager.is_flashlight_on else ""
-
-
 func debug_text() -> String:
 	if _state == State.AT_GLASS:
 		return "en el cristal, susto %d %%, le quedan %.1f s" % [
@@ -172,10 +166,6 @@ func retreats_walking() -> bool:
 ## salen del nombre que trae el nodo, así que casi ningún profe los cambia.
 func game_over_cause() -> String:
 	return display_name
-
-
-func glass_presence() -> String:
-	return "%s pegado al cristal" % display_name
 
 
 func repel_notice() -> String:

@@ -40,7 +40,6 @@ const GAME_OVER_CAUSE: String = "Delito federal"
 const GAMBLING_CAUSE: String = "Ludopatía"
 const HALLWAY_NOTICE: String = "[pasos lentos y llavero]"
 const NOTICE_TIME: float = 2.5
-const WINDOW_PRESENCE: String = "Mamador mirando por el cristal"
 
 var _state: State = State.WALKING
 var _inspect_elapsed: float = 0.0
@@ -185,12 +184,6 @@ func _slug_token() -> String:
 ## Se ve por el cristal mientras inspecciona.
 func is_in_zone(zone_id: String) -> bool:
 	return zone_id == "front_glass" and _state == State.INSPECTING
-
-
-func zone_presence(zone_id: String) -> String:
-	if zone_id == "front_glass" and _state == State.INSPECTING:
-		return WINDOW_PRESENCE
-	return ""
 
 
 func debug_text() -> String:

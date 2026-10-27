@@ -37,7 +37,6 @@ const STATE_DISCHARGE: String = "-descarga"
 const LADDER_NOTICE: String = "[zumbido eléctrico]"
 const CORTASO_NOTICE: String = "[cortaso]"
 const NOTICE_TIME: float = 2.5
-const LADDER_PRESENCE: String = "Mago Eléctrico bajando la escalera"
 const LADDER_ZONE: String = "ladder"
 
 ## Avisa que hay que dibujar las chispas sobre la pantalla.
@@ -141,12 +140,6 @@ func on_blackout() -> void:
 ## Se ve en la escalera al techo mientras baja.
 func is_in_zone(zone_id: String) -> bool:
 	return zone_id == LADDER_ZONE and _state == State.WALKING and _route_index == STEP_ESCALERA
-
-
-func zone_presence(zone_id: String) -> String:
-	if zone_id == LADDER_ZONE and _state == State.WALKING and _route_index == STEP_ESCALERA:
-		return LADDER_PRESENCE
-	return ""
 
 
 func debug_text() -> String:

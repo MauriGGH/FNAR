@@ -244,12 +244,7 @@ func boost_text() -> String:
 ## Texto provisional para la oficina mientras este profe se ve en una zona
 ## (la puerta, el cristal, la escalera). Cadena vacía = no se ve ahí.
 ## Lo reemplazarán los sprites.
-func zone_presence(_zone_id: String) -> String:
-	return ""
-
-
 ## Gancho: ¿se ve este profe en esa zona de la oficina? A diferencia de
-## zone_presence(), no depende de la linterna: eso lo dice needs_flashlight().
 func is_in_zone(_zone_id: String) -> bool:
 	return false
 

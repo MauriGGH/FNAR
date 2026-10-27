@@ -45,7 +45,6 @@ const BANG_TIME: float = 5.0
 const KNOCK_INTERVAL: float = 1.0
 const KNOCK_POWER_COST: float = 1.0
 
-const DOOR_PRESENCE: String = "Barcosa golpeando la puerta"
 
 const CAMERA_STATE_LEFT: String = "salio"
 ## Lo que se ve de él en el pasillo (CAM 1 y CAM 2).
@@ -291,12 +290,6 @@ func shows_silhouette() -> bool:
 
 func is_in_zone(zone_id: String) -> bool:
 	return zone_id == "entrance_door" and _state == State.BANGING
-
-
-func zone_presence(zone_id: String) -> String:
-	if zone_id == "entrance_door" and _state == State.BANGING:
-		return DOOR_PRESENCE
-	return ""
 
 
 func _set_stage(new_stage: int) -> void:

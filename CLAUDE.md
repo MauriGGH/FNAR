@@ -140,7 +140,9 @@ provisional») y no suena nada.
 "[pasos corriendo]" en pantalla: esos avisos van por `NoticeBanner.show_sound()`, que solo los
 saca por consola y nada más cuando el panel de pruebas está encendido (`DebugKeys.is_enabled()`).
 La banda de avisos se queda para lo que el jugador sí tiene que leer (un ticket nuevo, la linterna
-muerta), que va por `show_notice()`.
+muerta), que va por `show_notice()`. Los avisos de las **cámaras de ambiente**
+(«[una sombra entre los coches]») también van por `show_sound()`: son ruidos, y además el suceso
+ya se ve en la imagen de la cámara con su parpadeo.
 
 **Qué falta por grabar:** cada entrada del catálogo lleva un campo `"desc"` con cómo tiene que
 sonar, y `scripts/audio/missing_audio_report.gd` escribe con eso **`docs/audios_faltantes.md`**:
@@ -401,6 +403,28 @@ ahí en adelante manda el juego) para ver que a oscuras no se ve nadie y que con
 aparecen en penumbra; **`18c_giro_a_la_mitad`** deja el barrido clavado al 50 % con
 `office.debug_hold_sweep()`, para poder mirar el desenfoque siempre en el mismo punto.
 
+## Textos en pantalla
+
+**El juego no explica sus controles mientras juegas.** Para eso están la llamada de la noche 1, el
+recuadro del tutorial (que sale una sola vez) y la pantalla de Controles de la pausa. Durante la
+noche no hay pistas de "clic para…", ni letreros al pasar el mouse por encima de un objeto, ni
+letreros de estado: lo que se lee es lo que el jugador **no puede ver de otra manera**.
+
+- **El estado de la puerta no se escribe.** Lo dice el foco de la chapa: verde abierta (ya viene en
+  la foto) y **rojo latiendo** cerrada, pintado encima por `scenes/office/lock_light.gd`, en el
+  sitio del foco **medido** sobre `oficina_centro_oscura.jpeg` (x 0.6785, y 0.7070). Y la cortina
+  abajo se ve sola.
+- **Nadie escribe quién está dónde.** Las etiquetas de presencia eran el apaño de cuando faltaban
+  los recortes; ahora están todos, así que a cada profe se le ve. Si a alguno le faltara el suyo,
+  no se dibuja nada.
+- **Se quedan** el HUD, los nombres y el minimapa de las cámaras, los subtítulos, todo lo de dentro
+  de la PC (es una computadora), lo que está serigrafiado en el tablero del breaker y en la hoja
+  del rack, las cuentas atrás del breaker y los botones que son botones de verdad (DAR CUERDA,
+  REPRODUCIR AUDIO, Guardar baraja, Silenciar llamada).
+
+El inventario completo, con qué se quitó y qué se quedó y por qué, está en
+[docs/textos_en_pantalla.md](docs/textos_en_pantalla.md).
+
 ## Transiciones y pantallas
 
 - **Estática:** son los ocho cuadros de `assets/art/screens/static/estatica_0..7.png` (480x270),
@@ -537,7 +561,7 @@ material, porque en la vista central cada uno se comporta distinto frente al con
   estar colocada para la oficina vieja.
 
 **Orden de dibujo de la vista central:** fondo → **siluetas** → **cortina** → profes pegados al
-cristal → etiquetas de presencia. Las siluetas van debajo de la cortina a propósito: con la lámina
+cristal. Las siluetas van debajo de la cortina a propósito: con la lámina
 abajo, Barcosa al otro lado de la puerta queda tapado; los que están pegados al cristal, no.
 
 Dónde cae cada profe dentro de su recorte, y dónde tiene Armando el ojo, está en
@@ -1026,8 +1050,9 @@ oficina, y **Esc** (o clic derecho) sigue sirviendo. La zona activa es la que ca
 declara en su `active_rect()`: el hueco del escritorio en la PC —el bisel es del tamaño de la
 ventana, así que lo de "fuera" es su marco de plástico—, la placa del tablero en el breaker y el
 rack con su hoja de etiquetado en la sala. Lo único que queda es una pista chiquita y gris abajo
-al centro, **"clic fuera o Esc para salir"**, que sale **una sola vez por noche y por pantalla**
-(`scripts/ui/exit_hint.gd`, que `night.gd` reinicia en cada noche) y se desvanece sola.
+al centro, **"clic fuera o Esc para salir"**, que sale **una sola vez en toda la partida y por
+pantalla** (`scripts/ui/exit_hint.gd`, apuntada en `save.cfg` como `exit_hints_seen`) y se
+desvanece sola.
 
 **Ese clic no hace nada en la oficina.** Las tres pantallas se comen el evento, pero la linterna
 no se prende por eventos sino preguntando por el botón del mouse cada cuadro, así que al volver a

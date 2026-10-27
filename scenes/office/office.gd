@@ -62,6 +62,7 @@ const SERGIO_ARRIVAL: GDScript = preload("res://scenes/office/sergio_arrival.gd"
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
 const UNO_DECK_SPOT: GDScript = preload("res://scenes/office/uno_deck_spot.gd")
+const LOCK_LIGHT: GDScript = preload("res://scenes/office/lock_light.gd")
 const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
 const ARMANDO_EYE: GDScript = preload("res://scenes/office/armando_eye.gd")
 
@@ -135,7 +136,6 @@ const PAN_BLUR_FULL_SPEED: float = 900.0
 ## Lo que tarda el acercamiento a la pantalla de la PC.
 const ZOOM_TIME: float = 0.4
 
-const FLASHLIGHT_NOTICE: String = "[sostén Ctrl o el clic sobre el cristal]"
 const DOOR_NOTICE: String = "[clang]"
 const NOTICE_TIME: float = 1.6
 
@@ -143,17 +143,15 @@ const NOTICE_TIME: float = 1.6
 const SHAKE_TIME: float = 0.3
 const SHAKE_PIXELS: float = 5.0
 
-## Zonas sobre las que se ponen etiquetas de presencia, con su color y su
-## separación. El profe decide qué dice en cada una con zone_presence().
-const PRESENCE_ZONES: Array[Dictionary] = [
-	{"zone": "entrance_door", "color": Color(0.98, 0.45, 0.4), "gap": 6.0},
-	{"zone": "front_glass", "color": Color(0.98, 0.62, 0.35), "gap": 16.0},
-	{"zone": "ladder", "color": Color(0.6, 0.85, 1.0), "gap": 6.0},
-	{"zone": "doorway", "color": Color(0.82, 0.6, 0.98), "gap": 6.0},
-]
-## `cubicles_side`, en la vista central, ya no lleva etiqueta: lo que pasa en el
-## paso de los cubículos se ve en la vista derecha, con las capas de Rochis y de
-## la botarga. Desde la central lo tapan las persianas.
+## Las zonas en las que puede verse un profe. Ya no llevan etiqueta: solo
+## sirven para saber a qué vista va su recorte.
+const LAYER_ZONES: Array[String] = ["entrance_door", "front_glass", "ladder", "doorway"]
+
+## **Aquí ya no se escribe quién está dónde.** Las etiquetas de presencia
+## ("Mamador mirando por el cristal", "Barcosa golpeando la puerta") eran el
+## apaño de cuando no existían los recortes; ahora están todos, así que a cada
+## profe se le ve y punto. Lo que lo delata es su recorte, la cortina que
+## tiembla, su silueta tras el cristal o lo que grita, no un renglón de texto.
 
 ## Puntos que siguen encendidos cuando se corta la corriente, por vista.
 const BLACKOUT_SPOTS: Dictionary = {
@@ -162,8 +160,6 @@ const BLACKOUT_SPOTS: Dictionary = {
 	View.RIGHT: [],
 }
 
-const PRESENCE_SIZE: Vector2 = Vector2(360.0, 34.0)
-const DOOR_STATE_SIZE: Vector2 = Vector2(200.0, 28.0)
 
 enum ViewState { PANNING, SWEEPING, ZOOMING_IN, ZOOMED, ZOOMING_OUT }
 enum View { LEFT, CENTER, RIGHT }
@@ -199,9 +195,6 @@ var _sweep_direction: int = 1
 @onready var center_lit: TextureRect = $Views/CenterView/Content/LitImage
 @onready var right_image: TextureRect = $Views/RightView/Content/Background
 
-var door_state_label: Label = null
-
-var _presence_labels: Dictionary = {}  # id de zona -> Label
 var _blackout_overlays: Array[Control] = []
 var _zoom_view: int = View.CENTER
 var _zoom_request: String = ""
@@ -221,6 +214,7 @@ var flashlight_overlay: Control = null
 var phone_light: Control = null
 var ticket_envelope: Control = null
 var uno_deck_spot: Control = null
+var lock_light: Control = null
 var sergio: SergioArrival = null
 ## true mientras haya que ignorar el botón del mouse que viene apretado de
 ## otra pantalla, hasta que se suelte.
@@ -260,9 +254,9 @@ func _ready() -> void:
 	_build_door_shutter()
 	_build_sergio()
 	_build_layers()
-	_build_labels()
 	_build_ticket_envelope()
 	_build_uno_deck()
+	_build_lock_light()
 	# Arranca apagada: la baraja solo se puede picar cuando llega su ticket.
 	set_uno_deck_clickable(false)
 	_build_photo_viewer()
@@ -278,8 +272,6 @@ func _ready() -> void:
 		_view_nodes[i].visible = i == _current_view
 		_view_nodes[i].position = Vector2.ZERO
 
-	for entry: Dictionary in PRESENCE_ZONES:
-		set_zone_presence(str(entry["zone"]), "")
 	_refresh_urena_photos()
 	_refresh_door()
 
@@ -574,12 +566,6 @@ func _layout_zones() -> void:
 		zone.size = Vector2(
 			zone.normalized_rect.size.x * content_size.x,
 			zone.normalized_rect.size.y * content_size.y)
-	# Separaciones distintas para que los textos no se toquen cuando hay
-	# varios profes a la vista al mismo tiempo.
-	for entry: Dictionary in PRESENCE_ZONES:
-		_place_above_zone(_presence_labels[entry["zone"]], str(entry["zone"]),
-			PRESENCE_SIZE, float(entry["gap"]))
-	_place_below_zone(door_state_label, "lock_box", DOOR_STATE_SIZE)
 	_layout_blackout_overlays()
 	_layout_flashlight()
 
@@ -619,6 +605,9 @@ func _layout_flashlight() -> void:
 	if sergio != null:
 		sergio.position = Vector2.ZERO
 		sergio.size = content_size
+	if lock_light != null:
+		lock_light.position = Vector2.ZERO
+		lock_light.size = content_size
 	# La baraja ocupa justo su zona de clic, que es donde está medida.
 	if uno_deck_spot != null:
 		var spot: Rect2 = zone_rect(UNO_DECK_ZONE)
@@ -648,6 +637,14 @@ func _build_uno_deck() -> void:
 	uno_deck_spot = UNO_DECK_SPOT.new()
 	uno_deck_spot.name = "UnoDeck"
 	center_content.add_child(uno_deck_spot)
+
+
+## El foquito de la chapa, que es lo que dice si la puerta está abierta o
+## cerrada ahora que no hay letrero.
+func _build_lock_light() -> void:
+	lock_light = LOCK_LIGHT.new()
+	lock_light.name = "LockLight"
+	center_content.add_child(lock_light)
 
 
 ## La noche le pasa el modelo de la baraja: la capa se dibuja sola a partir de
@@ -1003,8 +1000,6 @@ func _on_zone_clicked(zone_id: String) -> void:
 			zoom_to_pc()
 		"lock_box":
 			_toggle_door()
-		"flashlight":
-			notice_requested.emit(FLASHLIGHT_NOTICE, NOTICE_TIME)
 		"phone":
 			phone_requested.emit()
 		"server_room":
@@ -1029,40 +1024,22 @@ func _toggle_door() -> void:
 	door_toggled.emit(is_door_closed)
 
 
+## El estado de la puerta **no se escribe en ningún lado**: se ve en el foco
+## de la chapa (verde abierta, rojo cerrada) y en la cortina misma.
 func _refresh_door() -> void:
 	if door_shutter != null:
 		door_shutter.set_closed(is_door_closed)
-	door_state_label.text = "CHAPA CERRADA" if is_door_closed else "CHAPA ABIERTA"
-	door_state_label.modulate = Color(1.0, 0.75, 0.2) if is_door_closed else Color(0.65, 0.7, 0.7)
+	if lock_light != null:
+		lock_light.set_closed(is_door_closed)
 
 
-## Las zonas que llevan etiqueta de presencia, para que el night.gd las recorra.
-func presence_zone_ids() -> PackedStringArray:
+## Las zonas donde puede aparecer un profe, para que el night.gd las recorra.
+func layer_zone_ids() -> PackedStringArray:
 	var ids: PackedStringArray = PackedStringArray()
-	for entry: Dictionary in PRESENCE_ZONES:
-		ids.append(str(entry["zone"]))
+	for zone_id: String in LAYER_ZONES:
+		if _zones.has(zone_id):
+			ids.append(zone_id)
 	return ids
-
-
-## Quién se ve en una zona. Vacío = nadie.
-func set_zone_presence(zone_id: String, text: String) -> void:
-	if not _presence_labels.has(zone_id):
-		return
-	var label: Label = _presence_labels[zone_id]
-	label.text = text
-	label.visible = not text.is_empty()
-
-
-# --- Etiquetas creadas por código --------------------------------------------
-# Van pegadas a su zona de la vista central, así que se recolocan con ella.
-
-func _build_labels() -> void:
-	for entry: Dictionary in PRESENCE_ZONES:
-		var label: Label = _make_label(22, entry["color"])
-		_presence_labels[entry["zone"]] = label
-		_content_for_zone(str(entry["zone"])).add_child(label)
-	door_state_label = _make_label(19, Color(0.65, 0.7, 0.7))
-	center_content.add_child(door_state_label)
 
 
 ## En qué vista vive una zona. Las de la izquierda y la derecha salen de sus
@@ -1245,34 +1222,3 @@ func set_blackout(blackout: bool) -> void:
 		overlay.set_blackout(blackout)
 
 
-func _make_label(font_size: int, color: Color) -> Label:
-	var label: Label = Label.new()
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", color)
-	# Contorno negro para que el texto se lea sobre la foto oscura.
-	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
-	label.add_theme_constant_override("outline_size", 6)
-	return label
-
-
-func _place_above_zone(label: Label, zone_id: String, label_size: Vector2, gap: float) -> void:
-	if label == null:
-		return
-	var rect: Rect2 = zone_rect(zone_id)
-	label.size = label_size
-	# Las zonas pegadas a un borde dejarían la etiqueta fuera del contenido.
-	var limit: float = maxf(size.x * VIEW_SCALE - label_size.x, 0.0)
-	label.position = Vector2(
-		clampf(rect.get_center().x - label_size.x * 0.5, 0.0, limit),
-		rect.position.y - label_size.y - gap)
-
-
-func _place_below_zone(label: Label, zone_id: String, label_size: Vector2) -> void:
-	if label == null:
-		return
-	var rect: Rect2 = zone_rect(zone_id)
-	label.size = label_size
-	label.position = Vector2(rect.get_center().x - label_size.x * 0.5, rect.end.y + 4.0)

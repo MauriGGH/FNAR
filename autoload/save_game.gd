@@ -43,6 +43,9 @@ var custom_mastered: bool = false
 var tutorial_seen: bool = false
 ## Los retos de Custom Night que ya se ganaron, por su id.
 var challenges_won: Array[String] = []
+## Las pantallas acercadas a las que ya se les enseñó la pista de cómo salir.
+## Es **una vez en toda la partida**, no una por noche: a la segunda ya sabes.
+var exit_hints_seen: Array[String] = []
 ## El nivel de la maquinita que toca la próxima vez que salga. Va 1, 2, 3 y de
 ## ahí en adelante se queda en ARCADE_RANDOM_FROM, que quiere decir "ya los
 ## viste los tres, ahora salen al azar".
@@ -149,6 +152,15 @@ func mark_tutorial_seen() -> void:
 	save_game()
 
 
+## La pista de salir de una pantalla: devuelve true la primera vez y nunca más.
+func take_exit_hint(screen_id: String) -> bool:
+	if screen_id.is_empty() or screen_id in exit_hints_seen:
+		return false
+	exit_hints_seen.append(screen_id)
+	save_game()
+	return true
+
+
 func mark_challenge_won(challenge_id: String) -> void:
 	if challenge_id.is_empty() or challenge_id in challenges_won:
 		return
@@ -227,6 +239,7 @@ func reset() -> void:
 	nights_cleared.clear()
 	custom_mastered = false
 	challenges_won.clear()
+	exit_hints_seen.clear()
 	tutorial_seen = false
 	arcade_level = 1
 	has_totem = false
@@ -244,6 +257,7 @@ func save_game() -> void:
 	file.set_value(SECTION_PROGRESS, "nights_cleared", nights_cleared)
 	file.set_value(SECTION_PROGRESS, "custom_mastered", custom_mastered)
 	file.set_value(SECTION_PROGRESS, "challenges_won", challenges_won)
+	file.set_value(SECTION_PROGRESS, "exit_hints_seen", exit_hints_seen)
 	file.set_value(SECTION_PROGRESS, "tutorial_seen", tutorial_seen)
 	file.set_value(SECTION_PROGRESS, "arcade_level", arcade_level)
 	file.set_value(SECTION_PROGRESS, "has_totem", has_totem)
@@ -267,6 +281,7 @@ func load_game() -> void:
 	nights_cleared = _to_int_array(file.get_value(SECTION_PROGRESS, "nights_cleared", []))
 	custom_mastered = bool(file.get_value(SECTION_PROGRESS, "custom_mastered", false))
 	challenges_won = _to_string_array(file.get_value(SECTION_PROGRESS, "challenges_won", []))
+	exit_hints_seen = _to_string_array(file.get_value(SECTION_PROGRESS, "exit_hints_seen", []))
 	tutorial_seen = bool(file.get_value(SECTION_PROGRESS, "tutorial_seen", false))
 	arcade_level = clampi(int(file.get_value(SECTION_PROGRESS, "arcade_level", 1)),
 		1, ARCADE_RANDOM_FROM)

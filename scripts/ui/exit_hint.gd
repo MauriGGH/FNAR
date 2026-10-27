@@ -6,13 +6,14 @@ extends Label
 ## con un clic fuera o con Escape, y lo único que queda es este renglón
 ## chiquito y gris abajo al centro.
 ##
-## **Sale una sola vez por noche y por pantalla.** La primera vez que abres la
-## PC esa noche la lees; de ahí en adelante ya sabes. Se desvanece sola.
+## **Sale una sola vez en toda la partida, por pantalla.** La primera vez que
+## abres la PC la lees y nunca más: queda apuntada en `save.cfg`. Se desvanece
+## sola, y va chiquita y muy tenue, porque no es parte de la escena.
 
 const TEXT: String = "clic fuera o Esc para salir"
-const SIZE_AT_1080: float = 18.0
+const SIZE_AT_1080: float = 14.0
 const REFERENCE_HEIGHT: float = 1080.0
-const COLOR: Color = Color(0.62, 0.63, 0.65)
+const COLOR: Color = Color(0.55, 0.56, 0.58, 0.62)
 ## Lo que se queda quieta y lo que tarda en irse.
 const HOLD: float = 1.4
 const FADE: float = 1.6
@@ -27,11 +28,6 @@ static var _shown: Dictionary = {}
 ## monitor ni encima de la barra de cámaras de la oficina. Vacío = toda la
 ## pantalla.
 var region: Rect2 = Rect2()
-
-
-## Nueva noche: todas vuelven a enseñarla una vez.
-static func reset() -> void:
-	_shown.clear()
 
 
 ## La mete en una pantalla y la deja lista, sin enseñarla todavía.
@@ -75,11 +71,10 @@ func set_region(rect: Rect2) -> void:
 	_layout()
 
 
-## La enseña si a esta pantalla todavía no le ha salido esta noche.
+## La enseña si a esta pantalla no le ha salido **en toda la partida**.
 func show_once(screen_id: String) -> void:
-	if _shown.has(screen_id):
+	if not SaveGame.take_exit_hint(screen_id):
 		return
-	_shown[screen_id] = true
 	_layout()
 	modulate.a = 1.0
 	var tween: Tween = create_tween()

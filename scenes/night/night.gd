@@ -58,7 +58,7 @@ const FLASH_TIME: float = 0.28
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
 
 const ARMANDO_NOTICE: String = "[Armando borró tu progreso]"
-const URENA_SNUB_NOTICE: String = "[Ureña se quedo esperando...]"
+const URENA_SNUB_NOTICE: String = "[Ureña se quedó esperando]"
 ## La causa cuando el apagón te alcanza. Es cosa del Mago, no de la energía.
 const NO_CALL_NOTICE: String = "[esta noche no tiene guion de llamada]"
 const BLACKOUT_CAUSE: String = "Mago Eléctrico"
@@ -208,7 +208,11 @@ func _ready() -> void:
 	camera_system.opened.connect(_on_cameras_opened)
 	camera_system.closed.connect(_on_cameras_closed)
 	camera_system.camera_changed.connect(_on_camera_changed)
-	camera_system.notice_requested.connect(notice_banner.show_notice)
+	# Los avisos de las cámaras de ambiente ("[una sombra entre los coches]")
+	# son **ruidos y cosas que ya se ven en la imagen**: van a la consola, no
+	# a la banda de avisos. Lo que el jugador tiene que leer ya se lo dice el
+	# suceso con su propia imagen y su parpadeo.
+	camera_system.notice_requested.connect(notice_banner.show_sound)
 	camera_bar.hovered.connect(_on_camera_bar_hovered)
 
 	# La PC y las cámaras no pueden estar abiertas a la vez.
@@ -296,7 +300,7 @@ func animatronics() -> Array[Animatronic]:
 ## El panel de pruebas: que suene la llamada de esta noche sin esperar.
 func debug_night_call() -> void:
 	if not NightCalls.has_call(GameManager.current_night):
-		notice_banner.show_notice(NO_CALL_NOTICE, NOTICE_SHORT)
+		notice_banner.show_sound(NO_CALL_NOTICE, NOTICE_SHORT)
 		return
 	phone_call.queue_recording(GameManager.current_night, NightCalls.RING_TIME)
 
@@ -395,9 +399,6 @@ func _collect_animatronics() -> Array[Animatronic]:
 func _on_night_started(night: int) -> void:
 	night_label.text = "NOCHE %d" % night
 	_momo_used = false
-	# La pista de cómo salir de las pantallas acercadas vuelve a salir una vez
-	# por noche, en cada una.
-	ExitHint.reset()
 	office.set_right_view_empty(false)
 	_schedule_calls(night)
 	for animatronic: Animatronic in _animatronics:
@@ -454,16 +455,15 @@ func _refresh_tickets(delta: float, force: bool = false) -> void:
 		pc_screen.refresh_tickets()
 
 
-## Por cada zona de presencia busca al primer profe que se vea ahí. Con
-## recorte va a la capa de su vista; sin recorte, a su etiqueta.
+## Quién se ve en cada vista de la oficina. **Solo recortes**: si a alguien le
+## faltara el suyo no se dibuja nada, que es mejor que escribir su nombre.
 func _refresh_office_presence() -> void:
 	# Una lista por vista, tipada, como la pide la capa de recortes.
 	var by_view: Dictionary = {}
 	for view: int in office.view_count():
 		by_view[view] = [] as Array[Dictionary]
-	for zone_id: String in office.presence_zone_ids():
+	for zone_id: String in office.layer_zone_ids():
 		var view: int = office.view_of_zone(zone_id)
-		var label: String = ""
 		# Hay que recorrer a todos, no quedarse con el primero: en el cristal
 		# pueden coincidir Mamador, Ureña, Juan y Armando, y sus recortes ya
 		# vienen colocados para no encimarse.
@@ -471,16 +471,12 @@ func _refresh_office_presence() -> void:
 			if not animatronic.is_in_zone(zone_id):
 				continue
 			var slug: String = animatronic.image_slug()
-			if not slug.is_empty() and office.has_layer(view, slug):
-				by_view[view].append({
-					"slug": slug,
-					"lit_only": animatronic.needs_flashlight(zone_id),
-				})
+			if slug.is_empty() or not office.has_layer(view, slug):
 				continue
-			# Sin recorte se queda su etiqueta; si hay varios, la del primero.
-			if label.is_empty():
-				label = animatronic.zone_presence(zone_id)
-		office.set_zone_presence(zone_id, label)
+			by_view[view].append({
+				"slug": slug,
+				"lit_only": animatronic.needs_flashlight(zone_id),
+			})
 	_add_glass_silhouettes(by_view)
 	for view: int in office.view_count():
 		office.set_view_present(view, by_view[view])

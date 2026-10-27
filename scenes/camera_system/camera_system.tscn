@@ -233,7 +233,7 @@ offset_bottom = 68.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.78, 0.79, 0.8, 1)
 theme_override_font_sizes/font_size = 16
-text = "Clic y mantén"
+text = ""
 vertical_alignment = 1
 
 [node name="WindGauge" type="Control" parent="WindControl"]
@@ -277,7 +277,7 @@ offset_bottom = 68.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.78, 0.79, 0.8, 1)
 theme_override_font_sizes/font_size = 16
-text = "Clic para reproducir"
+text = ""
 vertical_alignment = 1
 
 [node name="AudioGauge" type="Control" parent="AudioControl"]

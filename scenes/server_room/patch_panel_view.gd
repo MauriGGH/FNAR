@@ -369,11 +369,12 @@ func _try_plug(camera: int, gi_port: int) -> void:
 		return
 	if _model.try_connect(camera, gi_port):
 		_click_anim[camera] = CLICK_TIME
-		notice_requested.emit("[clic]", 1.0)
+		# Lo único que se escribe es que esa cámara volvió, que es lo que el
+		# jugador no puede ver desde aquí. El "clic" de acertar ya se ve en el
+		# destello y el puerto equivocado, en la chispa.
 		notice_requested.emit("CAM %02d restablecida" % camera, 2.2)
 	else:
 		_spark_anim[gi_port] = SPARK_TIME
-		notice_requested.emit("puerto incorrecto", 1.6)
 	queue_redraw()
 
 

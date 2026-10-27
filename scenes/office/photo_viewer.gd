@@ -21,9 +21,6 @@ const BACKDROP: Color = Color(0.0, 0.0, 0.0, 0.78)
 ## El marco blanco de la foto, como una impresión de verdad.
 const FRAME_COLOR: Color = Color(0.93, 0.91, 0.86)
 const FRAME_WIDTH: float = 10.0
-const HINT_COLOR: Color = Color(0.82, 0.8, 0.76, 0.8)
-const HINT_SIZE: int = 18
-const HINT_TEXT: String = "clic o Escape para cerrar"
 
 var is_open: bool = false
 
@@ -101,9 +98,6 @@ func _draw() -> void:
 
 	DrawKit.rect_shadow(self, rect.grow(FRAME_WIDTH), Vector2(6.0, 10.0))
 	draw_rect(rect.grow(FRAME_WIDTH), FRAME_COLOR)
+	# Sin pie de "clic para cerrar": es una foto en grande, se cierra sola con
+	# cualquier clic y eso se prueba en medio segundo.
 	draw_texture_rect(_texture, rect, false)
-
-	var font: Font = Fonts.terminal()
-	var hint_width: float = font.get_string_size(HINT_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, HINT_SIZE).x
-	draw_string(font, Vector2((size.x - hint_width) * 0.5, rect.end.y + FRAME_WIDTH + 30.0),
-		HINT_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1.0, HINT_SIZE, HINT_COLOR)
