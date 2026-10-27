@@ -240,8 +240,8 @@ func _draw_title() -> void:
 	draw_string(font, Vector2(UnoDeck.SPREAD.position.x, 40.0), TITLE,
 		HORIZONTAL_ALIGNMENT_LEFT, -1.0, 26, Color(0.78, 0.76, 0.7))
 	var count: String = "%d de %d acomodadas" % [_model.placed_count(), UnoDeck.TOTAL]
-	draw_string(font, Vector2(UnoDeck.SPREAD.position.x, 68.0), count,
-		HORIZONTAL_ALIGNMENT_LEFT, -1.0, 22, Color(0.62, 0.6, 0.55))
+	draw_string(font, Vector2(UnoDeck.SPREAD.position.x, 74.0), count,
+		HORIZONTAL_ALIGNMENT_LEFT, -1.0, 28, Color(0.86, 0.85, 0.8))
 
 
 ## Los cuatro montones. El hueco vacío es un marco punteado del color que le

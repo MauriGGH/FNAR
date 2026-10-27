@@ -631,8 +631,11 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     hacia abajo en el patch panel y hacia arriba en el switch. Eso lo dibuja el código. Antes los 24
     llevaban la imagen del RJ45 de frente y el rack parecía empapelado de calcomanías; y siguiendo
     la curva de su cable salían todos torcidos en ángulos distintos. Los anchos van en fracción del
-    ancho del puerto y la funda no pasa de 0.90, porque los puertos del switch están a 0.0269 de
-    paso con 0.0263 de ancho y con más se tocarían entre vecinos.
+    ancho del puerto y la funda no pasa de 0.76, porque los puertos del switch están a 0.0268 de
+    paso con 0.0263 de ancho y con más se rozan entre vecinos. El conector arranca en **la boca de
+    su puerto** —el centro de su borde de abajo, metido un 30 % de su alto— y no en el punto del
+    que sale el cable, que está a media altura: con eso los del switch quedaban montados sobre la
+    fila de LEDs en lugar de dentro de su puerto.
     **La imagen `assets/art/office/rj45.png` es solo para el conector suelto**, el que cuelga y se
     arrastra, que sí se ve entero: va girado hacia donde va su cable, a 1.2 veces el ancho del
     puerto y con el color multiplicado por 0.5, porque la foto viene de día y el rack está casi a

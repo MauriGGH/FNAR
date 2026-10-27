@@ -99,13 +99,19 @@ const PLUG_TINT: Color = Color(0.5, 0.5, 0.5)
 ## del cable, un poco más ancha. Nada de contactos dorados: esos miran hacia
 ## adentro del puerto y no se ven.
 ##
-## Los anchos van en fracción del ancho del puerto, y el de la funda no pasa de
-## 0.90 a propósito: los puertos del switch están a 0.0269 de paso con 0.0263
-## de ancho, así que con más de eso las fundas de dos vecinos se tocarían.
-const SEATED_BODY_WIDTH: float = 0.76
-const SEATED_BODY_LENGTH: float = 0.42
-const SEATED_BOOT_WIDTH: float = 0.88
-const SEATED_BOOT_LENGTH: float = 0.50
+## Los anchos van en fracción del ancho del puerto. El de la funda no pasa de
+## 0.76 a propósito: los puertos del switch están a 0.0268 de paso con 0.0263
+## de ancho, así que con más de eso las fundas de dos vecinos se rozan. Y el
+## largo es corto por lo mismo: en el switch, entre la boca del puerto y la
+## fila de LEDs hay poco sitio, y un conector largo se los comía.
+const SEATED_BODY_WIDTH: float = 0.66
+const SEATED_BODY_LENGTH: float = 0.32
+const SEATED_BOOT_WIDTH: float = 0.76
+const SEATED_BOOT_LENGTH: float = 0.38
+## Qué tan adentro del puerto arranca, en fracción de su alto: así se ve
+## **metido** en él y no pegado por fuera. Se cuenta desde el borde de abajo
+## del puerto, que es donde está la boca en las dos filas de la foto.
+const SEATED_INSET: float = 0.3
 ## Lo que se oscurece el color del cable en cada pieza. Son números altos
 ## porque el rack está casi a oscuras: con el amarillo a medio oscurecer los
 ## conectores parecían papelitos de colores pegados en la lámina.
@@ -543,10 +549,11 @@ func _draw_cords() -> void:
 			var points: PackedVector2Array = DrawKit.cord_points(from_point, to_point,
 				float(entry["drop"]), float(entry["rise"]), float(entry["side"]), CORD_SEGMENTS)
 			DrawKit.cable(self, points, CORD_WIDTH, color)
-			plugs.append({"at": from_point, "color": color, "highlight": false,
-				"aim": Vector2.UP, "width": pp_width})
-			plugs.append({"at": to_point, "color": color, "highlight": false,
-				"aim": Vector2.DOWN, "width": _gi_rect(gi_port).size.x})
+			plugs.append({"at": _seat_of(_pp_rect(pp_port)), "color": color,
+				"highlight": false, "aim": Vector2.UP, "width": pp_width})
+			plugs.append({"at": _seat_of(_gi_rect(gi_port)), "color": color,
+				"highlight": false, "aim": Vector2.DOWN,
+				"width": _gi_rect(gi_port).size.x})
 			if click > 0.0:
 				var flash: float = click / CLICK_TIME
 				draw_circle(to_point, 16.0 * flash, Color(0.9, 0.93, 0.95, 0.3 * flash))
@@ -556,8 +563,8 @@ func _draw_cords() -> void:
 		var loose: PackedVector2Array = DrawKit.hanging_points(from_point, end_point,
 			LOOSE_LENGTH, CORD_SEGMENTS)
 		DrawKit.cable(self, loose, CORD_WIDTH, color)
-		plugs.append({"at": from_point, "color": color, "highlight": false,
-			"aim": Vector2.UP, "width": pp_width})
+		plugs.append({"at": _seat_of(_pp_rect(pp_port)), "color": color,
+			"highlight": false, "aim": Vector2.UP, "width": pp_width})
 		plugs.append({"at": end_point, "color": color,
 			"highlight": camera == _hover_camera or camera == _drag_camera, "label": camera,
 			"aim": _tip_aim(loose, false), "width": pp_width})
@@ -572,6 +579,15 @@ func _draw_cords() -> void:
 		else:
 			_draw_seated_plug(plug["at"], plug["color"],
 				plug["aim"] as Vector2, float(plug["width"]))
+
+
+## La boca de un puerto: el centro de su borde de abajo, metido un poco hacia
+## adentro. De ahí arranca el conector, hacia abajo en el patch panel y hacia
+## arriba en el switch. Antes arrancaba del punto del que sale el cable, que
+## está a media altura del puerto, y en el switch eso dejaba los conectores
+## montados sobre la fila de LEDs en vez de dentro de su puerto.
+func _seat_of(port: Rect2) -> Vector2:
+	return Vector2(port.get_center().x, port.end.y - port.size.y * SEATED_INSET)
 
 
 ## Hacia dónde mira la punta del conector **suelto**: siguiendo su cable hacia

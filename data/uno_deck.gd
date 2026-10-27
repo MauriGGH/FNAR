@@ -63,16 +63,22 @@ const BACK: Color = Color(0.11, 0.1, 0.11)
 ## Todo está medido sobre el lienzo de 1152x648 de la noche.
 const CANVAS: Vector2 = Vector2(1152.0, 648.0)
 ## Los cuatro montones, arriba: dónde empieza el primero y cuánto se separan.
-const PILE_FIRST: Vector2 = Vector2(300.0, 52.0)
+## Los montones empiezan en x 360 para dejarle sitio al encabezado, que va en
+## la columna de la izquierda: con 300 el renglón de "X de 24 acomodadas" se
+## metía debajo del primer montón.
+const PILE_FIRST: Vector2 = Vector2(360.0, 44.0)
 const PILE_STEP: float = 184.0
 ## Lo que se encima una carta sobre la anterior dentro de un montón: lo justo
 ## para contarlas de un vistazo sin perder el número de la de arriba.
 const PILE_OVERLAP: float = 13.0
 
 ## El revoltijo de abajo: la rejilla sobre la que se reparten las 24 cartas.
-## Acaba en x 856 a propósito: lo que queda a la derecha es el hueco del botón
-## de "Guardar baraja", y así ninguna carta se esconde debajo.
-const SPREAD: Rect2 = Rect2(96.0, 300.0, 760.0, 300.0)
+## El revoltijo vive **solo en el hueco libre** de la pantalla: por la derecha
+## acaba antes del botón de "Guardar baraja" (x 880) y por abajo antes de la
+## energía (y 532), de la pista de "clic fuera o Esc" y de la barra de
+## cámaras. Si no, había cartas que no se podían agarrar porque les caía
+## encima el HUD.
+const SPREAD: Rect2 = Rect2(96.0, 262.0, 740.0, 250.0)
 const SPREAD_COLUMNS: int = 8
 ## Lo chueca que queda cada carta del revoltijo. Es poco a propósito: el clic
 ## se prueba contra el rectángulo sin girar, así que una carta muy torcida se
