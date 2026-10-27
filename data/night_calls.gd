@@ -77,12 +77,9 @@ const OFFSET_TAG: String = "@offset="
 ## el audio termina justo encima.
 const TAIL_TIME: float = 2.5
 
-# La síntesis de voz ya no se usa para estas llamadas (son audio grabado),
-# pero Ureña sigue hablando con ella, así que su configuración se queda aquí.
-const TTS_LANGUAGE: String = "es"
-const TTS_PITCH: float = 0.85
-const TTS_RATE: float = 0.95
-const TTS_VOLUME: int = 55
+# **Aquí no hay síntesis de voz.** Ni estas llamadas ni las de Ureña la usan:
+# todo lo hablado es grabación, y lo que no esté grabado sale solo como
+# subtítulo.
 
 
 ## El id del catálogo de sonidos para la llamada de esa noche.

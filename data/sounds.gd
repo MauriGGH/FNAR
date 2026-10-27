@@ -94,7 +94,15 @@ const SEQ_BLACKOUT: String = "apagon"
 ## profe y tres de reserva) y entran por su prefijo en `sequence_of()`.
 const SEQUENCES: Dictionary = {
 	SEQ_SCARE: [
-		"wasted", "mamador_brecha", "estatica_inquietante_gameover", "cortaso",
+		"wasted", "mamador_delito", "mamador_brecha",
+		"estatica_inquietante_gameover", "cortaso",
+	],
+	SEQ_VOICE: [
+		"urena_saludo", "urena_linea1", "urena_linea2", "urena_linea3",
+		"urena_linea4", "urena_linea5", "urena_linea6", "urena_linea7",
+		"urena_reaccion_esquiva", "urena_reaccion_sigue", "urena_reaccion_grosero",
+		"urena_adios_esquivo", "urena_adios_foto", "urena_adios_grosero",
+		"urena_adios_colgado",
 	],
 	SEQ_RESCUE: ["sergio_rescate"],
 	SEQ_MOMO: ["momo_cancion"],
@@ -237,9 +245,33 @@ const FAR_AMBIENT: Array[String] = [
 const PAN_LEFT: float = -0.7
 const PAN_CENTER: float = 0.0
 const PAN_RIGHT: float = 0.7
-## La voz de Rochis. No tiene provisional por código: mientras no esté grabada,
-## el botón de la CAM 3 la dice con la síntesis de voz.
+## La voz de Rochis, ya grabada. **Ninguna voz lleva provisional por código**:
+## un pitido en vez de una frase no dice nada, así que si falta el archivo lo
+## único que sale es el subtítulo.
 const IMPRESSIVE: String = "es_impresionante"
+
+# --- Las voces de Ureña y de Mamador -----------------------------------------
+## La llamada de media noche de Ureña, línea por línea. Todas van por el bus
+## Voces y **sin provisional**: lo que falte se queda en subtítulo.
+const URENA_GREETING: String = "urena_saludo"
+const URENA_LINES: Array[String] = [
+	"urena_linea1", "urena_linea2", "urena_linea3", "urena_linea4",
+	"urena_linea5", "urena_linea6", "urena_linea7",
+]
+const URENA_REACTION_DODGE: String = "urena_reaccion_esquiva"
+const URENA_REACTION_ALONG: String = "urena_reaccion_sigue"
+const URENA_REACTION_RUDE: String = "urena_reaccion_grosero"
+const URENA_FAREWELL_DODGED: String = "urena_adios_esquivo"
+const URENA_FAREWELL_ALONG: String = "urena_adios_foto"
+const URENA_FAREWELL_RUDE: String = "urena_adios_grosero"
+const URENA_FAREWELL_SNUBBED: String = "urena_adios_colgado"
+## Lo que grita Mamador al pillarte, justo antes de la irrupción.
+const MAMADOR_CRIME: String = "mamador_delito"
+
+## Las voces de la llamada son **una secuencia**: cada línea nueva calla la
+## anterior en vez de encimarse. En una conversación, interrumpir es lo que se
+## entiende; esperar turno dejaría la voz detrás del subtítulo.
+const SEQ_VOICE: String = "voz"
 
 ## Las llamadas grabadas con las que empieza cada noche. Tampoco llevan
 ## provisional: si no está el archivo, esa noche no hay llamada y ya.
@@ -802,25 +834,85 @@ const CATALOG: Dictionary = {
 		"volume_db": -6.0, "generator": "far_dishes", "pan": PAN_RIGHT,
 		"desc": "Platos y cubiertos en la cafetería vacía.",
 	},
-	"barcosa_puerta_1": {
-		"file": "voces/barcosa_puerta_1.ogg", "bus": "Voces",
+	"urena_saludo": {
+		"file": "voces/urena_saludo.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
-		"desc": "Barcosa aporreando: «¿Quién cerró? Tengo clase en este salón.»",
+		"desc": "Ureña saludando por teléfono, sin el nombre ni la cuenta de tareas.",
 	},
-	"barcosa_puerta_2": {
-		"file": "voces/barcosa_puerta_2.ogg", "bus": "Voces",
+	"urena_linea1": {
+		"file": "voces/urena_linea1.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
-		"desc": "Barcosa aporreando: «Abra, joven. Nada más paso lista y me voy.»",
+		"desc": "Insinuación 1 de Ureña: los trabajitos extra en su cubículo.",
 	},
-	"barcosa_puerta_3": {
-		"file": "voces/barcosa_puerta_3.ogg", "bus": "Voces",
+	"urena_linea2": {
+		"file": "voces/urena_linea2.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
-		"desc": "Barcosa aporreando: «Diez minutos. Le estoy pidiendo diez minutos.»",
+		"desc": "Insinuación 2 de Ureña: convertirte en mujer por una noche.",
 	},
-	"barcosa_se_va": {
-		"file": "voces/barcosa_se_va.ogg", "bus": "Voces",
+	"urena_linea3": {
+		"file": "voces/urena_linea3.ogg", "bus": "Voces",
 		"volume_db": 0.0, "generator": "",
-		"desc": "Barcosa rindiéndose: «Bueno, ya. Quedan todos con falta.»",
+		"desc": "Insinuación 3 de Ureña: subirte la calificación en su oficina.",
+	},
+	"urena_linea4": {
+		"file": "voces/urena_linea4.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Insinuación 4 de Ureña: la foto de cuerpo completo.",
+	},
+	"urena_linea5": {
+		"file": "voces/urena_linea5.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Insinuación 5 de Ureña: el disco duro.",
+	},
+	"urena_linea6": {
+		"file": "voces/urena_linea6.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Insinuación 6 de Ureña: la conexión punto a punto.",
+	},
+	"urena_linea7": {
+		"file": "voces/urena_linea7.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Insinuación 7 de Ureña: el cable y el conector.",
+	},
+	"urena_reaccion_esquiva": {
+		"file": "voces/urena_reaccion_esquiva.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Reacción de Ureña cuando lo esquivas con educación: «Ay, qué serio...»",
+	},
+	"urena_reaccion_sigue": {
+		"file": "voces/urena_reaccion_sigue.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Reacción de Ureña cuando le sigues el juego: «¡Así me gusta!»",
+	},
+	"urena_reaccion_grosero": {
+		"file": "voces/urena_reaccion_grosero.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Reacción de Ureña cuando le contestas mal: «Qué grosero eres...»",
+	},
+	"urena_adios_esquivo": {
+		"file": "voces/urena_adios_esquivo.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Despedida de Ureña si lo esquivaste todo: la oferta sigue en pie.",
+	},
+	"urena_adios_foto": {
+		"file": "voces/urena_adios_foto.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Despedida de Ureña si le seguiste el juego: te dejó un regalito.",
+	},
+	"urena_adios_grosero": {
+		"file": "voces/urena_adios_grosero.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Despedida de Ureña si le contestaste mal: eso se paga.",
+	},
+	"urena_adios_colgado": {
+		"file": "voces/urena_adios_colgado.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Lo que dice Ureña por el altavoz si le cuelgas: «Ahorita voy para allá.»",
+	},
+	"mamador_delito": {
+		"file": "voces/mamador_delito.ogg", "bus": "Voces",
+		"volume_db": 0.0, "generator": "",
+		"desc": "Mamador al pillarte: «¡Delito federal!». Va antes de la irrupción.",
 	},
 	"mamador_ok_1": {
 		"file": "voces/mamador_ok_1.ogg", "bus": "Voces",

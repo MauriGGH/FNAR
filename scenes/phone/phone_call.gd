@@ -236,7 +236,7 @@ func _speak_after_busy() -> void:
 
 
 func _on_snub_timeout() -> void:
-	_speak(UrenaQuestions.FAREWELL_SNUBBED)
+	_play_voice(Sounds.URENA_FAREWELL_SNUBBED)
 	snub_line.emit(UrenaQuestions.FAREWELL_SNUBBED)
 
 
@@ -247,27 +247,21 @@ func _on_mute_pressed() -> void:
 	hang_up()
 
 
-## Lee una línea con la síntesis de voz de Godot, si el sistema la tiene.
-func _speak(line: String) -> void:
-	var voice: String = _spanish_voice()
-	if voice.is_empty():
+## Suelta la grabación de una línea de Ureña. **Nada de síntesis de voz**: si
+## esa grabación no está, se queda el subtítulo y ya.
+##
+## Las voces de la llamada van como secuencia, así que una línea nueva **calla
+## la anterior** en vez de encimarse con ella. En una conversación interrumpir
+## se entiende; esperar turno dejaría la voz corriendo detrás del texto.
+func _play_voice(voice_id: String) -> void:
+	if voice_id.is_empty():
 		return
-	# El TTS no sale por los buses, así que el deslizador de Voces va aquí.
-	var volume: int = roundi(float(NightCalls.TTS_VOLUME) * AudioManager.voice_volume())
-	DisplayServer.tts_speak(line, voice, volume,
-		NightCalls.TTS_PITCH, NightCalls.TTS_RATE)
+	AudioManager.begin_sequence(Sounds.SEQ_VOICE)
+	AudioManager.play_in_sequence(Sounds.SEQ_VOICE, voice_id)
 
 
 func _stop_voice() -> void:
-	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		DisplayServer.tts_stop()
-
-
-func _spanish_voice() -> String:
-	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		return ""
-	var voices: PackedStringArray = DisplayServer.tts_get_voices_for_language(NightCalls.TTS_LANGUAGE)
-	return voices[0] if not voices.is_empty() else ""
+	AudioManager.begin_sequence(Sounds.SEQ_VOICE)
 
 
 # --- Llamada de Ureña ---------------------------------------------------------
@@ -280,20 +274,21 @@ func _start_urena() -> void:
 	# Lo que se lee lleva el nombre; lo que se oye, no.
 	var done: int = GameManager.completed_task_count()
 	_say(UrenaQuestions.greeting(GameManager.player_name, done),
-		UrenaQuestions.GREETING_HOLD, UrenaQuestions.greeting_spoken(done))
+		UrenaQuestions.GREETING_HOLD, Sounds.URENA_GREETING)
 	_step = Step.GREETING
 
 
 ## Pone a Ureña a decir algo: se escribe poco a poco y después se queda hold
 ## segundos en pantalla. Mientras habla no hay opciones ni reloj.
-## `spoken` sirve para que diga una cosa y se lea otra: el saludo se escribe
-## con el nombre del jugador, pero en voz va sin él.
-func _say(text: String, hold: float, spoken: String = "") -> void:
+## `voice_id` es la grabación que acompaña al texto. Van por separado a
+## propósito: el saludo se **escribe** con el nombre del jugador y se **oye**
+## sin él, porque una grabación no puede decir cómo te llamas.
+func _say(text: String, hold: float, voice_id: String = "") -> void:
 	_speech = text
 	_speech_typed = 0.0
 	_speech_hold = hold
 	subtitle_label.text = ""
-	_speak(spoken if not spoken.is_empty() else text)
+	_play_voice(voice_id)
 	options.visible = false
 	timer_label.visible = false
 
@@ -302,13 +297,15 @@ func _say(text: String, hold: float, spoken: String = "") -> void:
 func _next_line() -> void:
 	_line_urena += 1
 	if _line_urena >= _lines_urena.size():
-		_say(UrenaQuestions.farewell(_played_along, _was_rude), UrenaQuestions.FAREWELL_HOLD)
+		_say(UrenaQuestions.farewell(_played_along, _was_rude),
+			UrenaQuestions.FAREWELL_HOLD,
+			UrenaQuestions.farewell_voice(_played_along, _was_rude))
 		_step = Step.FAREWELL
 		return
 	var line: Dictionary = _lines_urena[_line_urena]
 	subtitle_label.text = str(line.get("text", ""))
 	# Las insinuaciones también se oyen, no solo se leen.
-	_speak(str(line.get("text", "")))
+	_play_voice(str(line.get("voz", "")))
 	if line.has("index"):
 		var index: int = int(line["index"])
 		if not index in _used_lines:
@@ -385,5 +382,6 @@ func _resolve_answer(kind: int) -> void:
 	elif kind == UrenaQuestions.Answer.RUDE:
 		_was_rude = true
 	answer_given.emit(kind)
-	_say(UrenaQuestions.reaction(kind), UrenaQuestions.REACTION_HOLD)
+	_say(UrenaQuestions.reaction(kind), UrenaQuestions.REACTION_HOLD,
+		UrenaQuestions.reaction_voice(kind))
 	_step = Step.REACTION

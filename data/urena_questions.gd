@@ -43,42 +43,49 @@ const GREETING_SPOKEN: String = "¡Quihubo! Ya vi que andas muy trabajador... qu
 const BANK: Array[Dictionary] = [
 	{
 		"text": "Ando buscando a alguien para unos trabajitos extra... en mi cubículo.",
+		"voz": "urena_linea1",
 		"dodge": "Ando de guardia, profe.",
 		"plays_along": "Uff, ¿cuánto paga?",
 		"rude": "Qué asco, profe.",
 	},
 	{
 		"text": "Te quiero convertir en mujer por una noche.",
+		"voz": "urena_linea2",
 		"dodge": "Así estoy bien, gracias, profe.",
 		"plays_along": "Uff, esas con Nutella.",
 		"rude": "Está bien enfermo.",
 	},
 	{
 		"text": "Te subo la calificación... ven a mi oficina a las 3 AM.",
+		"voz": "urena_linea3",
 		"dodge": "Mejor el examen, profe.",
 		"plays_along": "¿Llevo algo, profe?",
 		"rude": "Lo voy a acusar.",
 	},
 	{
 		"text": "¿Me mandas una foto de cuerpo completo? Para el archivo.",
+		"voz": "urena_linea4",
 		"dodge": "Ya tiene la oficial.",
 		"plays_along": "Ay, profe, qué rico.",
 		"rude": "No me stalkee, viejo.",
 	},
 	{
 		"text": "Se me puso bien duro... el disco. ¿Me lo formateas?",
+		"voz": "urena_linea5",
 		"dodge": "Tráigalo al laboratorio.",
 		"plays_along": "Con todo y particiones.",
 		"rude": "Búsquese un técnico.",
 	},
 	{
 		"text": "¿Me haces una conexión punto a punto? Sin switch.",
+		"voz": "urena_linea6",
 		"dodge": "Solo con ticket, profe.",
 		"plays_along": "¿Me pasa su IP?",
 		"rude": "Me da asco, profe.",
 	},
 	{
 		"text": "Tengo el cable bien largo... ¿me ayudas a ponchar el conector?",
+		"voz": "urena_linea7",
 		"dodge": "Mañana en el laboratorio.",
 		"plays_along": "Uy, ¿categoría 6?",
 		"rude": "Guárdese su cable.",
@@ -134,7 +141,10 @@ static func line(index: int) -> Dictionary:
 		{"text": str(entry["rude"]), "kind": Answer.RUDE},
 	]
 	answers.shuffle()
-	return {"index": index, "text": str(entry["text"]), "answers": answers}
+	return {
+		"index": index, "text": str(entry["text"]),
+		"voz": str(entry.get("voz", "")), "answers": answers,
+	}
 
 
 ## El saludo que se LEE, con el nombre del guardia y sus tareas puestos.
@@ -143,9 +153,29 @@ static func greeting(player_name: String, tasks_done: int) -> String:
 
 
 ## El saludo que se OYE: el mismo sin el nombre, porque una grabación no puede
-## decir cómo se llama el jugador.
+## decir cómo se llama el jugador. El texto se conserva aunque hoy lo que suena
+## sea la grabación `urena_saludo`, para saber qué dice.
 static func greeting_spoken(tasks_done: int) -> String:
 	return GREETING_SPOKEN.replace(TASKS_TAG, str(tasks_done))
+
+
+## La voz que le toca a cada reacción.
+static func reaction_voice(kind: Answer) -> String:
+	match kind:
+		Answer.PLAYS_ALONG:
+			return Sounds.URENA_REACTION_ALONG
+		Answer.RUDE:
+			return Sounds.URENA_REACTION_RUDE
+	return Sounds.URENA_REACTION_DODGE
+
+
+## Y a cada despedida, con el mismo orden de preferencia que el texto.
+static func farewell_voice(played_along: bool, was_rude: bool) -> String:
+	if played_along:
+		return Sounds.URENA_FAREWELL_ALONG
+	if was_rude:
+		return Sounds.URENA_FAREWELL_RUDE
+	return Sounds.URENA_FAREWELL_DODGED
 
 
 ## Lo que contesta a cada clase de respuesta. Son frases cortas de relleno

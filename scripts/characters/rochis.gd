@@ -34,8 +34,6 @@ const AUDIO_COOLDOWN: float = 2.0
 
 const GAME_OVER_CAUSE: String = "Rochis"
 const AUDIO_NOTICE: String = "[es impresionante]"
-## Lo que dice la síntesis de voz mientras no esté grabada la de Rochis.
-const IMPRESSIVE_TEXT: String = "Es impresionante"
 const STEPS_NOTICE: String = "[pasos en la recepción]"
 const NAME_NOTICE_FORMAT: String = "Rochis: %s…"
 const SIDE_PRESENCE: String = "[Rochis en el marco]"
@@ -44,12 +42,6 @@ const NOTICE_TIME: float = 2.0
 ## Zonas donde se asoma: el lado de los cubículos en la vista central y el
 ## marco sin puerta en la derecha.
 const SIDE_ZONES: Array[String] = ["cubicles_side", "doorway"]
-
-# Voz de la síntesis de Godot: en español y grave (1.0 es el tono normal).
-const TTS_LANGUAGE: String = "es"
-const TTS_PITCH: float = 0.6
-const TTS_RATE: float = 0.85
-const TTS_VOLUME: int = 60
 
 var stage: int = Stage.SITTING
 ## Lo que le falta al botón de la CAM 3 para poder usarse otra vez.
@@ -149,17 +141,10 @@ func play_audio() -> bool:
 	return true
 
 
-## Suena "es impresionante". Si ya está grabada la voz de Rochis se usa esa; si
-## no, la dice la síntesis de voz, que es el provisional de este sonido.
+## Suena "es impresionante", que ya está grabada. Si algún día faltara el
+## archivo **no suena nada**: en este juego no se usa la síntesis de voz.
 func _play_impressive() -> void:
-	if AudioManager.has_real_file(Sounds.IMPRESSIVE):
-		AudioManager.play(Sounds.IMPRESSIVE)
-		return
-	var voice: String = _spanish_voice()
-	if voice.is_empty():
-		return
-	var volume: int = roundi(float(TTS_VOLUME) * AudioManager.voice_volume())
-	DisplayServer.tts_speak(IMPRESSIVE_TEXT, voice, volume, TTS_PITCH, TTS_RATE)
+	AudioManager.play(Sounds.IMPRESSIVE)
 
 
 ## De 0 a 1: qué tan listo está el botón para volver a usarse.
@@ -246,13 +231,6 @@ func _appear() -> void:
 ## los pelos de punta. Aquí solo queda el aviso de la oficina.
 func _say_player_name() -> void:
 	made_noise.emit(NAME_NOTICE_FORMAT % GameManager.player_name, NOTICE_TIME)
-
-
-func _spanish_voice() -> String:
-	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		return ""
-	var voices: PackedStringArray = DisplayServer.tts_get_voices_for_language(TTS_LANGUAGE)
-	return voices[0] if not voices.is_empty() else ""
 
 
 func _catch_player() -> void:

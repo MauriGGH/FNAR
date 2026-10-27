@@ -208,14 +208,18 @@ func _start_body() -> void:
 	_tween.tween_callback(_on_finished).set_delay(TOTAL_TIME)
 
 
-## El negro de antes: el ruido del operativo y un flash blanco de un cuadro.
-## **Dura lo que dure el audio**: cuando se acaba, el negro se quita y arranca
-## lo demás, así que el golpe de WASTED nunca cae encima de la irrupción.
+## El negro de antes: primero lo que grita Mamador al pillarte, después el
+## ruido del operativo, y un flash blanco de un cuadro.
+##
+## **Dura lo que duren los dos audios**, uno detrás del otro: van en la misma
+## secuencia, así que la irrupción espera a que acabe la frase y el golpe de
+## WASTED espera a que acabe la irrupción. Nada se encima.
 func _play_breach() -> void:
 	_breach.visible = true
 	_flash.visible = true
 	_flash_left = BREACH_FLASH_FRAMES
 	set_process(true)
+	AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.MAMADOR_CRIME)
 	AudioManager.play_in_sequence(Sounds.SEQ_SCARE, Sounds.MAMADOR_BREACH,
 		_end_breach)
 
@@ -240,8 +244,7 @@ func _process(_delta: float) -> void:
 func stop() -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
-	AudioManager.stop(Sounds.WASTED)
-	AudioManager.stop(Sounds.MAMADOR_BREACH)
+	AudioManager.begin_sequence(Sounds.SEQ_SCARE)
 	_breach.visible = false
 	_flash.visible = false
 	is_playing = false

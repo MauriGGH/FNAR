@@ -3,10 +3,13 @@ extends Control
 ## Dice una línea suelta de profe y le pone su subtítulo pequeño: Barcosa
 ## aporreando la puerta, Mamador cuando no encuentra nada.
 ##
-## Si la línea ya está grabada en `assets/audio/voces/<id>.ogg`, se reproduce y
-## el subtítulo dura lo que el audio. Si no, la dice la síntesis de voz y el
-## subtítulo dura lo que se calcula por el largo del texto. En los dos casos el
-## texto se lee igual, así que la mecánica se entiende desde el primer día.
+## Si la línea está grabada en `assets/audio/voces/<id>.ogg`, se reproduce y el
+## subtítulo dura lo que el audio. **Si no hay grabación, solo sale el
+## subtítulo**, el tiempo que se calcula por el largo del texto: en este juego
+## **no se usa la síntesis de voz de Godot en ningún sitio**. Una voz robótica
+## leyendo a un profe no suma, y el texto ya cuenta lo que pasa.
+##
+## Barcosa es el caso de hoy: aporrea la cortina y **grita solo por escrito**.
 ##
 ## Va encima de los subtítulos de la llamada, para que no se tapen: una llamada
 ## de teléfono y un profe gritando en la puerta pueden coincidir.
@@ -20,16 +23,10 @@ const BOTTOM_MARGIN: float = 0.175
 const MAX_WIDTH: float = 0.56
 const FADE_TIME: float = 0.2
 
-## Lo que se calcula que tarda en decirse una línea con la voz sintética.
+## Lo que se calcula que tarda en leerse una línea sin grabación.
 const SECONDS_PER_WORD: float = 0.42
 const MIN_TIME: float = 1.5
 const MAX_TIME: float = 6.0
-
-## Voz de la síntesis para estas líneas: en español y algo grave.
-const TTS_LANGUAGE: String = "es"
-const TTS_PITCH: float = 0.9
-const TTS_RATE: float = 1.0
-const TTS_VOLUME: int = 60
 
 var _left: float = 0.0
 var _sound_id: String = ""
@@ -82,25 +79,13 @@ func say(line_id: String) -> void:
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_TIME)
 
 
-## Reproduce la grabación si existe; si no, la dice la voz sintética. Devuelve
-## cuánto tiene que quedarse el subtítulo.
+## Reproduce la grabación si existe. Si no, **no suena nada**: se queda el
+## subtítulo el tiempo que se tarda en leerlo. Devuelve cuánto dura.
 func _play(line_id: String, text: String) -> float:
 	if AudioManager.has_real_file(line_id):
 		AudioManager.play(line_id)
 		return maxf(AudioManager.length(line_id), MIN_TIME)
-	_speak(text)
 	return clampf(float(text.split(" ").size()) * SECONDS_PER_WORD, MIN_TIME, MAX_TIME)
-
-
-func _speak(text: String) -> void:
-	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		return
-	var voices: PackedStringArray = DisplayServer.tts_get_voices_for_language(TTS_LANGUAGE)
-	if voices.is_empty():
-		return
-	# El TTS no sale por los buses, así que el deslizador de Voces va aquí.
-	var volume: int = roundi(float(TTS_VOLUME) * AudioManager.voice_volume())
-	DisplayServer.tts_speak(text, voices[0], volume, TTS_PITCH, TTS_RATE)
 
 
 ## Corta lo que esté diciendo. Lo usa el fin de noche.
@@ -110,8 +95,6 @@ func stop() -> void:
 	_left = 0.0
 	if not _sound_id.is_empty():
 		AudioManager.stop(_sound_id)
-	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		DisplayServer.tts_stop()
 	_hide()
 
 

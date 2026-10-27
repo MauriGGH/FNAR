@@ -6,8 +6,12 @@ extends RefCounted
 ## solo una frase y a otra cosa.
 ##
 ## Cada una tiene su id, su texto y su archivo en `assets/audio/voces/<id>.ogg`.
-## Mientras no esté grabada, la dice la síntesis de voz y el texto sale igual
-## como subtítulo pequeño, así que la mecánica se entiende desde el primer día.
+## **Si no hay grabación, solo sale el subtítulo**: en este juego no se usa la
+## síntesis de voz en ningún sitio.
+##
+## **Barcosa no habla.** Sus cuatro líneas se quedan aquí porque se siguen
+## leyendo cuando aporrea la cortina, pero no tienen id en `data/sounds.gd` ni
+## archivo: son subtítulo y nada más. Las de Mamador sí están grabadas.
 
 ## Dónde van los archivos, dentro de assets/audio/.
 const FILE_FORMAT: String = "voces/%s.ogg"

@@ -130,6 +130,12 @@ Los gritos entran en la secuencia `susto` por su prefijo, sin listarlos uno a un
 el grito de un jumpscare ya no se pisa con la estática del game over, ni el golpe de WASTED con la
 irrupción.
 
+**Nada de síntesis de voz.** En el juego **no se usa `DisplayServer.tts_*` en ningún sitio**: una
+voz robótica leyendo a un profe no suma. Todo lo hablado es grabación, y **lo que no esté grabado
+sale solo como subtítulo**. Por eso **ninguna voz lleva provisional por código**: un pitido en vez
+de una frase no dice nada, así que si falta el archivo el AudioManager avisa («sin sonido ni
+provisional») y no suena nada.
+
 **Los ruidos no se leen.** Mientras un sonido no esté grabado, el juego **no** escribe
 "[pasos corriendo]" en pantalla: esos avisos van por `NoticeBanner.show_sound()`, que solo los
 saca por consola y nada más cuando el panel de pruebas está encendido (`DebugKeys.is_enabled()`).
@@ -145,8 +151,9 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (107 ids; la lista de los que faltan por grabar está en `docs/audios_faltantes.md`). Todos tienen provisional por código salvo `es_impresionante`, que
-mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
+**El catálogo** (120 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
+inventario completo de pendientes y provisionales en `docs/pendientes.md`). Casi todos tienen
+provisional por código; **las voces no**, por lo de arriba.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
 | --- | --- | --- | --- | --- | --- |
@@ -197,10 +204,12 @@ mientras no esté grabada la voz de Rochis la dice la síntesis de voz.
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
 | `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
 | `ninos_yay` | `ninos_yay.ogg` | Efectos | −3 | no | los niños al entrar el 6; solo se usa si no está grabado el despertador |
-| `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 (si no, la voz sintética) |
+| `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 |
+| `urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`, `urena_adios_*` | `voces/<id>.ogg` | Voces | 0 | no | la llamada de media noche de Ureña, línea por línea |
+| `mamador_delito` | `voces/mamador_delito.ogg` | Voces | 0 | no | «¡Delito federal!», **antes** de la irrupción |
 | `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
 | `telefono_colgar` | `telefono_colgar.ogg` | Efectos | −6 | no | al acabar o silenciar una llamada |
-| 7 líneas sueltas | `voces/<id>.ogg` | Voces | 0 | no | ver **Líneas sueltas de profe** |
+| `mamador_ok_1..3` | `voces/<id>.ogg` | Voces | 0 | no | ver **Líneas sueltas de profe** |
 
 ## Llamadas de inicio de noche
 
@@ -225,8 +234,16 @@ corta en cualquier momento.
   contador propio, así que no se desfasan si el juego da un tirón.
 - El guion completo para grabar las noches que faltan está en `docs/guion_voces.md`.
 
-La llamada de Ureña es otra cosa y sigue como estaba: conversación con respuestas, en la
-ventanita de la esquina y con síntesis de voz.
+La llamada de Ureña es otra cosa: conversación con respuestas, en la ventanita de la esquina y
+**con sus grabaciones**, una por línea (`urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`,
+`urena_adios_*`). Cada insinuación lleva **su** id en el banco de `data/urena_questions.gd`, no su
+posición en la lista, porque las líneas se barajan y se eligen sin repetir.
+
+Las voces de la llamada van como **secuencia** (`Sounds.SEQ_VOICE`): una línea nueva **calla la
+anterior** en vez de encimarse. En una conversación interrumpir se entiende; esperar turno dejaría
+la voz corriendo detrás del texto. Y el saludo se **escribe** con el nombre del jugador y la cuenta
+de tareas, pero se **oye** sin ninguno de los dos, porque una grabación no puede decir cómo te
+llamas.
 
 **La llamada rara de la noche:** un número equivocado que entra **todas las noches, una sola
 vez**, a una hora al azar entre la 1 y las 5 AM (`NightCalls.mencho_hour()`). La **noche 1 es
@@ -282,17 +299,19 @@ Los archivos van en `assets/audio/lejos/<id>.ogg`. Mientras no estén, suenan lo
 Frases de una sola tirada que dicen los profes en la oficina, con su **subtítulo pequeño** abajo
 (encima de los de la llamada, para que no se tapen). Los textos y los ids están en
 `data/voice_lines.gd`; los archivos van en `assets/audio/voces/<id>.ogg`, por el bus Voces.
-**Mientras no estén grabadas las dice la síntesis de voz** y el subtítulo sale igual, así que la
-mecánica se entiende desde el primer día.
 
-| Cuándo | Ids | Qué dice |
-| --- | --- | --- |
-| Barcosa empieza a aporrear la puerta (una al azar) | `barcosa_puerta_1/2/3` | "¿Quién cerró? Tengo clase en este salón." · "Abra, joven. Nada más paso lista y me voy." · "Diez minutos. Le estoy pidiendo diez minutos." |
-| Barcosa se rinde y se va | `barcosa_se_va` | "Bueno, ya. Quedan todos con falta." |
-| Mamador inspecciona y no encuentra nada (una al azar) | `mamador_ok_1/2/3` | "Sin novedad. Me retiro." · "Nada de inteligencia artificial. Así me gusta." · "Todo en orden. Sigan así." |
+**Barcosa no habla.** Sus cuatro frases se siguen **leyendo** cuando aporrea la cortina, pero no
+tienen id de sonido ni archivo: son subtítulo y nada más. Las de Mamador sí están grabadas.
+
+| Cuándo | Ids | Voz | Qué dice |
+| --- | --- | --- | --- |
+| Barcosa empieza a aporrear la puerta (una al azar) | `barcosa_puerta_1/2/3` | **solo texto** | "¿Quién cerró? Tengo clase en este salón." · "Abra, joven. Nada más paso lista y me voy." · "Diez minutos. Le estoy pidiendo diez minutos." |
+| Barcosa se rinde y se va | `barcosa_se_va` | **solo texto** | "Bueno, ya. Quedan todos con falta." |
+| Mamador inspecciona y no encuentra nada (una al azar) | `mamador_ok_1/2/3` | grabada | "Sin novedad. Me retiro." · "Nada de inteligencia artificial. Así me gusta." · "Todo en orden. Sigan así." |
 
 El profe las pide con la señal `said_line(id)` de `Animatronic`; el `night.gd` se la pasa al nodo
-`Hud/VoiceLine`, que decide entre la grabación y la voz sintética.
+`Hud/VoiceLine`, que reproduce la grabación si existe y, si no, deja el subtítulo el tiempo que se
+tarda en leerlo.
 
 **El nombre del jugador no se dice nunca en voz**, porque no se puede grabar:
 
@@ -608,9 +627,9 @@ Los tiempos están en `autoload/night_config.gd` para poder ajustarlos sin tocar
 cero) y lo que aguanta en el cristal, que se interpola entre `GLASS_TIME_FIRST_NIGHT` (9 s) y
 `GLASS_TIME_LAST_NIGHT` (5.5 s). Eso deja unos **7.25 s de margen de reacción en la noche 1 y 3.75 s
 en la 6**; `NightConfig.glass_margin(noche)` lo calcula y el panel de pruebas lo enseña.
-- **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. Al aparecer suena `armando_windows_crash` y, debajo,
-`armando_glitch_bucle` en bucle a −18 dB mientras dura la toma; los dos se callan al escribir
-APÁGATE o al acabarse el tiempo. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
+- **Armando Prompts (rol Chica clásico + Lolbit):** profe que se cree genio, presume títulos inventados y todo lo automatiza con IA. Misma ruta y misma mecánica de linterna que Juan.exe. Además, desde la noche 4, cada vez que el jugador pulsa "Resolver tarea" del asistente Claudio hay probabilidad de que su cara tome toda la pantalla de la PC con una frase al azar; hay que escribir "APÁGATE" en 6 s. **Armando no habla**: su frase es solo texto en pantalla. Al
+aparecer suena `armando_windows_crash` y, debajo, `armando_glitch_bucle` en bucle a −18 dB mientras
+dura la toma; los dos se callan al escribir APÁGATE o al acabarse el tiempo. Si no, borra el progreso de la tarea actual y quita 5 % de energía. Frases: "HOLA, SOY ARMANDO PROMPTS, INGENIERO EN PROMPTS CERTIFICADO POR MÍ MISMO.", "LE PEDÍ A CLAUDIO QUE HICIERA TU TAREA. TAMBIÉN LE PEDÍ QUE TE CORRIERA.", "ESTE MENSAJE FUE GENERADO CON IA. YO NI LO LEÍ.", "MI TESIS LA HIZO CLAUDIO. MI BODA TAMBIÉN.", "AUTOMATICÉ MIS SENTIMIENTOS. AHORA SUFRO 40% MÁS RÁPIDO.", "¿PENSAR? NAH, ESO ES DE BOOMERS."
 - **Claudio (asistente IA de la PC):** parodia de un asistente de IA. Logo propio: una chispa o asterisco naranja terracota con lentes tipo Clark Kent (que evoque la referencia sin calcar ningún logo real). Ventana con fondo crema y acentos naranja. Personalidad exageradamente educada: empieza cada respuesta con "¡Excelente pregunta!" y pide disculpas por todo.
 
 ## Alucinaciones
@@ -887,7 +906,7 @@ Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 
 | Cuándo | Qué pasa |
 | --- | --- |
-| antes | **La irrupción**: pantalla en negro, `mamador_brecha` (la puerta derribada y los gritos del operativo) y un flash blanco de un cuadro. **Dura lo que dure su audio** (3.8 s), porque lo que sigue arranca con su señal `finished`, no con un tiempo apuntado. Solo la lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
+| antes | **Lo que grita y la irrupción**: pantalla en negro, `mamador_delito` («¡Delito federal!», 0.9 s), después `mamador_brecha` (la puerta derribada y los gritos del operativo, 3.8 s) y un flash blanco de un cuadro. **Dura lo que duren los dos**, uno detrás de otro: van en la misma secuencia, así que la irrupción espera a la frase y el golpe de WASTED espera a la irrupción. Solo lo lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
 | 0.0 s | `jumpscare_mamador_militares` a pantalla completa, con un zoom de 1.0 a 1.08 que no para en toda la secuencia |
 | 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo |
 | 1.2 s | Entra una franja negra (alfa 0.55) de lado a lado, centrada, de alto 16 % de la pantalla, con fade de 0.3 s |
