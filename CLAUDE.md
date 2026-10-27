@@ -625,11 +625,20 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
     secuencia, el jugador se salva** y todo se calla.
   - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7).
-    Los conectores son `assets/art/office/rj45.png`, con la punta hacia arriba. El PNG trae el
-    conector **y su cable**, pero el cable lo dibuja el código, así que solo se usa el trozo del
-    conector, de la punta a donde empieza la funda azul: ese recorte y el ancho se **miden** con
-    `tools/measure_office_layers.py` (`PLUG_BODY` en `patch_panel_view.gd`). Cada conector se gira
-    siguiendo la curva de su cable y se escala al ancho de su puerto, con la punta clavada en él. Mientras está en la sala, no vigila la oficina.
+    **Los conectores enchufados y el de la mano no se dibujan igual.** De un puerto ocupado no se
+    ve el conector, se ve **lo que le sobresale por detrás**: un culote corto del color del cable y
+    muy oscurecido, con la funda detrás un poco más ancha y sin contactos dorados, y **derecho**,
+    hacia abajo en el patch panel y hacia arriba en el switch. Eso lo dibuja el código. Antes los 24
+    llevaban la imagen del RJ45 de frente y el rack parecía empapelado de calcomanías; y siguiendo
+    la curva de su cable salían todos torcidos en ángulos distintos. Los anchos van en fracción del
+    ancho del puerto y la funda no pasa de 0.90, porque los puertos del switch están a 0.0269 de
+    paso con 0.0263 de ancho y con más se tocarían entre vecinos.
+    **La imagen `assets/art/office/rj45.png` es solo para el conector suelto**, el que cuelga y se
+    arrastra, que sí se ve entero: va girado hacia donde va su cable, a 1.2 veces el ancho del
+    puerto y con el color multiplicado por 0.5, porque la foto viene de día y el rack está casi a
+    oscuras. El PNG trae el conector **y su cable**, pero el cable lo dibuja el código, así que solo
+    se usa el trozo del conector, de la punta a donde empieza la funda azul: ese recorte se **mide**
+    con `tools/measure_office_layers.py` (`PLUG_BODY` en `patch_panel_view.gd`). Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
 
