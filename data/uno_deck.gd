@@ -63,11 +63,13 @@ const BACK: Color = Color(0.11, 0.1, 0.11)
 ## Todo está medido sobre el lienzo de 1152x648 de la noche.
 const CANVAS: Vector2 = Vector2(1152.0, 648.0)
 ## Los cuatro montones, arriba: dónde empieza el primero y cuánto se separan.
-## Los montones empiezan en x 360 para dejarle sitio al encabezado, que va en
-## la columna de la izquierda: con 300 el renglón de "X de 24 acomodadas" se
-## metía debajo del primer montón.
-const PILE_FIRST: Vector2 = Vector2(360.0, 44.0)
-const PILE_STEP: float = 184.0
+## Los cuatro montones viven en la **franja de en medio de arriba**: a su
+## izquierda queda el encabezado (el título y "X de 24 acomodadas", que acaban
+## en x 343) y a su derecha el reloj del HUD, que empieza en x 952. De ahí
+## salen el x 350 de arranque y el paso de 170: el cuarto montón acaba en 926
+## y su renglón, centrado debajo, en 933.
+const PILE_FIRST: Vector2 = Vector2(350.0, 44.0)
+const PILE_STEP: float = 170.0
 ## Lo que se encima una carta sobre la anterior dentro de un montón: lo justo
 ## para contarlas de un vistazo sin perder el número de la de arriba.
 const PILE_OVERLAP: float = 13.0

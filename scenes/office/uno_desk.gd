@@ -262,8 +262,14 @@ func _draw_piles() -> void:
 			UnoCard.draw_card(self, at, {"color": color, "number": number}, 0.0, false)
 		var label: String = "%s %d/%d" % [UnoDeck.NAMES[color], count, UnoDeck.PER_COLOR]
 		var bottom: float = rect.end.y + float(maxi(count - 1, 0)) * UnoDeck.PILE_OVERLAP
-		draw_string(Fonts.terminal(), Vector2(rect.position.x, bottom + 26.0), label,
-			HORIZONTAL_ALIGNMENT_LEFT, -1.0, 20, tint)
+		# Centrado bajo su montón, no pegado a la izquierda: así el del azul,
+		# que es el último, no se estira hacia el reloj del HUD.
+		var font_size: int = 20
+		var wide: float = Fonts.terminal().get_string_size(label,
+			HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
+		draw_string(Fonts.terminal(),
+			Vector2(rect.get_center().x - wide * 0.5, bottom + 26.0), label,
+			HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, tint)
 
 
 ## El revoltijo: las que todavía no están puestas, cada una en su casilla y
