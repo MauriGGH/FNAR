@@ -173,10 +173,10 @@ func _load_key_sounds() -> void:
 
 
 ## La grabación que le toca a esta tecla: una al azar, nunca la misma dos veces
-## seguidas. Sin grabaciones, el id de respaldo, que siempre suena.
+## seguidas. Si no hubiera ninguna, la tecla se escribe sin sonido.
 func _key_sound() -> String:
 	if _key_sounds.is_empty():
-		return Sounds.TYPEWRITER_KEY
+		return ""
 	var pool: Array[String] = []
 	for sound_id: String in _key_sounds:
 		if sound_id != _last_key_sound:

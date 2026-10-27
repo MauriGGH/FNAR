@@ -36,12 +36,13 @@ const GAME_OVER_CAUSE: String = "Rochis"
 const AUDIO_NOTICE: String = "[es impresionante]"
 const STEPS_NOTICE: String = "[pasos en la recepción]"
 const NAME_NOTICE_FORMAT: String = "Rochis: %s…"
-const SIDE_PRESENCE: String = "[Rochis en el marco]"
 const NOTICE_TIME: float = 2.0
 
-## Zonas donde se asoma: el lado de los cubículos en la vista central y el
-## marco sin puerta en la derecha.
-const SIDE_ZONES: Array[String] = ["cubicles_side", "doorway"]
+## Donde se asoma: el marco sin puerta de la **vista derecha**, y solo ahí. En
+## la central no se dibuja nada aunque el marco se adivine al costado: desde ahí
+## lo tapan las persianas del cubículo. Su capa es `layers/derecha_rochis.png`,
+## así que tampoco hace falta etiqueta de texto.
+const SIDE_ZONE: String = "doorway"
 
 var stage: int = Stage.SITTING
 ## Lo que le falta al botón de la CAM 3 para poder usarse otra vez.
@@ -51,6 +52,9 @@ var _state: int = State.CUBICLE
 var _state_elapsed: float = 0.0
 ## El audio lo molestó estando sentado: la próxima oportunidad no falla.
 var _annoyed: bool = false
+## Depuración: lo deja asomado **sin reloj**, para poder mirar su capa. Sin esto
+## el game over se lo lleva en 1.2 s.
+var debug_frozen: bool = false
 
 
 ## Nombre corto para los archivos de imagen: cam07_rochis.png y demás.
@@ -80,6 +84,7 @@ func start() -> void:
 	_state = State.CUBICLE
 	_state_elapsed = 0.0
 	_annoyed = false
+	debug_frozen = false
 	cooldown_left = 0.0
 
 
@@ -90,6 +95,8 @@ func _process(delta: float) -> void:
 		cooldown_left = maxf(cooldown_left - delta, 0.0)
 	if _state == State.CUBICLE:
 		super(delta)  # El dado de la clase base.
+		return
+	if debug_frozen:
 		return
 	_state_elapsed += delta
 	if _state == State.COMING and _state_elapsed >= COMING_TIME:
@@ -141,10 +148,11 @@ func play_audio() -> bool:
 	return true
 
 
-## Suena "es impresionante", que ya está grabada. Si algún día faltara el
-## archivo **no suena nada**: en este juego no se usa la síntesis de voz.
+## Suena una de sus frases: «es impresionante», que ya está grabada, o una de
+## las extra en cuanto existan. Si faltara el archivo **no suena nada**: en
+## este juego no se usa la síntesis de voz.
 func _play_impressive() -> void:
-	AudioManager.play(Sounds.IMPRESSIVE)
+	AudioManager.play(Sounds.rochis_line())
 
 
 ## De 0 a 1: qué tan listo está el botón para volver a usarse.
@@ -178,15 +186,9 @@ func camera_token(camera: int) -> String:
 	return camera_state() if _state == State.CUBICLE else STATE_EMPTY
 
 
-## Se ve asomado en el marco lateral, en las dos vistas.
+## Se ve asomado en el marco de la vista derecha, con su capa.
 func is_in_zone(zone_id: String) -> bool:
-	return _state == State.INSIDE and zone_id in SIDE_ZONES
-
-
-func zone_presence(zone_id: String) -> String:
-	if _state != State.INSIDE or not zone_id in SIDE_ZONES:
-		return ""
-	return SIDE_PRESENCE
+	return _state == State.INSIDE and zone_id == SIDE_ZONE
 
 
 func debug_text() -> String:
@@ -196,6 +198,16 @@ func debug_text() -> String:
 		State.INSIDE:
 			return "asomado en el marco"
 	return "%s%s" % [camera_state(), ", molesto" if _annoyed else ""]
+
+
+## El panel de pruebas: lo planta asomado en el marco y le para el reloj, para
+## poder mirar su capa con calma.
+func debug_peek_doorway() -> void:
+	debug_activate()
+	move_to_step(1)
+	_state = State.INSIDE
+	_state_elapsed = 0.0
+	debug_frozen = true
 
 
 ## Tecla 3: lo deja de pie, para no esperar las etapas.

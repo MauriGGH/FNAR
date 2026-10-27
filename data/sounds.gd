@@ -38,15 +38,12 @@ const SCREAM: String = "grito"
 ## Los gritos de los jumpscares. Cada profe puede tener el suyo (`grito_<id>`);
 ## si no está grabado, se echa mano de uno de los tres de base. Los ids salen
 ## de scream_for().
-const SCREAM_BASE: Array[String] = ["grito_base_1", "grito_base_2", "grito_base_3"]
 const SCREAM_SLUGS: Array[String] = [
 	"barcosa", "urena", "rochis", "juan", "armando", "cometrabas", "audel",
 ]
 const BUSY_TONE: String = "tono_ocupado"
 const ALARM: String = "despertador"
-const SCHOOL_BELL: String = "campana_escuela"
 ## Los niños gritando "¡yeeey!" al acabarse las campanadas de las 6 AM.
-const CHILDREN_CHEER: String = "ninos_yay"
 ## La música del menú principal: **una sola pista en bucle**, de 64 s. Ya trae
 ## mezclado el dron de voces, así que no lleva ninguna capa encima ni hay nada
 ## que elegir: antes eran tres pistas a la vez y dos opciones para comparar.
@@ -174,7 +171,6 @@ static func arcade_music(level: int) -> String:
 const MENU_BLIP: String = "menu_blip"
 ## El golpe de una tecla de máquina de escribir, al escribir el nombre. Este es
 ## el de respaldo: siempre suena, aunque sea el provisional por código.
-const TYPEWRITER_KEY: String = "tecla_maquina"
 ## Las tres grabaciones de la tecla. Si están en assets/audio/, se alterna entre
 ## ellas sin repetir la misma dos veces seguidas; si no, suena el de respaldo.
 ## Por eso no llevan provisional: quien las usa pregunta antes si están.
@@ -249,6 +245,12 @@ const PAN_RIGHT: float = 0.7
 ## un pitido en vez de una frase no dice nada, así que si falta el archivo lo
 ## único que sale es el subtítulo.
 const IMPRESSIVE: String = "es_impresionante"
+## Frases sueltas más de Rochis, todavía **sin grabar**. Las que existan entran
+## al sorteo del botón de la CAM 4 junto con «es impresionante»; mientras no
+## esté el archivo, es como si no estuvieran.
+const ROCHIS_EXTRA: Array[String] = [
+	"rochis_extra_1", "rochis_extra_2", "rochis_extra_3",
+]
 
 # --- Las voces de Ureña y de Mamador -----------------------------------------
 ## La llamada de media noche de Ureña, línea por línea. Todas van por el bus
@@ -335,21 +337,23 @@ static func metal_hit(last: String = "") -> String:
 	return pool[randi() % pool.size()]
 
 
-## El grito que le toca a un jumpscare: el suyo si está grabado, uno de los
-## tres de base al azar si no, y el grito de siempre como último recurso.
-## **Nunca devuelve vacío**: un salto sin grito no asusta, y con la estática
-## sola no se entiende lo que pasó.
+## El grito que le toca a un jumpscare: el suyo si está grabado y, si no, el
+## grito de siempre. **Nunca devuelve vacío**: un salto sin grito no asusta, y
+## con la estática sola no se entiende lo que pasó.
 static func scream_for(slug: String) -> String:
 	var own: String = "grito_%s" % slug
-	if AudioManager.has_real_file(own):
-		return own
-	var pool: Array[String] = []
-	for id: String in SCREAM_BASE:
+	return own if AudioManager.has_real_file(own) else SCREAM
+
+
+## La frase que suelta Rochis al darle al botón: «es impresionante» y, cuando
+## estén grabadas, cualquiera de sus frases extra, una al azar. Las que no
+## tengan archivo no entran al sorteo, así que hoy siempre sale la de siempre.
+static func rochis_line() -> String:
+	var pool: Array[String] = [IMPRESSIVE]
+	for id: String in ROCHIS_EXTRA:
 		if AudioManager.has_real_file(id):
 			pool.append(id)
-	if not pool.is_empty():
-		return pool[randi() % pool.size()]
-	return SCREAM
+	return pool[randi() % pool.size()]
 
 
 ## El id de una línea suelta de profe es el mismo que el de data/voice_lines.gd.
@@ -415,18 +419,6 @@ const CATALOG: Dictionary = {
 		"volume_db": 0.0, "generator": "",
 		"desc": "Grito del Mago Eléctrico: chispazo eléctrico y una carcajada.",
 	},
-	"grito_base_1": {"file": "gritos/grito_base_1.ogg", "bus": "Efectos",
-		"volume_db": 0.0, "generator": "",
-		"desc": "Grito de jumpscare de reserva (1 de 3), fuerte y saturado.",
-	},
-	"grito_base_2": {"file": "gritos/grito_base_2.ogg", "bus": "Efectos",
-		"volume_db": 0.0, "generator": "",
-		"desc": "Grito de jumpscare de reserva (2 de 3), distinto al 1.",
-	},
-	"grito_base_3": {"file": "gritos/grito_base_3.ogg", "bus": "Efectos",
-		"volume_db": 0.0, "generator": "",
-		"desc": "Grito de jumpscare de reserva (3 de 3), distinto a los otros dos.",
-	},
 	"tono_ocupado": {
 		"file": "tono_ocupado.ogg", "bus": "Efectos",
 		"volume_db": -6.0, "generator": "busy_tone",
@@ -436,16 +428,6 @@ const CATALOG: Dictionary = {
 		"file": "despertador.ogg", "bus": "Efectos",
 		"volume_db": -8.0, "generator": "alarm",
 		"desc": "Campanadas de reloj despertador de los de cuerda, 2 o 3 s.",
-	},
-	"campana_escuela": {
-		"file": "campana_escuela.ogg", "bus": "Efectos",
-		"volume_db": -4.0, "generator": "school_bell",
-		"desc": "Campana de escuela con aplausos de fondo.",
-	},
-	"ninos_yay": {
-		"file": "ninos_yay.ogg", "bus": "Efectos",
-		"volume_db": -3.0, "generator": "school_bell",
-		"desc": "Niños gritando «yeeey», contentos, 1 o 2 s. Entra al acabarse el despertador.",
 	},
 	"extras_musica": {
 		"file": "extras_musica.ogg", "bus": "Música",
@@ -739,11 +721,6 @@ const CATALOG: Dictionary = {
 		"volume_db": -16.0, "generator": "menu_blip",
 		"desc": "Pitido corto y seco de moverse por un menú de consola vieja.",
 	},
-	"tecla_maquina": {
-		"file": "tecla_maquina.ogg", "bus": "Efectos",
-		"volume_db": -12.0, "generator": "typewriter_key",
-		"desc": "Golpe de una tecla de máquina de escribir. Respaldo de las tres de abajo.",
-	},
 	"tecla_maquina_1": {
 		"file": "tecla_maquina_1.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "",
@@ -762,7 +739,22 @@ const CATALOG: Dictionary = {
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",
 		"volume_db": -2.0, "generator": "",
-		"desc": "Voz de Rochis diciendo «es impresionante». Si falta, la dice la voz sintética.",
+		"desc": "Voz de Rochis diciendo «es impresionante».",
+	},
+	"rochis_extra_1": {
+		"file": "voces/rochis_extra_1.ogg", "bus": "Voces",
+		"volume_db": -2.0, "generator": "",
+		"desc": "Otra frase de Rochis para el botón de la CAM 4, en su mismo tono de asombro (1 de 3).",
+	},
+	"rochis_extra_2": {
+		"file": "voces/rochis_extra_2.ogg", "bus": "Voces",
+		"volume_db": -2.0, "generator": "",
+		"desc": "Otra frase de Rochis para el botón de la CAM 4 (2 de 3), distinta a la 1.",
+	},
+	"rochis_extra_3": {
+		"file": "voces/rochis_extra_3.ogg", "bus": "Voces",
+		"volume_db": -2.0, "generator": "",
+		"desc": "Otra frase de Rochis para el botón de la CAM 4 (3 de 3), distinta a las otras dos.",
 	},
 	"cajita_musical_aviso": {
 		"file": "cajita_musical.ogg", "bus": "Lejos",

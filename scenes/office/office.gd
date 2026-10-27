@@ -143,9 +143,11 @@ const PRESENCE_ZONES: Array[Dictionary] = [
 	{"zone": "entrance_door", "color": Color(0.98, 0.45, 0.4), "gap": 6.0},
 	{"zone": "front_glass", "color": Color(0.98, 0.62, 0.35), "gap": 16.0},
 	{"zone": "ladder", "color": Color(0.6, 0.85, 1.0), "gap": 6.0},
-	{"zone": "cubicles_side", "color": Color(0.82, 0.6, 0.98), "gap": 6.0},
 	{"zone": "doorway", "color": Color(0.82, 0.6, 0.98), "gap": 6.0},
 ]
+## `cubicles_side`, en la vista central, ya no lleva etiqueta: lo que pasa en el
+## paso de los cubículos se ve en la vista derecha, con las capas de Rochis y de
+## la botarga. Desde la central lo tapan las persianas.
 
 ## Puntos que siguen encendidos cuando se corta la corriente, por vista.
 const BLACKOUT_SPOTS: Dictionary = {

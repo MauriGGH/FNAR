@@ -438,6 +438,20 @@ func _build_events_section() -> void:
 		close()
 		_night.debug_open_minigame(3, true))
 
+	# Las dos capas de la vista derecha. Los dos se quedan **quietos y sin
+	# reloj**, para poder girar a la derecha y mirarlos sin que haya game over.
+	_add_label(body, "Capas de la vista derecha:")
+	_add_button(body, "Rochis en el marco", func() -> void:
+		close()
+		var rochis: Rochis = _find(Rochis) as Rochis
+		if rochis != null:
+			rochis.debug_peek_doorway())
+	_add_button(body, "Come Trabas fuera de la silla", func() -> void:
+		close()
+		var botarga: ComeTrabas = _find(ComeTrabas) as ComeTrabas
+		if botarga != null:
+			botarga.debug_leave_chair())
+
 	_add_label(body, "Tickets:")
 	_add_button(body, "Que llegue uno nuevo",
 		func() -> void: GameManager.debug_arrive_next_ticket())

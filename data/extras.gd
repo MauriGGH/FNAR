@@ -9,9 +9,10 @@ extends RefCounted
 ## (image_slug()), así que un profe puede pedir su propio expediente sin que
 ## nadie tenga que mantener dos listas.
 
-## El crédito de la música del menú. La licencia pide nombrar al autor, así
-## que se enseña en Extras, que es donde se puede leer con calma.
-const MUSIC_CREDIT: String = "Música del menú: «Halloween Atmosphere 2024» de Sascha Ende (ende.app), CC BY 4.0"
+## El crédito de la música de esta pantalla (`extras_musica.ogg`, la que suena
+## en Extras y en la Custom Night). La licencia pide nombrar al autor, así que
+## se enseña aquí, que es donde se puede leer con calma.
+const MUSIC_CREDIT: String = "Música de Extras: «Halloween Atmosphere 2024» de Sascha Ende (ende.app), CC BY 4.0"
 
 const DOSSIER_PATH: String = "res://assets/art/extras/expediente_%s"
 ## Las imágenes de jumpscare, que la galería de Extras también usa.

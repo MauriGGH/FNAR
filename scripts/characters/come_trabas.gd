@@ -36,6 +36,9 @@ const STATE_SLUMPED: String = "desplomada"
 const STATE_WAKING: String = "despertando"
 const STATE_EMPTY: String = "vacia"
 
+## La zona de la vista derecha donde se la ve de pie al salir del cubículo.
+const DOORWAY_ZONE: String = "doorway"
+
 const GAME_OVER_CAUSE: String = "Come Trabas"
 const MUSIC_STOPPED_NOTICE: String = "[la música se detuvo]"
 const NOTICE_TIME: float = 3.0
@@ -49,6 +52,9 @@ var is_attacking: bool = false
 var speed: int = Speed.SLOW
 
 var _attack_elapsed: float = 0.0
+## Depuración: la deja de pie en el pasillo **sin reloj del salto**, para poder
+## mirar su capa de la vista derecha.
+var debug_frozen: bool = false
 
 
 ## Su imagen se llama cometrabas, sin el guion bajo del id.
@@ -76,6 +82,7 @@ func start() -> void:
 	wind = MAX_WIND
 	is_winding = false
 	is_attacking = false
+	debug_frozen = false
 	_attack_elapsed = 0.0
 	wind_changed.emit(wind)
 
@@ -90,6 +97,8 @@ func _process(delta: float) -> void:
 		return
 
 	if is_attacking:
+		if debug_frozen:
+			return
 		_attack_elapsed += delta
 		if _attack_elapsed >= ATTACK_TIME:
 			_catch_player()
@@ -149,9 +158,16 @@ func camera_state() -> String:
 
 
 ## Id del personaje, el mismo que usa su expediente de Extras. Su cámara no
-## lo usa: la CAM 4 lleva sus propios estados.
+## lo usa: la CAM 4 lleva sus propios estados; la vista derecha sí, para
+## encontrar `layers/derecha_come_trabas.png`.
 func image_slug() -> String:
 	return "come_trabas"
+
+
+## Una vez fuera de la silla se ve de pie en el paso hacia los cubículos, con
+## su capa en la vista derecha. No lleva etiqueta de texto: la capa ya está.
+func is_in_zone(zone_id: String) -> bool:
+	return is_attacking and zone_id == DOORWAY_ZONE
 
 
 ## Su cámara no usa nombres de profe: lleva sus tres estados de siempre.
@@ -170,6 +186,17 @@ func debug_text() -> String:
 	if is_attacking:
 		return "levantada, %.1f s para el salto" % maxf(ATTACK_TIME - _attack_elapsed, 0.0)
 	return "cuerda %d %% (%s)" % [roundi(wind), camera_state()]
+
+
+## El panel de pruebas: la saca de la silla ya y le para el reloj del salto,
+## para poder mirar su capa en la vista derecha.
+func debug_leave_chair() -> void:
+	debug_frozen = true
+	if is_attacking:
+		return
+	wind = 0.0
+	wind_changed.emit(wind)
+	_start_attack()
 
 
 ## F7: deja la cuerda casi vacía, para no tener que esperar.

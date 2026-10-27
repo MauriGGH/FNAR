@@ -5,7 +5,7 @@ extends Control
 ## entra el 6. El texto **no cambia de color**: lo único que se mueve es la
 ## hora. Suena el despertador (campanadas de reloj), que **ya trae el grito de
 ## los niños al final**, y el confeti cae en ese último tramo. Solo si no está
-## grabado el despertador se pide aparte el `ninos_yay`. Al terminar avisa.
+## El despertador ya trae el grito de los niños al final. Al terminar avisa.
 
 ## Ya acabó: quien la abrió sigue con el recorte de periódico.
 signal finished()
@@ -156,12 +156,9 @@ func _roll() -> void:
 	tween.tween_property(self, "_roll_progress", 1.0, ROLL_TIME)
 
 
-## El confeti, ya con el 6 puesto. El grito de los niños solo se pide aparte
-## si no hay despertador grabado: el de verdad ya lo trae al final.
+## El confeti, ya con el 6 puesto. No hace falta pedir nada más: el grito de
+## los niños ya viene al final del propio despertador.
 func _cheer() -> void:
-	if not AudioManager.has_real_file(Sounds.ALARM):
-		AudioManager.stop(Sounds.ALARM)
-		AudioManager.play(Sounds.CHILDREN_CHEER)
 	_confetti.play(CONFETTI_TIME)
 
 
@@ -176,4 +173,3 @@ func _done() -> void:
 ## Y si la pantalla se va antes de tiempo, lo mismo.
 func _exit_tree() -> void:
 	AudioManager.stop(Sounds.ALARM)
-	AudioManager.stop(Sounds.CHILDREN_CHEER)

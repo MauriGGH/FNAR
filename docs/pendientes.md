@@ -1,8 +1,8 @@
 # Pendientes y provisionales
 
 Inventario de lo que falta y lo que está puesto de mentiras, sacado **del propio código y del
-disco** el 26 de octubre de 2026 (segunda pasada, después de quitar las voces de Barcosa y
-Armando y de enganchar las de Ureña), no de la memoria de nadie. Si algo de aquí ya no cuadra, es que
+disco** el 27 de octubre de 2026 (tercera pasada, después de limpiar el catálogo y de apartar las
+frases extra de Rochis), no de la memoria de nadie. Si algo de aquí ya no cuadra, es que
 el juego cambió: vuelve a correr las comprobaciones que están al final de cada tabla.
 
 **Nada de esto cambia el juego.** Es solo la lista.
@@ -11,7 +11,7 @@ el juego cambió: vuelve a correr las comprobaciones que están al final de cada
 
 ## 1. Audios
 
-Los 108 ids de `data/sounds.gd`. Tres estados posibles:
+Los 117 ids de `data/sounds.gd`. Tres estados posibles:
 
 - **archivo real** — el `.ogg` está en `assets/audio/` y suena ese.
 - **provisional** — no hay archivo, suena lo que genera `scripts/audio/tone_builder.gd` por código
@@ -22,17 +22,13 @@ Los 108 ids de `data/sounds.gd`. Tres estados posibles:
 La columna "dónde se usa" es el script que lo pide. Cuando el id no se pide por su constante sino
 que lo resuelve una función (los gritos, los golpes, los tics), ahí va la función.
 
-#### Durante la noche — 94 ids (78 reales, 7 provisionales, 9 faltan)
+#### Durante la noche — 93 ids (78 reales, 6 provisionales, 9 faltan)
 
 | id | archivo esperado | dónde se usa | estado |
 | --- | --- | --- | --- |
 | `ambiente_oficina` | `ambiente_oficina.ogg` | scenes/night/night.gd | provisional (`office_ambience`) |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | scenes/night/night.gd | provisional (`hallway_ambience`) |
 | `armando_modem` | `lejos/armando_modem.ogg` | scenes/night/distant_sounds.gd | provisional (`far_modem`) |
-| `campana_escuela` | `campana_escuela.ogg` | — | provisional (`school_bell`) |
-| `grito_base_1` | `gritos/grito_base_1.ogg` | `Sounds.scream_for()` · scenes/night/jumpscare_overlay.gd | **FALTA** |
-| `grito_base_2` | `gritos/grito_base_2.ogg` | `Sounds.scream_for()` · scenes/night/jumpscare_overlay.gd | **FALTA** |
-| `grito_base_3` | `gritos/grito_base_3.ogg` | `Sounds.scream_for()` · scenes/night/jumpscare_overlay.gd | **FALTA** |
 | `llamada_noche2` | `llamadas/llamada_noche2.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
 | `llamada_noche3` | `llamadas/llamada_noche3.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
 | `llamada_noche4` | `llamadas/llamada_noche4.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
@@ -90,6 +86,9 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `momo_cancion` | `extras/momo_cancion.ogg` | scenes/night/momo_event.gd · scenes/night/night.gd | **archivo real** |
 | `pasos_acercandose` | `pasos_acercandose.ogg` | scenes/night/blackout_death.gd | **archivo real** |
 | `puerta_cortina` | `puerta_cortina.ogg` | scenes/night/night.gd · scenes/office/door_shutter.gd | **archivo real** |
+| `rochis_extra_1` | `voces/rochis_extra_1.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **FALTA** |
+| `rochis_extra_2` | `voces/rochis_extra_2.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **FALTA** |
+| `rochis_extra_3` | `voces/rochis_extra_3.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **FALTA** |
 | `rochis_silla` | `lejos/rochis_silla.ogg` | scenes/night/night.gd | **archivo real** |
 | `se_aleja` | `se_aleja.ogg` | scripts/characters/glass_stalker.gd | **archivo real** |
 | `sergio_rescate` | `extras/sergio_rescate.ogg` | scenes/night/sergio_rescue.gd | **archivo real** |
@@ -131,7 +130,7 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `menu_glitch_largo` | `menu_glitch_largo.ogg` | scenes/night/mod_menu.gd · scripts/ui/menu_backdrop.gd | **archivo real** |
 | `menu_musica_final` | `menu/menu_musica_final.ogg` | scenes/main_menu/main_menu.gd · scenes/night/mod_menu.gd | **archivo real** |
 
-#### Menús, pantallas y maquinita — 21 ids (10 reales, 11 provisionales, 0 faltan)
+#### Menús, pantallas y maquinita — 19 ids (10 reales, 9 provisionales, 0 faltan)
 
 | id | archivo esperado | dónde se usa | estado |
 | --- | --- | --- | --- |
@@ -144,8 +143,6 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `arcade_recoge` | `arcade_recoge.ogg` | scenes/minigames/arcade_bienvenida.gd · scenes/minigames/arcade_posada.gd | provisional (`arcade_pick`) |
 | `arcade_salto` | `arcade_salto.ogg` | scenes/minigames/arcade_bienvenida.gd · scenes/minigames/arcade_junta.gd · scenes/minigames/arcade_posada.gd | provisional (`arcade_jump`) |
 | `menu_blip` | `menu_blip.ogg` | scripts/ui/menu_style.gd | provisional (`menu_blip`) |
-| `ninos_yay` | `ninos_yay.ogg` | scenes/win_screen/six_am_roll.gd | provisional (`school_bell`) |
-| `tecla_maquina` | `tecla_maquina.ogg` | scenes/main_menu/name_entry.gd | provisional (`typewriter_key`) |
 | `aura` | `extras/aura.ogg` | scenes/minigames/arcade_ending.gd | **archivo real** |
 | `despertador` | `despertador.ogg` | scenes/win_screen/six_am_roll.gd | **archivo real** |
 | `extras_musica` | `extras_musica.ogg` | scenes/extras/custom_night.gd · scenes/extras/extras_menu.gd | **archivo real** |
@@ -157,11 +154,10 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `tic_rechinido` | `menu/tic_rechinido.ogg` | `Sounds.menu_tic()` · scripts/ui/menu_backdrop.gd | **archivo real** |
 | `wasted` | `wasted.ogg` | scenes/ui/wasted_screen.gd | **archivo real** |
 
-### Los cuatro que conviene mirar
+### Los tres que conviene mirar
 
 | id | qué pasa |
 | --- | --- |
-| `campana_escuela` | **nadie lo pide.** Está en el catálogo y el archivo existe, pero la pantalla de las 6 AM no lo reproduce: usa `despertador` y, si falta, `ninos_yay`. O se engancha o sobra. |
 | `grito` | solo sale como **último recurso** de `Sounds.scream_for()`. Con los siete gritos propios grabados, hoy no se oye nunca. |
 | `golpes_cortina` | es el respaldo de `Sounds.metal_hit()`. Con los tres `golpe_metal_N` ya grabados, **hoy no se oye nunca**. |
 | `llavero` | se pide con el id escrito a pelo en `night.gd` (`DISTANT_WITH_MOVE`), no por su constante. **Ya tiene archivo** (apareció el 26 de octubre), así que suena. |
@@ -261,12 +257,10 @@ lo que falte (nunca pisa un archivo que ya exista salvo con `--forzar`).
 
 ### 3.2 Lo que el código pide y **no está**
 
-| ruta | quién la pide | qué se ve hoy |
-| --- | --- | --- |
-| `assets/art/office/rj45.png` | `scenes/server_room/patch_panel_view.gd` | el conector del patch panel; sin la imagen se dibuja por código |
-| `layers/centro_rochis.png` o `derecha_rochis.png` (activa) | `scenes/night/night.gd` cuando Rochis llega a `cubicles_side` o `doorway` | **la etiqueta de texto**. `derecha_rochis.png` existe pero está en `OfficeLayers.DISABLED` por ser de la oficina vieja |
-| `layers/<vista>_come_trabas.png` | la botarga cuando sale del cubículo 3 | **la etiqueta de texto** |
-| `layers/izquierda_*.png` | la vista izquierda | ninguna capa de profe; ahí no llega nadie (es donde entra Momo) |
+**Nada.** Con las dos capas de la vista derecha y el conector del patch panel ya puestos, todas
+las rutas que el código nombra existen en el disco. La única capa que no existe es
+`layers/izquierda_*.png`, y es a propósito: a la vista izquierda no llega ningún profe (es por
+donde entra Momo, que tiene su propia imagen).
 
 ### 3.3 Arte que existe y nadie pide
 
@@ -335,30 +329,35 @@ Recordatorios del formato, que son fáciles de olvidar:
 
 | Bloque | Total | Listo | Provisional | Falta |
 | --- | --- | --- | --- | --- |
-| **Audios** (ids del catálogo) | 120 | 92 con archivo real | 19 con provisional por código | **9 sin nada** |
+| **Audios** (ids del catálogo) | 117 | 92 con archivo real | 16 con provisional por código | **9 sin nada** |
 | **Voces** (líneas que quedan) | 26 | 19 enganchadas | 4 sin voz a propósito · 1 reservada | **1** (`urena_saludo`) |
 | | | | | *(la 26.ª, `juan_respiracion`, es una acotación: no se graba)* |
-| **Imágenes** (bloques que pide el código) | 15 bloques | 14 completos | 4 cosas se dibujan por código pudiendo ser arte | **1 ruta** (`office/rj45.png`) |
+| **Imágenes** (bloques que pide el código) | 15 bloques | **15 completos** | 4 cosas se dibujan por código pudiendo ser arte | — |
 | **Llamadas** | 6 noches + 2 raras | noche 1 y las 2 raras | — | **5 noches** (audio, subtítulos y guion) |
 
-**Los 9 audios que no suenan nada:** `grito_base_1`, `grito_base_2`, `grito_base_3` (los tres de
-reserva; con los siete propios grabados no hacen falta, pero el `.import` quedó huérfano en
-`assets/audio/gritos/`), `urena_saludo`, y las cinco llamadas de las noches 2 a 6.
+**Los 9 audios que no suenan nada:** `rochis_extra_1..3` (apartados a propósito, para frases de
+Rochis que se grabarán después), `urena_saludo`, y las cinco llamadas de las noches 2 a 6.
 
 **Lo que cambió desde la primera pasada:**
 
 - Fuera las voces de **Barcosa** (4) y **Armando** (6): borradas del disco y del catálogo.
 - Dentro las **15 de Ureña** y la de **Mamador**, ya enganchadas.
 - **Ni una línea de síntesis de voz** en todo el proyecto.
-- Aparecieron cinco audios tuyos: `llavero`, `golpe_metal_1..3` y `extras_musica`.
+- Aparecieron cinco audios tuyos: `llavero`, `golpe_metal_1..3` y `extras_musica`, **los cinco
+  comprobados sonando de verdad**, no por provisional.
+- Fuera del catálogo seis ids que sobraban: `campana_escuela` y `ninos_yay` (el despertador ya trae
+  el grito de los niños), `tecla_maquina` (las tres tomas están grabadas) y `grito_base_1..3` (los
+  siete gritos propios están grabados). Con ellos se fueron sus tres `.import` huérfanos.
+- Apartados `rochis_extra_1..3`, sin grabar todavía.
+- Ya están las dos capas de la vista derecha (`derecha_rochis`, `derecha_come_trabas`) y el
+  conector `office/rj45.png`, así que ninguna imagen queda pendiente.
 
 **Lo más barato de arreglar, por orden:**
 
 1. **`urena_saludo`** — la única voz con id y sin audio. La vas a regrabar con los demás.
-2. **`office/rj45.png`** — una imagen chica que ya está referenciada.
-3. **Decidir dónde va `santi_voces`** — el audio ya está, solo falta el momento.
+2. **Decidir dónde va `santi_voces`** — el audio ya está, solo falta el momento.
+3. **`rochis_extra_1..3`** — tres frases cortas, en el mismo tono que «es impresionante».
 4. **Los cinco guiones de llamada** — es escribir, y el formato ya está resuelto.
-5. **`campana_escuela`** — o se engancha en las 6 AM o se quita del catálogo.
 
 ### Cómo rehacer este inventario
 

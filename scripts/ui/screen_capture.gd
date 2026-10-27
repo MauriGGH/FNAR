@@ -127,6 +127,21 @@ func _send_to_hallway(scene: Node, slugs: Array, flashlight: bool) -> void:
 const HALLWAY_ROOM: String = "pasillo_sur"
 
 
+## Deja a Rochis asomado en el marco, o a la botarga de pie en el paso, y gira
+## la cabeza a la vista derecha, que es donde se ven sus capas.
+func _peek_right(scene: Node, slug: String) -> void:
+	if not scene.has_method("animatronics"):
+		return
+	for animatronic: Animatronic in scene.animatronics():
+		if animatronic.image_slug() != slug:
+			continue
+		if animatronic.has_method("debug_peek_doorway"):
+			animatronic.debug_peek_doorway()
+		elif animatronic.has_method("debug_leave_chair"):
+			animatronic.debug_leave_chair()
+	scene.office.rotate_view(1)
+
+
 # --- La lista de pantallas ----------------------------------------------------
 
 ## Todas las pantallas del juego, en el orden en que las ve el jugador. Las
@@ -171,6 +186,10 @@ func _night_entries() -> Array[Dictionary]:
 			"setup": func(scene: Node) -> void: scene.pc_screen.open()},
 		{"name": "16_sala_de_servidores", "scene": Screens.NIGHT, "wait": 1.0,
 			"setup": func(scene: Node) -> void: scene.server_room.open()},
+		{"name": "16b_patch_panel_con_cable", "scene": Screens.NIGHT, "wait": 1.2,
+			"setup": func(scene: Node) -> void:
+				scene.server_room.open()
+				scene.server_room.patch_panel.debug_grab()},
 		{"name": "17_panel_de_pruebas", "scene": Screens.NIGHT, "wait": 0.6,
 			"setup": func(scene: Node) -> void: scene.mod_menu.open()},
 		# Las dos de comprobar: que las siluetas se dibujan de verdad cuando
@@ -181,6 +200,15 @@ func _night_entries() -> Array[Dictionary]:
 		{"name": "18b_siluetas_con_linterna", "scene": Screens.NIGHT, "wait": 1.6,
 			"setup": func(scene: Node) -> void: _send_to_hallway(scene,
 				["mamador", "urena"], true)},
+		# Las dos capas de la vista derecha: el paso hacia los cubículos. Los
+		# dos se mandan por el camino de siempre y se les para el reloj, así
+		# que la captura comprueba la cadena entera, no solo el PNG.
+		{"name": "18d_derecha_rochis", "scene": Screens.NIGHT, "wait": 1.4,
+			"setup": func(scene: Node) -> void:
+				_peek_right(scene, "rochis")},
+		{"name": "18e_derecha_come_trabas", "scene": Screens.NIGHT, "wait": 1.4,
+			"setup": func(scene: Node) -> void:
+				_peek_right(scene, "come_trabas")},
 		{"name": "18c_giro_a_la_mitad", "scene": Screens.NIGHT, "wait": 1.0,
 			"setup": func(scene: Node) -> void: scene.office.debug_hold_sweep(0.5)},
 		{"name": "18_tablero_breaker", "scene": Screens.NIGHT, "wait": 1.0,

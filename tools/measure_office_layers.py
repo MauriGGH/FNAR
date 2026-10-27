@@ -3,11 +3,16 @@
 
 Saca dos cosas, que luego se copian a mano a data/office_layers.gd:
 
-1. El rectángulo que ocupa de verdad cada profe dentro de su capa (el recuadro
+1. El rectángulo que ocupa de verdad cada profe dentro de su capa, tanto en la
+   vista central como en la derecha (el recuadro
    de los píxeles que no son transparentes), en coordenadas normalizadas. El
    juego lo usa para saber si el cono de la linterna le está dando a ese profe.
 
-2. Dónde tiene el ojo Armando: el píxel naranja más brillante de centro_armando,
+2. El conector RJ45 (`assets/art/office/rj45.png`): lo que de verdad se pinta
+   dentro del PNG, para poder girarlo y escalarlo por su punta en el patch
+   panel. Va a scenes/server_room/patch_panel_view.gd.
+
+3. Dónde tiene el ojo Armando: el píxel naranja más brillante de centro_armando,
    que es donde el juego pinta el puntito que parpadea en la oscuridad.
 
 Uso:  python3 tools/measure_office_layers.py
@@ -18,12 +23,15 @@ from pathlib import Path
 
 from PIL import Image
 
-LAYERS_DIR = Path(__file__).resolve().parent.parent / "assets/art/office/layers"
+OFFICE_DIR = Path(__file__).resolve().parent.parent / "assets/art/office"
+LAYERS_DIR = OFFICE_DIR / "layers"
 # Las capas de la vista central, en el orden en que se enseñan.
 LAYERS = [
     "centro_mamador", "centro_barcosa", "centro_audel",
     "centro_urena", "centro_juan", "centro_armando",
 ]
+# Las capas de la vista derecha: el paso hacia los cubículos.
+RIGHT_LAYERS = ["derecha_rochis", "derecha_come_trabas"]
 # Las siluetas de los que se ven al otro lado del cristal.
 SILHOUETTES = [
     "silueta_barcosa", "silueta_mamador", "silueta_urena",
@@ -93,6 +101,25 @@ def main():
               % (name, box[0], box[1], box[2], box[3], size[0], size[1]))
 
     print()
+    print("## Capas de la vista derecha (x, y, ancho, alto normalizados)")
+    for name in RIGHT_LAYERS:
+        path = LAYERS_DIR / f"{name}.png"
+        if not path.is_file():
+            print(f'  # falta {name}.png')
+            continue
+        with Image.open(path) as handle:
+            image = handle.convert("RGBA")
+            box = opaque_box(image)
+            size = image.size
+        if box is None:
+            print(f'  # {name}: la capa está vacía')
+            continue
+        # En el .gd van por el slug del profe, sin el nombre de la vista.
+        print('  "%s": Rect2(%.4f, %.4f, %.4f, %.4f),   # %s, %dx%d'
+              % (name.removeprefix("derecha_"), box[0], box[1], box[2], box[3],
+                 name, size[0], size[1]))
+
+    print()
     print("## Siluetas tras el cristal (x, y, ancho, alto normalizados)")
     boxes = {}
     for name in SILHOUETTES:
@@ -122,6 +149,39 @@ def main():
             if wide > 0 and tall > 0:
                 clashes.append(f"{names[i]} con {names[j]}")
     print("  # se enciman: " + (", ".join(clashes) if clashes else "ninguna"))
+
+    print()
+    print("## El conector RJ45 (en píxeles de la imagen)")
+    plug = OFFICE_DIR / "rj45.png"
+    if not plug.is_file():
+        print("  # falta rj45.png")
+    else:
+        with Image.open(plug) as handle:
+            image = handle.convert("RGBA")
+            alpha = image.getchannel("A")
+            box = alpha.point(lambda value: 255 if value >= ALPHA_FLOOR else 0).getbbox()
+            size = image.size
+        if box is None:
+            print("  # rj45.png está vacío")
+        else:
+            left, top, right, bottom = box
+            print("  PLUG_IMAGE_SIZE: Vector2(%.1f, %.1f)" % size)
+            # El PNG trae conector y cable; el juego solo usa el conector, que
+            # acaba donde empieza la funda azul.
+            pixels = image.load()
+            boot = bottom
+            for y in range(top, bottom):
+                row = [pixels[x, y] for x in range(size[0])
+                       if pixels[x, y][3] >= ALPHA_FLOOR]
+                if not row:
+                    continue
+                red = sum(p[0] for p in row) / len(row)
+                blue = sum(p[2] for p in row) / len(row)
+                if blue > red + 40:
+                    boot = y
+                    break
+            print("  PLUG_BODY: Rect2(%.1f, %.1f, %.1f, %.1f)"
+                  % (left, top, right - left, boot - top))
 
     print()
     print("## El ojo de Armando")

@@ -151,7 +151,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (120 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
+**El catálogo** (117 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
 inventario completo de pendientes y provisionales en `docs/pendientes.md`). Casi todos tienen
 provisional por código; **las voces no**, por lo de arriba.
 
@@ -167,7 +167,6 @@ provisional por código; **las voces no**, por lo de arriba.
 | `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | Efectos | −16 | no | debajo de la estática del game over (mismo archivo) |
 | `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −6 | no | pasos recorriendo el pasillo, con los demás ambientales |
 | `menu_musica_final` | `menu/menu_musica_final.ogg` | Música | −4 | sí | la música del menú principal, la única |
-| `tecla_maquina` | `tecla_maquina.ogg` | Efectos | −12 | sí | el respaldo de la tecla, si no están las tres grabaciones |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
 | `cajita_musical_apagon` | `cajita_musical.ogg` | Música | −4 | no | las chispas del apagón (mismo archivo) |
@@ -187,7 +186,7 @@ provisional por código; **las voces no**, por lo de arriba.
 | `golpe_grave_1..3` | `golpe_grave_N.ogg` | Efectos | 0 | no | el cuadro de una alucinación: uno de los tres, sin repetir |
 | `golpe_grave` | `golpe_grave.ogg` | Efectos | 0 | sí | el respaldo de los tres de arriba |
 | `grito` | `grito.ogg` | Efectos | 0 | no | el jumpscare |
-| `grito_<id>`, `grito_base_1`…`3` | `gritos/<id>.ogg` | Efectos | 0 | no | el grito de cada jumpscare y los tres de reserva |
+| `grito_<id>` | `gritos/grito_<id>.ogg` | Efectos | 0 | no | el grito de cada jumpscare; los siete están grabados |
 | `mamador_brecha` | `mamador_brecha.ogg` | Efectos | 0 | no | la irrupción del operativo, antes del WASTED |
 | `armando_windows_crash` | `armando_windows_crash.ogg` | Efectos | −2 | no | Armando toma la pantalla de la PC |
 | `armando_glitch_bucle` | `armando_glitch_bucle.ogg` | Efectos | −18 | sí | de fondo, mientras dura esa toma |
@@ -202,9 +201,8 @@ provisional por código; **las voces no**, por lo de arriba.
 | `aura` | `extras/aura.ogg` | Música | −6 | no | el tótem al pasar un nivel de la maquinita |
 | `momo_cancion` | `extras/momo_cancion.ogg` | Música | 0 | no | el susto de Momo, 15.3 s, con su grito al final |
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
-| `campana_escuela` | `campana_escuela.ogg` | Efectos | −4 | no | al entrar el 6 |
-| `ninos_yay` | `ninos_yay.ogg` | Efectos | −3 | no | los niños al entrar el 6; solo se usa si no está grabado el despertador |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 |
+| `rochis_extra_1..3` | `voces/rochis_extra_N.ogg` | Voces | −2 | no | **sin grabar**: más frases para ese mismo botón (ver abajo) |
 | `urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`, `urena_adios_*` | `voces/<id>.ogg` | Voces | 0 | no | la llamada de media noche de Ureña, línea por línea |
 | `mamador_delito` | `voces/mamador_delito.ogg` | Voces | 0 | no | «¡Delito federal!», **antes** de la irrupción |
 | `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
@@ -382,7 +380,7 @@ su propia estética.
   foto con texto encima (ver **Pantallas que son una imagen**).
 
 **Capturas de todas las pantallas:** el panel de pruebas (F1 → Pantallas → **"Capturar todas"**)
-recorre las 33 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
+recorre las 36 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
 guarda un PNG de cada una con `scripts/ui/screen_capture.gd`. Van a `user://capturas/`, que en
 Linux es `~/.local/share/godot/app_userdata/Five Nights at Rocha\'s/capturas/`. La herramienta se
 cuelga de la raíz del árbol, no de una escena, porque va cambiando de escena. Ojo: pasar por las
@@ -392,7 +390,11 @@ pantallas de documentos y periódicos los deja marcados como vistos en `save.cfg
 pausado y cambiar de escena no lo despausa, así que sin eso todo lo que viniera después salía en
 blanco (los fundidos de entrada del recibo y de los documentos no corren con el árbol parado).
 
-Tres capturas son de comprobación y no de catálogo: **`18a_siluetas_sin_linterna`** y **`18b_siluetas_con_linterna`** meten a dos profes en
+Seis capturas son de comprobación y no de catálogo. **`18d_derecha_rochis`** y
+**`18e_derecha_come_trabas`** mandan a cada uno por su propio camino, le paran el reloj y giran la
+cabeza a la vista derecha, para ver sus capas sin que haya game over;
+**`16b_patch_panel_con_cable`** deja un cable en la mano, a medio camino entre su puerto y el
+switch, que es donde se ve el conector girado. Las otras tres: **`18a_siluetas_sin_linterna`** y **`18b_siluetas_con_linterna`** meten a dos profes en
 `pasillo_sur` **por su propia ruta** (no pintan las siluetas a mano: usan `move_to_step()`, y de
 ahí en adelante manda el juego) para ver que a oscuras no se ve nadie y que con la linterna
 aparecen en penumbra; **`18c_giro_a_la_mitad`** deja el barrido clavado al 50 % con
@@ -412,8 +414,7 @@ aparecen en penumbra; **`18c_giro_a_la_mitad`** deja el barrido clavado al 50 % 
   rodillo y entra el 6 en 0.8 s. **El texto no cambia de color**: lo único que se mueve es la hora.
   Suenan las campanadas del despertador, que **ya traen el grito de los niños al final**: el
   confeti cae en los últimos 4 s del audio (se mide su largo de verdad con `AudioManager.length()`)
-  y la pantalla acaba con él. Solo si no estuviera grabado el despertador se pide aparte el
-  `ninos_yay`. El confeti son triangulitos de colores que caen durante 4 s (`scenes/win_screen/confetti_fall.gd`, dibujado por código). Al acabar, el recorte de
+  y la pantalla acaba con él. El confeti son triangulitos de colores que caen durante 4 s (`scenes/win_screen/confetti_fall.gd`, dibujado por código). Al acabar, el recorte de
   esa noche.
 - **Game over:** un segundo de estática fuerte —con `estatica_inquietante_gameover` sonando
   debajo a −16 dB— y, al aclararse, la cámara vacía del lugar de donde salió quien te atrapó, en blanco y negro y con grano; encima "GAME OVER" y la causa a máquina.
@@ -451,8 +452,8 @@ arte, se vuelven a medir los campos en el JSON y no se toca código.
   `solicitud_nombre`, Special Elite), con cursor que parpadea y un "clac" de máquina por tecla;
   máximo 16 caracteres (`NightConfig.MAX_NAME_LENGTH`). El "clac" **alterna al azar entre
   `tecla_maquina_1..3`** (las que de verdad estén en `assets/audio/`, que se preguntan una sola vez
-  al abrir la hoja) **sin repetir la misma dos veces seguidas**; si no hay ninguna, suena
-  `tecla_maquina`, que siempre está porque lleva provisional por código. **No hay cajas ni botones.** Con Enter
+  al abrir la hoja) **sin repetir la misma dos veces seguidas**; si no hubiera ninguna, la tecla se
+  escribe sin sonido. **No hay cajas ni botones.** Con Enter
   aparece la firma en `solicitud_firma`, el mismo nombre en Reenie Beanie y tinta azul #283a8c, que
   entra en 0.4 s; 1 s después arranca la partida. Esc vuelve al menú. Abajo, chiquito: "Escribe tu
   nombre · Enter para firmar · Esc para volver".
@@ -522,9 +523,17 @@ material, porque en la vista central cada uno se comporta distinto frente al con
   Ureña, Juan.exe y Armando) y **pueden verse varias a la vez**: cada una tiene su sitio y ninguna
   se encima con otra, comprobado con `tools/measure_office_layers.py`. Si falta el archivo de
   alguien, no se dibuja nada.
-- **Capas desactivadas** (`OfficeLayers.DISABLED`): `derecha_rochis.png`, que es de la vista derecha
-  vieja; y `centro_barcosa.png`, que solo salía cuando Barcosa aporreaba la puerta y ahora eso no se
-  dibuja (está detrás de la cortina), además de estar colocada para la oficina vieja.
+- **Capas de la vista derecha**, el paso hacia los cubículos: `derecha_rochis.png` cuando Rochis
+  se asoma al marco y `derecha_come_trabas.png` cuando la botarga sale del cubículo 3 (ahí el
+  fondo cambia además a `oficina_derecha_vacia.png`, que ya trae la silla vacía). **En la vista
+  central no se dibuja ninguno de los dos**: desde ahí los tapan las persianas del cubículo, así
+  que la zona `cubicles_side` ya no lleva ni capa ni etiqueta. Los dos van con el mismo parallax
+  que la vista y debajo de la oscuridad, como las demás capas, y sus recuadros están medidos en
+  `OfficeLayers.RIGHT_BOXES`. Mientras Rochis sigue en el cubículo no se ve nada de él en ninguna
+  vista: lo único que se oye es `rochis_silla` al cambiar de etapa.
+- **Capas desactivadas** (`OfficeLayers.DISABLED`): `centro_barcosa.png`, que solo salía cuando
+  Barcosa aporreaba la puerta y ahora eso no se dibuja (está detrás de la cortina), además de
+  estar colocada para la oficina vieja.
 
 **Orden de dibujo de la vista central:** fondo → **siluetas** → **cortina** → profes pegados al
 cristal → etiquetas de presencia. Las siluetas van debajo de la cortina a propósito: con la lámina
@@ -590,7 +599,10 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 - **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
 - **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna (ver **Destellos en el cristal**).
   - **Llamada de Ureña (comedia):** cada noche que Ureña está activo, puede llamar entre las 2 y las 4 AM (60 %; en noches 5 y 6 hasta dos llamadas). La llamada no bloquea el juego: Ureña habla en altavoz y sus textos salen en un recuadro pequeño en una esquina, mientras el jugador sigue usando cámaras, puerta y linterna. Saluda con el nombre del jugador, lo felicita por sus tareas y le hace 1 o 2 insinuaciones (banco en `data/urena_questions.gd`). Cada una tiene 3 respuestas barajadas, elegibles con las teclas 1, 2 y 3 o con clic, y 6 s para elegir: la correcta esquiva con educación (no pasa nada); `sigue_el_juego` quita 5 % de energía y deja la foto en el escritorio; `grosera` quita 5 % sin foto; sin respuesta cuenta como `sigue_el_juego`. Se puede colgar en cualquier momento (o no contestar), pero Ureña se ofende: deja la foto y su nivel sube +5 durante una hora de juego. Ya no hay game over por no contestar. Se despide según cómo le fue. Los demás profes siguen moviéndose.
-- **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
+- **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar.
+  El botón suelta **una de sus frases al azar** (`Sounds.rochis_line()`): hoy siempre
+  «es impresionante», y en cuanto existan `voces/rochis_extra_1..3.ogg` entran al sorteo con ella.
+  Las que no tengan archivo no entran, así que no hay que tocar código para añadirlas. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Mago Eléctrico (rol Balloon Boy; antes Audel Electrix):** en pantalla y diálogos se llama "Mago Eléctrico"; en código, ids, estados y archivos se sigue usando `audel` (por ejemplo `cam06_audel-acecho`, `centro_audel.png`) para no romper nada. vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
   - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible. Con la linterna muerta **el pasillo se queda a oscuras**: no hay cono, no se ve quién está en el cristal y no se le pueden contar destellos a nadie. Eso es parte del castigo.
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
@@ -611,7 +623,12 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
     secuencia, el jugador se salva** y todo se calla.
-  - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7). Mientras está en la sala, no vigila la oficina.
+  - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7).
+    Los conectores son `assets/art/office/rj45.png`, con la punta hacia arriba. El PNG trae el
+    conector **y su cable**, pero el cable lo dibuja el código, así que solo se usa el trozo del
+    conector, de la punta a donde empieza la funda azul: ese recorte y el ancho se **miden** con
+    `tools/measure_office_layers.py` (`PLUG_BODY` en `patch_panel_view.gd`). Cada conector se gira
+    siguiendo la curva de su cable y se escala al ancho de su puerto, con la punta clavada en él. Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
 
@@ -896,9 +913,8 @@ Las imágenes están en `assets/art/jumpscares/`: `jumpscare_<id>.png` y `jumpsc
 La animación de cada muerte es la misma: la variante `_a` durante 0.12 s, corte a la imagen final con un zoom de 1.0 a 1.15 en 0.5 s, temblor fuerte, un destello blanco de un cuadro y un grito; después estática y la pantalla de game over con su causa.
 
 **El grito va siempre y a 0 dB**, encima de la estática: nunca se oye solo el siseo. Lo elige
-`Sounds.scream_for(slug)`: el grito propio del profe (`grito_<id>`) si está grabado, si no uno de
-`grito_base_1..3` al azar, y si tampoco están, `grito`, que lleva provisional por código. **Los
-siete propios ya están grabados** (`gritos/grito_<id>.ogg`); el de Ureña es una risa, y es lo que
+`Sounds.scream_for(slug)`: el grito propio del profe (`grito_<id>`) si está grabado y, si no,
+`grito`, que lleva provisional por código. **Los siete propios ya están grabados** (`gritos/grito_<id>.ogg`); el de Ureña es una risa, y es lo que
 se oye en su jumpscare.
 
 Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
@@ -1080,9 +1096,10 @@ dónde iba (`main_menu.gd`, en una variable `static`, que sobrevive al cambio de
 entrar se retoma desde ahí. Las opciones son una capa de la misma pantalla, así que ni se tocan; de
 Extras se vuelve y la música sigue donde se quedó. Los tics van encima, igual que antes.
 
-El crédito de **«Halloween Atmosphere 2024» de Sascha Ende (ende.app), CC BY 4.0** se queda escrito
-en Extras (`Extras.MUSIC_CREDIT`): la pista suelta ya no está, pero por si la mezcla final la lleva
-dentro, la atribución no cuesta nada y no se quita a la ligera.
+La música del menú no es esa pista: **«Halloween Atmosphere 2024» de Sascha Ende (ende.app),
+CC BY 4.0** es `extras_musica.ogg`, la de Extras y la Custom Night. Su crédito va escrito en
+Extras (`Extras.MUSIC_CREDIT`), que es donde se puede leer con calma, y la licencia pide que se
+quede ahí.
 
 **Fondo de los menús (`scripts/ui/menu_backdrop.gd`):** de fondo va siempre
 `assets/art/menu/menu_fondo_0.png`, con líneas de escaneo suaves y un poco de estática. Encima, el

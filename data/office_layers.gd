@@ -11,7 +11,7 @@ extends RefCounted
 ## Son medidas, no inventadas: las saca `tools/measure_office_layers.py` de los
 ## propios PNG. Si cambia el arte, se vuelve a correr y se copian aquí.
 
-## slug del profe -> su recuadro, normalizado sobre la vista.
+## slug del profe -> su recuadro, normalizado sobre la **vista central**.
 const BOXES: Dictionary = {
 	"mamador": Rect2(0.3949, 0.3047, 0.1295, 0.3880),
 	"barcosa": Rect2(0.6065, 0.2799, 0.2422, 0.4128),
@@ -19,6 +19,15 @@ const BOXES: Dictionary = {
 	"urena": Rect2(0.4545, 0.2773, 0.2124, 0.4154),
 	"juan": Rect2(0.7855, 0.2878, 0.1382, 0.4049),
 	"armando": Rect2(0.6538, 0.3047, 0.1215, 0.3880),
+}
+
+## Lo mismo para las capas de la **vista derecha**, el paso hacia los
+## cubículos: Rochis asomado al marco y la botarga de pie en el pasillo. Ahí no
+## hay linterna, así que estos recuadros no sirven para el cono; están medidos
+## igual, para tener a mano dónde cae cada uno sin abrir el PNG.
+const RIGHT_BOXES: Dictionary = {
+	"rochis": Rect2(0.3561, 0.2057, 0.2711, 0.7943),
+	"come_trabas": Rect2(0.4288, 0.3333, 0.1526, 0.5938),
 }
 
 ## Dónde cae cada silueta dentro de su capa. Medidas con la misma herramienta y
@@ -39,12 +48,10 @@ const ARMANDO_EYE_COLOR: Color = Color(0.86, 0.45, 0.14)
 
 ## Capas que existen como archivo pero ya no se usan:
 ##
-## - `derecha_rochis.png` es de la vista derecha vieja y no cuadra con la nueva.
-##   En cuanto llegue la de verdad, se quita de aquí y vuelve a dibujarse.
 ## - `centro_barcosa.png` solo salía cuando Barcosa golpeaba la puerta, y eso
 ##   ahora no se dibuja: está detrás de la cortina. Además su sitio es el de la
 ##   oficina vieja (x 0.61, cuando la puerta está en x 0.30).
-const DISABLED: Array[String] = ["derecha_rochis", "centro_barcosa"]
+const DISABLED: Array[String] = ["centro_barcosa"]
 
 ## Los cuartos que se alcanzan a ver desde la oficina a través del cristal. Un
 ## profe que esté en uno de ellos y tenga su `layers/silueta_<id>.png` se
@@ -111,3 +118,8 @@ static func silhouette_box(slug: String) -> Rect2:
 
 static func has_silhouette(slug: String) -> bool:
 	return SILHOUETTE_BOXES.has(slug)
+
+
+## El recuadro de una capa de la vista derecha.
+static func right_box(slug: String) -> Rect2:
+	return RIGHT_BOXES.get(slug, Rect2()) as Rect2
