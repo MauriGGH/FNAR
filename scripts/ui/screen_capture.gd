@@ -214,6 +214,10 @@ func _night_entries() -> Array[Dictionary]:
 		{"name": "18e_derecha_come_trabas", "scene": Screens.NIGHT, "wait": 1.4,
 			"setup": func(scene: Node) -> void:
 				_peek_right(scene, "come_trabas")},
+		# Con la cortina abajo la vista central cambia a las fotos `*_cerrada`,
+		# que son otras dos: esta captura es la que las comprueba.
+		{"name": "18f_cortina_cerrada", "scene": Screens.NIGHT, "wait": 1.6,
+			"setup": func(scene: Node) -> void: scene.office._toggle_door()},
 		{"name": "18c_giro_a_la_mitad", "scene": Screens.NIGHT, "wait": 1.0,
 			"setup": func(scene: Node) -> void: scene.office.debug_hold_sweep(0.5)},
 		{"name": "18_tablero_breaker", "scene": Screens.NIGHT, "wait": 1.0,
