@@ -2,8 +2,9 @@ class_name Mamador
 extends Animatronic
 
 ## Mamador (rol Freddy). Sale de la sala de juntas y baja por el pasillo hasta
-## el cristal de la oficina. Al llegar revisa solo dos cosas, la ventana de
-## Claudio y la puerta cerrada, y las revisa durante los 4 s que se queda ahí.
+## el cristal de la oficina. Al llegar revisa tres cosas —la ventana de
+## Claudio, la puerta cerrada y la baraja decomisada afuera— durante los 4 s
+## que se queda ahí.
 ## Ignora la linterna, el breaker y las cámaras: vigilarlo no lo frena.
 ## Reserva el pasillo antes de entrar al pasillo norte, así que mientras él
 ## está ahí Barcosa espera, y al revés.
@@ -34,6 +35,9 @@ const MOVE_INTERVAL: float = 6.0
 const INSPECT_TIME: float = 4.0
 
 const GAME_OVER_CAUSE: String = "Delito federal"
+## La otra manera de que te cache: con la baraja de UNO desparramada en el
+## escritorio. Mismo final, otro cartel.
+const GAMBLING_CAUSE: String = "Ludopatía"
 const HALLWAY_NOTICE: String = "[pasos lentos y llavero]"
 const NOTICE_TIME: float = 2.5
 const WINDOW_PRESENCE: String = "Mamador mirando por el cristal"
@@ -62,6 +66,11 @@ func jumpscare_id() -> String:
 
 func game_over_cause() -> String:
 	return GAME_OVER_CAUSE
+
+
+## Las dos suyas: el expediente y la pantalla de WASTED son los mismos.
+func owns_cause(cause: String) -> bool:
+	return cause == GAME_OVER_CAUSE or cause == GAMBLING_CAUSE
 
 
 func ai_key() -> String:
@@ -125,14 +134,26 @@ func _needs_hallway(next_step: int) -> bool:
 
 ## Mientras está en el cristal revisa todo el tiempo, no solo al llegar.
 func _process_inspecting(delta: float) -> void:
-	if GameManager.is_ai_window_open or door_closed:
+	var caught: String = _caught_cause()
+	if not caught.is_empty():
 		stop()
 		GameManager.release_hallway(self)
-		GameManager.trigger_game_over(GAME_OVER_CAUSE)
+		GameManager.trigger_game_over(caught)
 		return
 	_inspect_elapsed += delta
 	if _inspect_elapsed >= INSPECT_TIME:
 		_leave()
+
+
+## Qué le encuentra, si le encuentra algo. La baraja va primero a propósito:
+## quien tenga las dos cosas afuera se lleva el cartel raro, que es el que vale
+## la pena ver; el delito federal se consigue de sobra por su cuenta.
+func _caught_cause() -> String:
+	if GameManager.uno_deck.is_out:
+		return GAMBLING_CAUSE
+	if GameManager.is_ai_window_open or door_closed:
+		return GAME_OVER_CAUSE
+	return ""
 
 
 ## No encontró nada: dice su frase y empieza a bajar hacia el estacionamiento.

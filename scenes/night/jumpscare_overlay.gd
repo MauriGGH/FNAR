@@ -38,6 +38,8 @@ const SCARE_ID: String = "audel_susto"
 ## El id de la imagen de Mamador. La secuencia la hace WastedScreen.
 const MAMADOR_ID: String = "mamador_militares"
 const MAMADOR_TEXT: String = "DELITO FEDERAL"
+## El de la baraja: la misma pantalla con otro renglón.
+const GAMBLING_TEXT: String = "LUDOPATÍA"
 
 ## El cartel en rojo del jumpscare (el nombre del guardia, en el de Rochis).
 ## Medido a 1080p y escalado con el alto, como el resto de los textos grandes.
@@ -121,8 +123,8 @@ static func mamador_image() -> String:
 	return MAMADOR_ID
 
 
-static func mamador_text() -> String:
-	return MAMADOR_TEXT
+static func mamador_text(cause: String = "") -> String:
+	return GAMBLING_TEXT if cause == Mamador.GAMBLING_CAUSE else MAMADOR_TEXT
 
 
 ## El susto del cortaso: no mata, así que al acabar no avisa a nadie.

@@ -11,7 +11,7 @@ el juego cambió: vuelve a correr las comprobaciones que están al final de cada
 
 ## 1. Audios
 
-Los 117 ids de `data/sounds.gd`. Tres estados posibles:
+Los 119 ids de `data/sounds.gd`. Tres estados posibles:
 
 - **archivo real** — el `.ogg` está en `assets/audio/` y suena ese.
 - **provisional** — no hay archivo, suena lo que genera `scripts/audio/tone_builder.gd` por código
@@ -22,7 +22,7 @@ Los 117 ids de `data/sounds.gd`. Tres estados posibles:
 La columna "dónde se usa" es el script que lo pide. Cuando el id no se pide por su constante sino
 que lo resuelve una función (los gritos, los golpes, los tics), ahí va la función.
 
-#### Durante la noche — 93 ids (78 reales, 6 provisionales, 9 faltan)
+#### Durante la noche — 95 ids (78 reales, 8 provisionales, 9 faltan)
 
 | id | archivo esperado | dónde se usa | estado |
 | --- | --- | --- | --- |
@@ -48,6 +48,8 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `cajita_musical_apagon` | `cajita_musical.ogg` | data/music_box.gd · scenes/night/blackout_death.gd | **archivo real** |
 | `cajita_musical_aviso` | `cajita_musical.ogg` | scenes/night/blackout_death.gd · scenes/night/night.gd | **archivo real** |
 | `camara_cambio` | `camara_cambio.ogg` | scenes/night/night.gd | **archivo real** |
+| `carta_pone` | `carta_pone.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
+| `carta_toma` | `carta_toma.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
 | `cortaso` | `cortaso.ogg` | scenes/night/mod_menu.gd · scripts/characters/audel.gd | **archivo real** |
 | `descarga_pararrayos` | `descarga_pararrayos.ogg` | scenes/night/mod_menu.gd · scripts/characters/audel.gd | **archivo real** |
 | `es_impresionante` | `es_impresionante.ogg` | scripts/characters/rochis.gd | **archivo real** |
@@ -329,7 +331,7 @@ Recordatorios del formato, que son fáciles de olvidar:
 
 | Bloque | Total | Listo | Provisional | Falta |
 | --- | --- | --- | --- | --- |
-| **Audios** (ids del catálogo) | 117 | 92 con archivo real | 16 con provisional por código | **9 sin nada** |
+| **Audios** (ids del catálogo) | 119 | 92 con archivo real | 18 con provisional por código | **9 sin nada** |
 | **Voces** (líneas que quedan) | 26 | 19 enganchadas | 4 sin voz a propósito · 1 reservada | **1** (`urena_saludo`) |
 | | | | | *(la 26.ª, `juan_respiracion`, es una acotación: no se graba)* |
 | **Imágenes** (bloques que pide el código) | 15 bloques | **15 completos** | 4 cosas se dibujan por código pudiendo ser arte | — |
@@ -349,6 +351,8 @@ Rochis que se grabarán después), `urena_saludo`, y las cinco llamadas de las n
   el grito de los niños), `tecla_maquina` (las tres tomas están grabadas) y `grito_base_1..3` (los
   siete gritos propios están grabados). Con ellos se fueron sus tres `.import` huérfanos.
 - Apartados `rochis_extra_1..3`, sin grabar todavía.
+- Entraron `carta_toma` y `carta_pone`, de la baraja de UNO. Los dos suenan con el provisional de
+  la tecla de máquina, que es justo lo que hace una carta: un clac seco de cartón.
 - Ya están las dos capas de la vista derecha (`derecha_rochis`, `derecha_come_trabas`) y el
   conector `office/rj45.png`, así que ninguna imagen queda pendiente.
 

@@ -74,6 +74,22 @@
       "w": 0.09,
       "h": 0.074,
       "desc": "Clic: ver en grande la foto que dejó Ureña (solo si ya la dejó)"
+    },
+    "uno_deck": {
+      "x": 0.335,
+      "y": 0.8,
+      "w": 0.055,
+      "h": 0.072,
+      "clickable": true,
+      "desc": "Clic: la baraja decomisada, a la derecha del teclado (solo cuando llegó su ticket)"
+    },
+    "desk": {
+      "x": 0.18,
+      "y": 0.7,
+      "w": 0.4,
+      "h": 0.3,
+      "clickable": false,
+      "desc": "Encuadre del escritorio: a esto se acerca la vista para la baraja"
     }
   }
 }

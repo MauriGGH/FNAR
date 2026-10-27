@@ -53,6 +53,7 @@ const FLASH_TIME: float = 0.28
 @onready var wasted_screen: WastedScreen = $Hud/WastedScreen
 @onready var mod_menu: Control = $Hud/ModMenu
 @onready var server_room: Control = $ServerRoom
+@onready var uno_desk: UnoDesk = $UnoDesk
 @onready var fade_overlay: ColorRect = $Hud/FadeOverlay
 @onready var flash_overlay: ColorRect = $Hud/FlashOverlay
 
@@ -183,6 +184,17 @@ func _ready() -> void:
 	server_room.closed.connect(_set_hud_compact.bind(false))
 	server_room.cameras_requested.connect(_on_server_cameras_requested)
 	server_room.notice_requested.connect(notice_banner.show_notice)
+	# La baraja decomisada: el acercamiento lo lleva la oficina y la mesa es
+	# una capa encima, igual que el tablero del breaker.
+	uno_desk.bind(GameManager.uno_deck)
+	office.bind_uno_deck(GameManager.uno_deck)
+	office.uno_deck_requested.connect(uno_desk.open)
+	office.uno_deck_requested.connect(_set_hud_compact.bind(true))
+	uno_desk.closed.connect(office.zoom_out)
+	uno_desk.closed.connect(_set_hud_compact.bind(false))
+	if not GameManager.uno_deck.changed.is_connected(_refresh_uno_deck):
+		GameManager.uno_deck.changed.connect(_refresh_uno_deck)
+	_refresh_uno_deck()
 	breaker_panel.closed.connect(office.zoom_out)
 	breaker_panel.closed.connect(_set_hud_compact.bind(false))
 	breaker_panel.lever_pulled.connect(_on_breaker_pulled)
@@ -420,6 +432,8 @@ func _on_ticket_arrived(index: int) -> void:
 	# El aviso es sutil, como en los juegos originales: el "ping" y nada más.
 	# Con la PC abierta, una notificación de sistema dentro del escritorio;
 	# con la PC cerrada, el sobrecito parpadeando sobre el monitor.
+	if str(tasks[index].get("type", "")) == Tasks.TYPE_UNO_DECK:
+		GameManager.uno_deck.make_available()
 	AudioManager.play(Sounds.TICKET)
 	if pc_screen.is_open:
 		pc_screen.show_ticket_toast()
@@ -1069,7 +1083,7 @@ func _on_game_over(cause: String) -> void:
 	# El apagón es cosa del Mago, aunque no se le haya visto venir.
 	GameManager.last_game_over_slug = BLACKOUT_JUMPSCARE if cause == BLACKOUT_CAUSE else ""
 	for animatronic: Animatronic in _animatronics:
-		if animatronic.game_over_cause() != cause:
+		if not animatronic.owns_cause(cause):
 			continue
 		SaveGame.unlock_dossier(animatronic.image_slug())
 		GameManager.last_game_over_slug = animatronic.image_slug()
@@ -1078,14 +1092,20 @@ func _on_game_over(cause: String) -> void:
 		break
 	SaveGame.unlock_jumpscare(cause)
 	# Mamador no salta: su final es la pantalla de WASTED.
-	if cause == Mamador.GAME_OVER_CAUSE:
+	if cause == Mamador.GAME_OVER_CAUSE or cause == Mamador.GAMBLING_CAUSE:
 		wasted_screen.play(JumpscareOverlay.mamador_image(),
-			JumpscareOverlay.mamador_text(), true)
+			JumpscareOverlay.mamador_text(cause), true)
 		return
 	if jumpscare_id.is_empty():
 		get_tree().change_scene_to_file(Screens.GAME_OVER)
 		return
 	jumpscare.play(jumpscare_id, caption)
+
+
+## La baraja aparece o desaparece del escritorio: lo único que hay que mover
+## es si su zona se puede picar, porque el dibujo lo lleva la propia capa.
+func _refresh_uno_deck() -> void:
+	office.set_uno_deck_clickable(GameManager.uno_deck.is_available)
 
 
 ## La botarga se quedó sin cuerda: la cajita musical se calla y por eso el
@@ -1106,6 +1126,7 @@ func _end_night() -> void:
 	distant.stop_all()
 	controls_card.close_card()
 	wasted_screen.stop()
+	uno_desk.close()
 	AudioManager.stop_all()
 	for animatronic: Animatronic in _animatronics:
 		animatronic.stop()

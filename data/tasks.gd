@@ -14,11 +14,13 @@ const TYPE_BACKUP_SERVICE: String = "backup_service"
 const TYPE_CLASSROOM_VLAN: String = "classroom_vlan"
 const TYPE_PRINTER_DHCP: String = "printer_dhcp"
 const TYPE_PATCH_RELABEL: String = "patch_relabel"
+const TYPE_UNO_DECK: String = "uno_deck"
 
 # En qué app del escritorio se hace cada tarea.
 const APP_TERMINAL: String = "Terminal"
 const APP_NETWORK: String = "Simulador de red"
 const APP_SERVER_ROOM: String = "Sala de servidores"
+const APP_DESK: String = "Escritorio"
 
 ## Lo que le pagan al guardia por cada tarea terminada.
 const PAYMENT_PER_TASK: int = 75
@@ -40,6 +42,22 @@ const SCENES: Dictionary = {
 	TYPE_CLASSROOM_VLAN: "res://scenes/tasks/classroom_vlan_task.tscn",
 	TYPE_PRINTER_DHCP: "res://scenes/tasks/printer_dhcp_task.tscn",
 	TYPE_PATCH_RELABEL: "res://scenes/tasks/patch_relabel_task.tscn",
+	TYPE_UNO_DECK: "res://scenes/tasks/uno_deck_task.tscn",
+}
+
+## La baraja decomisada va **aparte del banco**, porque no se sortea como las
+## demás: desde la noche 2 cae **una de cada tres noches** y, cuando cae, le
+## quita el sitio a otra tarea en vez de sumar una más. Si entrara al banco
+## saldría con la frecuencia de cualquiera y dejaría de ser la rareza que es.
+const UNO_MIN_NIGHT: int = 2
+const UNO_ONE_IN: int = 3
+const UNO_TASK: Dictionary = {
+	"id": "baraja_uno",
+	"min_night": UNO_MIN_NIGHT,
+	"title": "Inventariar material decomisado: ordenar baraja de UNO",
+	"description": "Le decomisaron una baraja a un grupo de primero. Hay que inventariarla.",
+	"app": APP_DESK,
+	"type": TYPE_UNO_DECK,
 }
 
 ## El banco. Cada tarea trae su noche mínima, para que las mecánicas lleguen
@@ -141,7 +159,11 @@ static func pick_for_night(night: int) -> Array:
 		if night >= int(task.get("min_night", 1)):
 			pool.append(task)
 	pool.shuffle()
-	return pool.slice(0, mini(count, pool.size()))
+	var picked: Array = pool.slice(0, mini(count, pool.size()))
+	if night >= UNO_MIN_NIGHT and not picked.is_empty() \
+			and randi() % UNO_ONE_IN == 0:
+		picked[randi() % picked.size()] = UNO_TASK
+	return picked
 
 
 static func scene_for_type(type: String) -> String:

@@ -140,6 +140,13 @@ func shows_silhouette() -> bool:
 	return true
 
 
+## ¿Es este profe el del game over con esa causa? Casi todos tienen una sola,
+## así que basta con compararla; Mamador tiene dos (el delito federal y la
+## ludopatía de la baraja) y lo sobrescribe.
+func owns_cause(cause: String) -> bool:
+	return cause == game_over_cause()
+
+
 ## Lo que se escribe encima de su jumpscare. Vacío en casi todos; Rochis pone
 ## ahí el nombre del jugador.
 func jumpscare_caption() -> String:

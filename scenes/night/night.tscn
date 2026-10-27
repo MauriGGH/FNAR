@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="Script" path="res://scenes/ui/static_frames.gd" id="90_staticframes"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" path="res://scenes/breaker/breaker_panel.tscn" id="14_breaker"]
 [ext_resource type="Script" path="res://scenes/night/cortaso_overlay.gd" id="15_cortaso"]
 [ext_resource type="PackedScene" path="res://scenes/server_room/server_room.tscn" id="17_room"]
+[ext_resource type="PackedScene" path="res://scenes/office/uno_desk.tscn" id="17b_uno"]
 [ext_resource type="Script" path="res://scenes/night/fade_overlay.gd" id="18_fade"]
 [ext_resource type="Script" path="res://scripts/characters/urena.gd" id="19_urena"]
 [ext_resource type="PackedScene" path="res://scenes/phone/phone_call.tscn" id="20_phone"]
@@ -55,6 +56,9 @@ layout_mode = 1
 layout_mode = 1
 
 [node name="ServerRoom" parent="." instance=ExtResource("17_room")]
+layout_mode = 1
+
+[node name="UnoDesk" parent="." instance=ExtResource("17b_uno")]
 layout_mode = 1
 
 [node name="Animatronics" type="Node" parent="."]

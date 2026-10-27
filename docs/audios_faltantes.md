@@ -11,7 +11,7 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **25 de 117**. Generado desde el catálogo.
+Faltan **27 de 119**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 
@@ -45,5 +45,7 @@ Faltan **25 de 117**. Generado desde el catálogo.
 | `arcade_bip` | `arcade_bip.ogg` | Efectos | El bip de arranque de la maquinita, con su estática. |
 | `arcade_cajita` | `arcade_cajita.ogg` | Música | La cajita musical distorsionada del final del nivel 3. |
 | `menu_blip` | `menu_blip.ogg` | Efectos | Pitido corto y seco de moverse por un menú de consola vieja. |
+| `carta_toma` | `carta_toma.ogg` | Efectos | Una carta que se despega del montón: roce corto de cartón. |
+| `carta_pone` | `carta_pone.ogg` | Efectos | Una carta que cae sobre el montón: palmadita seca de cartón. |
 | `urena_banos` | `lejos/urena_banos.ogg` | Lejos | Agua de lavabo corriendo, lejos, en bucle. |
 | `armando_modem` | `lejos/armando_modem.ogg` | Lejos | Módem de 56k negociando, distorsionado y lejos. |

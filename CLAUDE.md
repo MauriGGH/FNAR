@@ -201,6 +201,7 @@ provisional por código; **las voces no**, por lo de arriba.
 | `aura` | `extras/aura.ogg` | Música | −6 | no | el tótem al pasar un nivel de la maquinita |
 | `momo_cancion` | `extras/momo_cancion.ogg` | Música | 0 | no | el susto de Momo, 15.3 s, con su grito al final |
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
+| `carta_toma`, `carta_pone` | `carta_<id>.ogg` | Efectos | −16 / −12 | no | agarrar y soltar una carta de la baraja decomisada |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 |
 | `rochis_extra_1..3` | `voces/rochis_extra_N.ogg` | Voces | −2 | no | **sin grabar**: más frases para ese mismo botón (ver abajo) |
 | `urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`, `urena_adios_*` | `voces/<id>.ogg` | Voces | 0 | no | la llamada de media noche de Ureña, línea por línea |
@@ -380,7 +381,7 @@ su propia estética.
   foto con texto encima (ver **Pantallas que son una imagen**).
 
 **Capturas de todas las pantallas:** el panel de pruebas (F1 → Pantallas → **"Capturar todas"**)
-recorre las 36 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
+recorre las 38 pantallas del juego —abriendo también las capas que viven dentro de la noche— y
 guarda un PNG de cada una con `scripts/ui/screen_capture.gd`. Van a `user://capturas/`, que en
 Linux es `~/.local/share/godot/app_userdata/Five Nights at Rocha\'s/capturas/`. La herramienta se
 cuelga de la raíz del árbol, no de una escena, porque va cambiando de escena. Ojo: pasar por las
@@ -596,7 +597,7 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   está aporreando con la chapa cerrada **no se dibuja nada**: está detrás de la cortina. Lo único
   que se nota es que **la lámina tiembla 2.5 px durante 0.15 s con cada golpe** (señal
   `door_knocked` → `office.shake_curtain()`), y lo que grita (ver **Líneas sueltas de profe**).
-- **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa solo dos cosas: la ventana de la IA abierta en la PC y la puerta cerrada. Si ve alguna, game over "delito federal" (llegan los militares). Si no, dice su frase y se va. Tiene sonido propio de aviso.
+- **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa **tres** cosas: la ventana de la IA abierta en la PC, la puerta cerrada y **la baraja de UNO afuera**. Con las dos primeras es game over "Delito federal" (llegan los militares); con la baraja, el mismo final pero con causa **"Ludopatía"** y el cartel de abajo "LUDOPATÍA" en vez de "DELITO FEDERAL". Si tienes las dos cosas afuera manda la baraja, porque ese cartel es el que vale la pena ver y el otro se consigue de sobra. Si no encuentra nada, dice su frase y se va. Tiene sonido propio de aviso.
 - **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna (ver **Destellos en el cristal**).
   - **Llamada de Ureña (comedia):** cada noche que Ureña está activo, puede llamar entre las 2 y las 4 AM (60 %; en noches 5 y 6 hasta dos llamadas). La llamada no bloquea el juego: Ureña habla en altavoz y sus textos salen en un recuadro pequeño en una esquina, mientras el jugador sigue usando cámaras, puerta y linterna. Saluda con el nombre del jugador, lo felicita por sus tareas y le hace 1 o 2 insinuaciones (banco en `data/urena_questions.gd`). Cada una tiene 3 respuestas barajadas, elegibles con las teclas 1, 2 y 3 o con clic, y 6 s para elegir: la correcta esquiva con educación (no pasa nada); `sigue_el_juego` quita 5 % de energía y deja la foto en el escritorio; `grosera` quita 5 % sin foto; sin respuesta cuenta como `sigue_el_juego`. Se puede colgar en cualquier momento (o no contestar), pero Ureña se ofende: deja la foto y su nivel sube +5 durante una hora de juego. Ya no hay game over por no contestar. Se despide según cómo le fue. Los demás profes siguen moviéndose.
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar.
@@ -930,8 +931,9 @@ Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 | 2.2 s | Debajo de la franja, el texto de abajo en la misma fuente, blanco con contorno, al 40 % del tamaño de WASTED |
 | 5.2 s | Pasa a la pantalla de game over normal, con su causa |
 
-**El texto de abajo es un parámetro**, así que la pantalla se reutiliza: el game over de Mamador
-pone "DELITO FEDERAL" y la tarea de la baraja pondrá "LUDOPATÍA". Si falta la fuente se cae a
+**El texto de abajo es un parámetro**, así que la pantalla se reutiliza: lo elige
+`JumpscareOverlay.mamador_text(causa)`, que pone "DELITO FEDERAL" con la ventana de Claudio o la
+puerta cerrada y "LUDOPATÍA" con la baraja afuera. Si falta la fuente se cae a
 Oswald en negritas (`Fonts.display()`), y si falta `wasted.ogg`, a un provisional por código.
 
 La galería de Jumpscares de Extras **reproduce de verdad**: clic en una ficha y sale su salto, y
@@ -945,7 +947,7 @@ la de Mamador lanza esta misma pantalla de WASTED.
 
 ## Tareas
 
-Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en la sala de servidores, dejando la oficina sin vigilar. La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
+Cada noche pide de 2 a 5 tareas (minijuegos de 20 a 60 s) para que le paguen al guardia. Casi todas se hacen en la PC; las del tablero de pastillas y el patch panel se hacen en la sala de servidores, dejando la oficina sin vigilar, y **la baraja de UNO se hace en el propio escritorio** (ver abajo). La IA de la PC las resuelve o da pistas, pero su ventana abierta delata al jugador ante Mamador.
 
 **Tickets durante la noche:** las tareas no están todas desde las 12. Llegan como tickets repartidos en la noche (el primero al inicio y los demás espaciados hasta las 5 AM, con algo de azar).
 
@@ -957,6 +959,44 @@ y nada de texto en pantalla. Lo demás depende de dónde esté el jugador:
   allá lo ves; si no, te queda el ping.
 - **Con la PC abierta:** una **notificación de sistema** dentro del escritorio, en la esquina de
   abajo a la derecha, en VT323: "1 ticket nuevo", y se va en 3 s.
+
+### La baraja de UNO (tarea del escritorio)
+
+Guiño a la vez que un profe nos sacó del salón por andar acomodando una baraja. Llega **como un
+ticket más desde la noche 2, una de cada tres noches**
+(`Tasks.UNO_ONE_IN`): cuando cae, **le quita el sitio a otra tarea** en vez de sumar una más, así
+que la noche sigue pidiendo las mismas. No está en `Tasks.BANK` sino aparte, en `Tasks.UNO_TASK`,
+justo para que no se sortee como las demás.
+
+Al llegar su ticket aparece **una baraja junto al teclado**, a la derecha, en la vista central
+(`scenes/office/uno_deck_spot.gd`, dibujada por código). Picarla acerca la vista al **encuadre del
+escritorio** —la zona `desk`, no la baraja: acercarse a ella sola sería ampliarla dieciocho
+veces— y abre la mesa (`scenes/office/uno_desk.gd`). Se sale como de las otras pantallas
+acercadas: clic fuera, Esc o clic derecho.
+
+**La tarea:** 24 cartas revueltas (rojo, amarillo, verde y azul, del 0 al 5) que se arrastran a
+cuatro montones por color, **en orden del 0 al 5**: el montón del rojo con tres cartas solo acepta
+el rojo 3. Soltar una donde no va la **regresa sola** a su sitio, sin castigo. **No hay barra de
+espera**: lo que tarda es acomodarlas.
+
+**Las cartas se dibujan por código** (`scripts/ui/uno_card.gd`), al estilo de las de UNO —marco
+blanco, óvalo blanco inclinado, número grande al centro y dos chiquitos en las esquinas— pero
+**sin el logo ni la palabra de la marca**. El número grande va **del color de la carta sobre el
+óvalo** y los chiquitos en **blanco sobre el color**, para que cada uno se lea contra su fondo. Los
+colores, las medidas y la repartición están en `data/uno_deck.gd`.
+
+**El riesgo:** mientras la baraja esté **afuera** —y lo sigue estando aunque cierres la pantalla
+con Esc, porque los montones se quedan a medias sobre la mesa— cuenta como algo prohibido para
+Mamador, igual que la ventana de Claudio. Si llega al cristal y la ve: su irrupción de siempre y la
+pantalla de WASTED con "LUDOPATÍA". El botón **"Guardar baraja"** la recoge: las sueltas vuelven a
+la caja, **lo ya acomodado se queda** y deja de ser un problema. Ese es el precio de la tarea: para
+estar a salvo hay que parar de jugar. Al completarla desaparece del escritorio y **se paga como
+cualquier ticket**.
+
+El estado vive en `GameManager.uno_deck` (`scripts/tasks/uno_deck_model.gd`) y no en la pantalla,
+porque lo miran tres sitios: la mesa, la tarjeta de la PC y Mamador desde el cristal
+(`uno_deck.is_out`, al lado de `is_ai_window_open`). En el panel de pruebas, F1 → Eventos →
+**"Dar ticket de UNO"**, **"Dejarla a una carta del final"** y **"Probar LUDOPATÍA"**.
 
 **El contador de tickets ya no está en el HUD de la oficina.** Se consulta dentro de la PC, que es
 donde se trabaja: en la **barra de abajo del escritorio**, a la derecha ("TICKETS 1/3"), y en la

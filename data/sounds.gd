@@ -245,6 +245,12 @@ const PAN_RIGHT: float = 0.7
 ## un pitido en vez de una frase no dice nada, así que si falta el archivo lo
 ## único que sale es el subtítulo.
 const IMPRESSIVE: String = "es_impresionante"
+
+## Las cartas de la baraja decomisada. Mientras no estén grabadas suena el
+## provisional de la tecla de máquina, que es justo eso: un clac seco de
+## cartón.
+const CARD_PICK: String = "carta_toma"
+const CARD_DROP: String = "carta_pone"
 ## Frases sueltas más de Rochis, todavía **sin grabar**. Las que existan entran
 ## al sorteo del botón de la CAM 4 junto con «es impresionante»; mientras no
 ## esté el archivo, es como si no estuvieran.
@@ -735,6 +741,16 @@ const CATALOG: Dictionary = {
 		"file": "tecla_maquina_3.ogg", "bus": "Efectos",
 		"volume_db": -12.0, "generator": "",
 		"desc": "Tecla de máquina de escribir, toma 3 de 3.",
+	},
+	"carta_toma": {
+		"file": "carta_toma.ogg", "bus": "Efectos",
+		"volume_db": -16.0, "generator": "typewriter_key",
+		"desc": "Una carta que se despega del montón: roce corto de cartón.",
+	},
+	"carta_pone": {
+		"file": "carta_pone.ogg", "bus": "Efectos",
+		"volume_db": -12.0, "generator": "typewriter_key",
+		"desc": "Una carta que cae sobre el montón: palmadita seca de cartón.",
 	},
 	"es_impresionante": {
 		"file": "es_impresionante.ogg", "bus": "Voces",

@@ -190,6 +190,11 @@ func _night_entries() -> Array[Dictionary]:
 			"setup": func(scene: Node) -> void:
 				scene.server_room.open()
 				scene.server_room.patch_panel.debug_grab()},
+		{"name": "16c_baraja_uno", "scene": Screens.NIGHT, "wait": 1.2,
+			"setup": func(scene: Node) -> void:
+				GameManager.debug_give_uno_ticket()
+				GameManager.uno_deck.debug_place(9)
+				scene.uno_desk.open()},
 		{"name": "17_panel_de_pruebas", "scene": Screens.NIGHT, "wait": 0.6,
 			"setup": func(scene: Node) -> void: scene.mod_menu.open()},
 		# Las dos de comprobar: que las siluetas se dibujan de verdad cuando
@@ -215,9 +220,14 @@ func _night_entries() -> Array[Dictionary]:
 			"setup": func(scene: Node) -> void: scene.breaker_panel.open()},
 		{"name": "19_jumpscare", "scene": Screens.NIGHT, "wait": 0.7,
 			"setup": func(scene: Node) -> void: scene.jumpscare.play("barcosa")},
-		{"name": "19b_pantalla_wasted", "scene": Screens.NIGHT, "wait": 2.0,
+		{"name": "19b_pantalla_wasted", "scene": Screens.NIGHT, "wait": 7.0,
 			"setup": func(scene: Node) -> void: scene.wasted_screen.play(
-				JumpscareOverlay.mamador_image(), JumpscareOverlay.mamador_text(), true)},
+				JumpscareOverlay.mamador_image(),
+				JumpscareOverlay.mamador_text(Mamador.GAME_OVER_CAUSE), true)},
+		{"name": "19d_wasted_ludopatia", "scene": Screens.NIGHT, "wait": 7.0,
+			"setup": func(scene: Node) -> void: scene.wasted_screen.play(
+				JumpscareOverlay.mamador_image(),
+				JumpscareOverlay.mamador_text(Mamador.GAMBLING_CAUSE), true)},
 	]
 
 

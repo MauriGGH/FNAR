@@ -55,6 +55,10 @@ var _ai_boosts: Dictionary = {}
 ## El patch panel de la sala de servidores: qué puerto le toca a cada cámara y
 ## cuáles tumbó una descarga de Audel. Es estado de la noche, como las tareas.
 var patch_panel: PatchPanelModel = PatchPanelModel.new()
+## La baraja decomisada de la tarea del escritorio. Vive aquí, y no en la
+## pantalla, porque Mamador pregunta por ella desde el cristal: lo que lo
+## dispara es `uno_deck.is_out`, igual que `is_ai_window_open`.
+var uno_deck: UnoDeckModel = UnoDeckModel.new()
 ## Mientras el guardia está en la sala de servidores no vigila la oficina.
 var is_in_server_room: bool = false
 
@@ -136,6 +140,7 @@ func start_night(night: int = current_night) -> void:
 	_build_tickets()
 	_ai_boosts.clear()
 	patch_panel.reset_for_night()
+	uno_deck.reset()
 	is_in_server_room = false
 	is_ai_window_open = false
 	# El tótem se gana entre noches, así que se trae del guardado.
@@ -383,15 +388,35 @@ func debug_win_night() -> void:
 		_win_night()
 
 
+## El panel de pruebas: mete el ticket de la baraja en la noche aunque no le
+## haya tocado, y lo hace llegar. Si ya estaba, solo lo hace llegar.
+func debug_give_uno_ticket() -> bool:
+	for i: int in _night_tasks.size():
+		if str(_night_tasks[i].get("type", "")) == Tasks.TYPE_UNO_DECK:
+			return _debug_arrive(i)
+	_night_tasks.append(Tasks.UNO_TASK)
+	_tickets.append({"at": night_progress(), "arrived": false})
+	return _debug_arrive(_night_tasks.size() - 1)
+
+
 ## Hace llegar el siguiente ticket que falte, sin esperar su hora.
 func debug_arrive_next_ticket() -> bool:
 	for i: int in _tickets.size():
 		if bool(_tickets[i]["arrived"]):
 			continue
-		_tickets[i]["arrived"] = true
-		ticket_arrived.emit(i)
-		return true
+		return _debug_arrive(i)
 	return false
+
+
+func _debug_arrive(index: int) -> bool:
+	if index < 0 or index >= _tickets.size():
+		return false
+	if bool(_tickets[index]["arrived"]):
+		ticket_arrived.emit(index)
+		return true
+	_tickets[index]["arrived"] = true
+	ticket_arrived.emit(index)
+	return true
 
 
 

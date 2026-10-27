@@ -20,6 +20,8 @@ signal door_toggled(is_closed: bool)
 signal pc_requested()
 signal breaker_requested()
 signal server_room_requested()
+## Picaron la baraja decomisada del escritorio.
+signal uno_deck_requested()
 signal phone_requested()
 ## La linterna se prendió o se apagó de verdad.
 ## Cambió de vista. La escucha el night.gd, que es quien tira el dado de Momo
@@ -59,6 +61,7 @@ const TICKET_ENVELOPE: GDScript = preload("res://scenes/office/ticket_envelope.g
 const SERGIO_ARRIVAL: GDScript = preload("res://scenes/office/sergio_arrival.gd")
 const DOOR_SHUTTER: GDScript = preload("res://scenes/office/door_shutter.gd")
 const OFFICE_LAYERS: GDScript = preload("res://scenes/office/office_layers.gd")
+const UNO_DECK_SPOT: GDScript = preload("res://scenes/office/uno_deck_spot.gd")
 const PHOTO_VIEWER: GDScript = preload("res://scenes/office/photo_viewer.gd")
 const ARMANDO_EYE: GDScript = preload("res://scenes/office/armando_eye.gd")
 
@@ -71,6 +74,9 @@ const URENA_PHOTO_LAYER: String = "urena_foto"
 
 ## El JSON de la vista central no trae el campo clickable, así que va aquí.
 const CENTER_CLICKABLE: Array[String] = ["monitor", "lock_box", "phone", "flashlight"]
+## La zona de la baraja decomisada, que solo se puede picar mientras su ticket
+## esté vivo. Se enciende y se apaga con `set_uno_deck_clickable()`.
+const UNO_DECK_ZONE: String = "uno_deck"
 
 ## La zona del cristal, que es por donde se asoman los del pasillo.
 const GLASS_ZONE: String = "front_glass"
@@ -214,6 +220,7 @@ var _urena_photos: int = 0
 var flashlight_overlay: Control = null
 var phone_light: Control = null
 var ticket_envelope: Control = null
+var uno_deck_spot: Control = null
 var sergio: SergioArrival = null
 ## true mientras haya que ignorar el botón del mouse que viene apretado de
 ## otra pantalla, hasta que se suelte.
@@ -255,6 +262,9 @@ func _ready() -> void:
 	_build_layers()
 	_build_labels()
 	_build_ticket_envelope()
+	_build_uno_deck()
+	# Arranca apagada: la baraja solo se puede picar cuando llega su ticket.
+	set_uno_deck_clickable(false)
 	_build_photo_viewer()
 	_build_momo()
 	_build_totem()
@@ -605,10 +615,15 @@ func _layout_flashlight() -> void:
 	if ticket_envelope != null:
 		ticket_envelope.position = Vector2.ZERO
 		ticket_envelope.size = content_size
+		ticket_envelope.set_target(zone_rect("monitor_screen"))
 	if sergio != null:
 		sergio.position = Vector2.ZERO
 		sergio.size = content_size
-		ticket_envelope.set_target(zone_rect("monitor_screen"))
+	# La baraja ocupa justo su zona de clic, que es donde está medida.
+	if uno_deck_spot != null:
+		var spot: Rect2 = zone_rect(UNO_DECK_ZONE)
+		uno_deck_spot.position = spot.position
+		uno_deck_spot.size = spot.size
 
 
 ## La llegada de Sergio: encima de la cortina y debajo de los profes del
@@ -625,6 +640,27 @@ func _build_ticket_envelope() -> void:
 	ticket_envelope = TICKET_ENVELOPE.new()
 	ticket_envelope.name = "TicketEnvelope"
 	center_content.add_child(ticket_envelope)
+
+
+## La baraja decomisada sobre la mesa. Como el tótem, cuelga del Content de la
+## vista central: parallax, desenfoque del giro y apagón le llegan solos.
+func _build_uno_deck() -> void:
+	uno_deck_spot = UNO_DECK_SPOT.new()
+	uno_deck_spot.name = "UnoDeck"
+	center_content.add_child(uno_deck_spot)
+
+
+## La noche le pasa el modelo de la baraja: la capa se dibuja sola a partir de
+## él, sin que nadie tenga que decirle qué enseñar.
+func bind_uno_deck(model: UnoDeckModel) -> void:
+	if uno_deck_spot != null:
+		uno_deck_spot.bind(model)
+
+
+## La baraja se puede picar solo mientras su ticket esté vivo.
+func set_uno_deck_clickable(can_click: bool) -> void:
+	if _zones.has(UNO_DECK_ZONE):
+		(_zones[UNO_DECK_ZONE] as OfficeZone).set_clickable(can_click)
 
 
 ## Llegó un ticket y la PC está cerrada: el sobre parpadea sobre el monitor.
@@ -840,6 +876,13 @@ func zoom_to_breaker() -> void:
 	_zoom_to_zone("breaker", View.LEFT, "breaker")
 
 
+## Y con la baraja decomisada. El acercamiento no va a la baraja sino al
+## **encuadre del escritorio** (`desk`): la baraja ocupa un pedacito de la foto
+## y acercarse a ella sola sería ampliarla dieciocho veces.
+func zoom_to_uno_deck() -> void:
+	_zoom_to_zone("desk", View.CENTER, "uno")
+
+
 ## Acerca la vista a una zona y, al terminar, avisa qué se pidió abrir.
 func _zoom_to_zone(zone_id: String, view: int, request: String) -> void:
 	if _state != ViewState.PANNING or _current_view != view:
@@ -857,10 +900,13 @@ func _zoom_to_zone(zone_id: String, view: int, request: String) -> void:
 
 
 func _emit_zoom_request() -> void:
-	if _zoom_request == "breaker":
-		breaker_requested.emit()
-	else:
-		pc_requested.emit()
+	match _zoom_request:
+		"breaker":
+			breaker_requested.emit()
+		"uno":
+			uno_deck_requested.emit()
+		_:
+			pc_requested.emit()
 
 
 ## Vuelve la vista a donde estaba antes del acercamiento.
@@ -963,6 +1009,8 @@ func _on_zone_clicked(zone_id: String) -> void:
 			phone_requested.emit()
 		"server_room":
 			server_room_requested.emit()
+		UNO_DECK_ZONE:
+			zoom_to_uno_deck()
 		"breaker":
 			zoom_to_breaker()
 		URENA_PHOTO_ZONE:

@@ -452,6 +452,22 @@ func _build_events_section() -> void:
 		if botarga != null:
 			botarga.debug_leave_chair())
 
+	# La baraja decomisada: el ticket y el final raro de Mamador.
+	_add_label(body, "Baraja de UNO:")
+	_add_button(body, "Dar ticket de UNO", func() -> void:
+		close()
+		GameManager.debug_give_uno_ticket())
+	_add_button(body, "Dejarla a una carta del final", func() -> void:
+		close()
+		GameManager.debug_give_uno_ticket()
+		GameManager.uno_deck.take_out()
+		GameManager.uno_deck.debug_place(UnoDeck.TOTAL - 1))
+	_add_button(body, "Probar LUDOPATÍA", func() -> void:
+		close()
+		GameManager.debug_give_uno_ticket()
+		GameManager.uno_deck.take_out()
+		GameManager.trigger_game_over(Mamador.GAMBLING_CAUSE))
+
 	_add_label(body, "Tickets:")
 	_add_button(body, "Que llegue uno nuevo",
 		func() -> void: GameManager.debug_arrive_next_ticket())
