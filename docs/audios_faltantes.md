@@ -11,7 +11,7 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **27 de 119**. Generado desde el catálogo.
+Faltan **28 de 120**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 
@@ -35,6 +35,7 @@ Faltan **27 de 119**. Generado desde el catálogo.
 | `tono_ocupado` | `tono_ocupado.ogg` | Efectos | Tono de ocupado de teléfono fijo, dos o tres pitidos. |
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | Zumbido de lámparas y ventilador de oficina, en bucle sin corte. |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | Aire de pasillo vacío de noche, en bucle sin corte, muy tenue. |
+| `totem_reventando` | `extras/totem_reventando.ogg` | Efectos | El tronido del tótem al reventar: un golpe seco con cola, un segundo. |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | Estática de televisión vieja, en bucle sin corte, suave. |
 | `arcade_nivel1` | `arcade_nivel1.ogg` | Música | Chiptune de 8 bits de la maquinita, nivel 1: alegre, de posada. |
 | `arcade_nivel2` | `arcade_nivel2.ogg` | Música | La misma idea para el nivel 2, pero ya desafinada: algo va mal. |

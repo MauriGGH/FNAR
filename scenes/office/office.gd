@@ -234,6 +234,9 @@ var _content_nodes: Array[Control] = []
 var _right_normal_texture: Texture2D = null
 var _momo_layer: TextureRect = null
 var _totem_layer: TextureRect = null
+## Dónde va Sergio en el contenido de la vista central cuando no hay rescate.
+## Durante el rescate sube al final, y de aquí sale el sitio al que vuelve.
+var _sergio_index: int = 0
 
 
 func _ready() -> void:
@@ -621,6 +624,27 @@ func _build_sergio() -> void:
 	sergio = SERGIO_ARRIVAL.new()
 	sergio.name = "SergioArrival"
 	center_content.add_child(sergio)
+	_sergio_index = sergio.get_index()
+
+
+## Mientras corre el rescate, la oficina se queda sin nadie: **se esconden
+## todos los recortes de profes, las siluetas y el ojo de Armando**. Si uno
+## estaba pegado al cristal o asomado al marco, se dibujaba delante del haz y
+## de Sergio, que es justo lo que no puede pasar.
+##
+## Y Sergio sube al final del contenido, por encima de la oscuridad y del cono
+## de la linterna: su haz es una luz, no algo a lo que haya que alumbrar. Al
+## acabar, todo vuelve a donde estaba y el night.gd repinta quién se ve.
+func set_rescue_active(active: bool) -> void:
+	for layer: Control in _layers:
+		layer.visible = not active
+	if _silhouettes != null:
+		_silhouettes.visible = not active
+	if armando_eye != null:
+		armando_eye.visible = not active
+	if sergio != null:
+		center_content.move_child(sergio,
+			center_content.get_child_count() - 1 if active else _sergio_index)
 
 
 ## El sobrecito del ticket, encima de la pantalla del monitor. Va en el

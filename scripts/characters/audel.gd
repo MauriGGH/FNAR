@@ -46,6 +46,8 @@ signal discharge_started(cameras: PackedInt32Array)
 
 var _state: State = State.WALKING
 var _cortaso_elapsed: float = 0.0
+## Lo que le falta para poder volver a bajar del techo después de un cortaso.
+var _cooldown_left: float = 0.0
 ## Lo que le queda al chispazo que se ve en la CAM 6.
 var _discharge_left: float = 0.0
 
@@ -78,6 +80,7 @@ func start() -> void:
 	super()
 	_state = State.WALKING
 	_cortaso_elapsed = 0.0
+	_cooldown_left = 0.0
 
 
 func _process(delta: float) -> void:
@@ -85,6 +88,8 @@ func _process(delta: float) -> void:
 		return
 	if _discharge_left > 0.0:
 		_discharge_left = maxf(_discharge_left - delta, 0.0)
+	if _cooldown_left > 0.0:
+		_cooldown_left = maxf(_cooldown_left - delta, 0.0)
 	match _state:
 		State.WALKING:
 			super(delta)  # El dado de la IA de la clase base
@@ -119,15 +124,31 @@ func cause_discharge() -> void:
 
 
 ## Le ganó el dado: baja un paso. Al llegar a la oficina hace el cortaso.
+##
+## Salir del techo es lo único que no basta con ganarlo: hace falta que haya
+## pasado el descanso del último cortaso y, además, que le toque en el segundo
+## dado (`NightConfig.CORTASO_DESCENT_CHANCE`). Sin eso, en la noche 6 bajaba
+## casi cada vez que le tocaba y los cortasos eran imposibles de aguantar. Lo
+## que pierde aquí es la oportunidad: se queda donde está.
 func advance() -> void:
 	var next_step: int = _route_index + 1
 	if next_step > STEP_OFICINA:
+		return
+	if next_step == STEP_ESCALERA and not _can_leave_roof():
 		return
 	move_to_step(next_step)
 	if next_step == STEP_ESCALERA:
 		made_noise.emit(LADDER_NOTICE, NOTICE_TIME)
 	elif next_step == STEP_OFICINA:
 		_do_cortaso()
+
+
+## ¿Puede bajarse del techo ahora? El descanso del último cortaso primero, y
+## luego su propio dado.
+func _can_leave_roof() -> bool:
+	if _cooldown_left > 0.0:
+		return false
+	return randi_range(1, 100) <= NightConfig.CORTASO_DESCENT_CHANCE
 
 
 ## El breaker lo manda de vuelta al techo, pero solo si va en la escalera.
@@ -146,6 +167,8 @@ func debug_text() -> String:
 	if _state == State.CORTASO:
 		return "cortaso (%.1f s)" % maxf(CORTASO_TIME - _cortaso_elapsed, 0.0)
 	var text: String = "en %s" % Rooms.display_name(current_room)
+	if _cooldown_left > 0.0:
+		text += ", descansando (%.0f s)" % _cooldown_left
 	if PowerManager.is_flashlight_disabled:
 		text += ", linterna muerta"
 	var down: Array = GameManager.patch_panel.disconnected
@@ -168,6 +191,7 @@ func debug_force_to_ladder() -> void:
 func _do_cortaso() -> void:
 	_state = State.CORTASO
 	_cortaso_elapsed = 0.0
+	_cooldown_left = NightConfig.cortaso_cooldown()
 	made_noise.emit(CORTASO_NOTICE, NOTICE_TIME)
 	AudioManager.play(Sounds.CORTASO)
 	PowerManager.apply_cortaso()

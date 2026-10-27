@@ -2,9 +2,15 @@ class_name JumpscareOverlay
 extends Control
 
 ## El salto de cada muerte. Siempre igual: la variante _a un instante, corte
-## a la imagen final con zoom, temblor fuerte, un destello blanco de un cuadro
-## y un grito provisional; después estática y, al acabar, la pantalla de game
-## over con su causa.
+## a la imagen final, que se queda MAIN_TIME con su zoom y su temblor, un
+## destello blanco de un cuadro y el grito; después estática y, al acabar, la
+## pantalla de game over con su causa.
+##
+## **El grito no se corta nunca.** Entra en la secuencia `susto` y se le deja
+## acabar: sigue sonando por encima de la estática y de la pantalla de game
+## over (la risa de Ureña dura más que todo el salto). La estática que se oye
+## en el game over espera su turno en la misma secuencia, y lo único que lo
+## calla es salir de ahí con "Repetir la noche" o "Volver al menú".
 ##
 ## Mamador es la excepción: no salta. Su pantalla enseña a los militares con un
 ## zoom lento, luces rojo y azul parpadeando y "DELITO FEDERAL" al centro.
@@ -19,7 +25,10 @@ const IMAGE_PATH: String = "res://assets/art/jumpscares/jumpscare_%s"
 
 # La animación de muerte.
 const FIRST_FRAME_TIME: float = 0.12
-const ZOOM_TIME: float = 0.5
+## Lo que se queda la imagen final antes de la estática. Medio segundo no daba
+## tiempo ni a ver de quién era la cara: ahora el zoom y el temblor corren a lo
+## largo de todo este rato.
+const MAIN_TIME: float = 1.5
 const ZOOM_FROM: float = 1.0
 const ZOOM_TO: float = 1.15
 const SHAKE_PIXELS: float = 26.0
@@ -169,13 +178,14 @@ func _process(delta: float) -> void:
 	if _flash_left > 0:
 		_flash_left -= 1
 	if _phase == Phase.MAIN:
-		_zoom = lerpf(ZOOM_FROM, ZOOM_TO, clampf(1.0 - _left / ZOOM_TIME, 0.0, 1.0))
+		_zoom = lerpf(ZOOM_FROM, ZOOM_TO,
+			clampf(1.0 - _left / MAIN_TIME, 0.0, 1.0))
 	queue_redraw()
 	if _left > 0.0:
 		return
 	match _phase:
 		Phase.FIRST:
-			_set_phase(Phase.MAIN, ZOOM_TIME)
+			_set_phase(Phase.MAIN, MAIN_TIME)
 		Phase.MAIN:
 			_set_phase(Phase.STATIC, STATIC_TIME)
 		Phase.SCARE_BLACK:

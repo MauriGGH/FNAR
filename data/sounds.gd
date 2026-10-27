@@ -203,12 +203,16 @@ const LIGHTNING: String = "descarga_pararrayos"
 ## El cortaso: el Mago entrando a la oficina a dejarla sin linterna.
 const CORTASO: String = "cortaso"
 
-## El rescate de Sergio es **una sola pista de 13.3 s** que lleva dentro todo:
-## el suspenso del congelado, el aire del haz y el aura del tótem. La escena se
-## cuelga de sus tiempos (ver `Sergio.RESCUE_*`), así que no hay nada que
-## encimar. Antes eran tres sonidos sueltos y se pisaban.
+## El rescate de Sergio es **una sola pista de 17.5 s** —la Rosa de Guadalupe,
+## sin nada encima—. La escena se cuelga de sus tiempos (ver `Sergio.RESCUE_*`),
+## así que no hay nada que encimar. Antes eran tres sonidos sueltos y se pisaban.
 const SERGIO_RESCUE: String = "sergio_rescate"
-## El aura sigue en pie, pero solo para el final del minijuego de la maquinita.
+## El tronido del tótem, el único golpe que va **encima** de la pista: suena
+## cuando el tótem se activa y suelta sus partículas. Va por su cuenta, fuera
+## de la secuencia del rescate, justo porque tiene que oírse a la vez.
+const TOTEM_BURST: String = "totem_reventando"
+## El aura ya no entra en el rescate: se quedó solo para el final de la
+## maquinita.
 const AURA: String = "aura"
 ## Y la canción de Momo, con su grito al final.
 const MOMO_SONG: String = "momo_cancion"
@@ -665,7 +669,12 @@ const CATALOG: Dictionary = {
 	"sergio_rescate": {
 		"file": "extras/sergio_rescate.ogg", "bus": "Música",
 		"volume_db": -2.0, "generator": "rescue",
-		"desc": "El rescate de Sergio completo, 13.3 s: suspenso, el aire del haz a los 3.5 s y el aura del tótem a los 8.5 s.",
+		"desc": "La Rosa de Guadalupe, 17.5 s: el haz entra a los 6 s y el tótem a los 14 s. Sin aura.",
+	},
+	"totem_reventando": {
+		"file": "extras/totem_reventando.ogg", "bus": "Efectos",
+		"volume_db": -2.0, "generator": "low_hit",
+		"desc": "El tronido del tótem al reventar: un golpe seco con cola, un segundo.",
 	},
 	"aura": {
 		"file": "extras/aura.ogg", "bus": "Música",

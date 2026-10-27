@@ -15,10 +15,14 @@ extends Control
 ## se lo pide y espera.
 ##
 ## **Todo va pegado a una sola pista**, `sergio_rescate`: el congelado hasta los
-## 3.5 s, el haz ahí, el tótem a los 8.5 s y, cuando el audio se acaba, la noche
+## 6 s, el haz ahí, el tótem a los 14 s y, cuando el audio se acaba, la noche
 ## sigue. Antes eran tres sonidos sueltos que acabaron encimándose; ahora no hay
 ## nada que sincronizar a mano más que estos tres números, que están en
 ## `data/sergio.gd`.
+##
+## Lo único que suena **encima** de la pista es el tronido del tótem, en el
+## mismo instante en que se activa y suelta sus partículas: va fuera de la
+## secuencia del rescate justo para que se oigan los dos a la vez.
 
 ## Terminó todo: la noche puede seguir.
 signal finished()
@@ -108,8 +112,8 @@ func _scare_texture(jumpscare_id: String) -> Texture2D:
 	return first if first != null else GameAssets.load_texture(JUMPSCARE_PATH % jumpscare_id)
 
 
-## Entra el tótem. Lo pide el reloj de la pista, a los 8.5 s: para entonces
-## Sergio ya bajó (el haz entra a los 3.5 y la bajada dura 1.8).
+## Entra el tótem. Lo pide el reloj de la pista, a los 14 s: para entonces
+## Sergio ya bajó (el haz entra a los 6 y la bajada dura 1.8).
 func start_totem() -> void:
 	if not is_playing or _phase == Phase.TOTEM:
 		return
@@ -119,6 +123,10 @@ func start_totem() -> void:
 	# El susto deja de verse: lo que importa ahora es el tótem.
 	_frozen.visible = false
 	_spawn_particles()
+	# El tronido va con las partículas y **encima** de la pista: con `play()` a
+	# secas, no en la secuencia del rescate, que lo dejaría esperando el final
+	# de la música.
+	AudioManager.play(Sounds.TOTEM_BURST)
 	queue_redraw()
 
 

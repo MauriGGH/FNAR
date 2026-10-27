@@ -859,6 +859,9 @@ func _on_cortaso_started() -> void:
 func _on_sergio_rescued(cause: String) -> void:
 	_rescued_from = cause
 	GameManager.set_clock_held(true)
+	# La oficina se queda sin nadie: el haz, Sergio y el tótem van por encima
+	# de todo, y un profe en el cristal o en el marco se dibujaba delante.
+	office.set_rescue_active(true)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_process(false)
 	var jumpscare_id: String = ""
@@ -884,6 +887,7 @@ func _on_totem_finished() -> void:
 ## Se acabó la pista del rescate: se reparte lo que deja Sergio —el profe a su
 ## sitio, energía de vuelta— y la noche sigue donde estaba.
 func _on_sergio_left() -> void:
+	office.set_rescue_active(false)
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_process(true)
 		if animatronic.game_over_cause() == _rescued_from:

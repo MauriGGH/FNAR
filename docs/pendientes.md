@@ -94,6 +94,7 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `rochis_silla` | `lejos/rochis_silla.ogg` | scenes/night/night.gd | **archivo real** |
 | `se_aleja` | `se_aleja.ogg` | scripts/characters/glass_stalker.gd | **archivo real** |
 | `sergio_rescate` | `extras/sergio_rescate.ogg` | scenes/night/sergio_rescue.gd | **archivo real** |
+| `totem_reventando` | `extras/totem_reventando.ogg` | scenes/night/sergio_rescue.gd | **falta**, suena el provisional del golpe grave |
 | `sonido_perturbador` | `extras/sonido_perturbador.ogg` | scenes/camera_system/camera_system.gd | **archivo real** |
 | `telefono_colgar` | `telefono_colgar.ogg` | scenes/phone/call_subtitles.gd | **archivo real** |
 | `telefono_timbre` | `telefono_timbre.ogg` | scenes/night/night.gd | **archivo real** |
@@ -282,7 +283,7 @@ si algún día quieres.
 | dónde | qué dibuja | ¿valdría la pena arte? |
 | --- | --- | --- |
 | `scenes/minigames/arcade_level.gd` + los tres niveles | corazones de vida, tablas, escaleras, huecos, charcos, piñatas, ventiladores, macetas, sillas, el círculo de oscuridad | **sí**: es lo único del minijuego que no es pixel art tuyo |
-| `scenes/server_room/patch_panel_view.gd` | el rack, los puertos, los cables y la hoja de etiquetado | **sí**, sobre todo el conector (`rj45.png` ya está referenciado y falta) |
+| `scenes/server_room/patch_panel_view.gd` | el rack, los puertos, los cables, los conectores y la hoja de etiquetado | **sí**, el rack y la hoja; los conectores ya se dibujan por código a propósito |
 | `scenes/tasks/network_sim/network_canvas.gd` y `plan_diagram.gd` | los equipos, los cables y el diagrama de topología | quizá: con íconos de equipo se vería mejor |
 | `scenes/breaker/breaker_panel.gd` | la placa, las pastillas y la palanca | quizá |
 | `scenes/pc_screen/desktop_icon.gd`, `pc_window.gd`, `monitor_bezel.gd` | los íconos del escritorio, las ventanas y el bisel | quizá los íconos; el bisel y las ventanas funcionan bien por código |
@@ -353,8 +354,10 @@ Rochis que se grabarán después), `urena_saludo`, y las cinco llamadas de las n
 - Apartados `rochis_extra_1..3`, sin grabar todavía.
 - Entraron `carta_toma` y `carta_pone`, de la baraja de UNO. Los dos suenan con el provisional de
   la tecla de máquina, que es justo lo que hace una carta: un clac seco de cartón.
-- Ya están las dos capas de la vista derecha (`derecha_rochis`, `derecha_come_trabas`) y el
-  conector `office/rj45.png`, así que ninguna imagen queda pendiente.
+- Ya están las dos capas de la vista derecha (`derecha_rochis`, `derecha_come_trabas`), así que
+  ninguna imagen queda pendiente. **`office/rj45.png` ya no se usa**: los conectores del patch
+  panel, enchufados y sueltos, se dibujan por código, porque la imagen se veía como una
+  calcomanía. El archivo se puede borrar.
 
 **Lo más barato de arreglar, por orden:**
 

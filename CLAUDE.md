@@ -153,7 +153,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (117 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
+**El catálogo** (120 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
 inventario completo de pendientes y provisionales en `docs/pendientes.md`). Casi todos tienen
 provisional por código; **las voces no**, por lo de arriba.
 
@@ -199,7 +199,8 @@ provisional por código; **las voces no**, por lo de arriba.
 | `llamada_juguete` | `llamadas/llamada_juguete.ogg` | Voces | 0 | no | la otra llamada rara, desde la noche 2 |
 | `descarga_pararrayos` | `descarga_pararrayos.ogg` | Efectos | −3 | no | la descarga que tumba los patch cords |
 | `cortaso` | `cortaso.ogg` | Efectos | −2 | no | el Mago entrando a la oficina |
-| `sergio_rescate` | `extras/sergio_rescate.ogg` | Música | −2 | no | el rescate de Sergio entero, 13.3 s |
+| `sergio_rescate` | `extras/sergio_rescate.ogg` | Música | −2 | no | el rescate de Sergio entero, 17.5 s |
+| `totem_reventando` | `extras/totem_reventando.ogg` | Efectos | −2 | no | el tronido del tótem, **encima** de la pista del rescate |
 | `aura` | `extras/aura.ogg` | Música | −6 | no | el tótem al pasar un nivel de la maquinita |
 | `momo_cancion` | `extras/momo_cancion.ogg` | Música | 0 | no | el susto de Momo, 15.3 s, con su grito al final |
 | `despertador` | `despertador.ogg` | Efectos | −8 | no | las campanadas de las 6 AM; **ya traen el grito de los niños al final** |
@@ -629,6 +630,15 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   «es impresionante», y en cuanto existan `voces/rochis_extra_1..3.ogg` entran al sorteo con ella.
   Las que no tengan archivo no entran, así que no hay que tocar código para añadirlas. Reproducirlo cuando ya está sentado lo molesta y acelera su avance. Si llega a estar de pie, entra a la oficina, dice el nombre del jugador y es game over.
 - **Mago Eléctrico (rol Balloon Boy; antes Audel Electrix):** en pantalla y diálogos se llama "Mago Eléctrico"; en código, ids, estados y archivos se sigue usando `audel` (por ejemplo `cam06_audel-acecho`, `centro_audel.png`) para no romper nada. vive en el techo (CAM 6), baja por la escalera (CAM 5). Si se baja el breaker mientras está en la escalera, regresa al techo. Si entra, hace un "cortaso": la linterna deja de funcionar y se pierde parte de la energía. No mata directamente.
+  - **Cuántos cortasos caben en una noche.** Con el dado pelón bajaba del techo en cuanto le
+    tocaba, y eso eran **unos 5 cortasos en la noche 4, 10 en la 5 y 16 en la 6**: a 15 % de energía
+    cada uno, no había manera. Ahora se frena por dos lados, los dos en `NightConfig`: aunque le
+    gane el dado, solo baja a la escalera el **50 %** de las veces (`CORTASO_DESCENT_CHANCE`), y
+    entre un cortaso y el siguiente tienen que pasar **2 horas de juego**
+    (`CORTASO_COOLDOWN_HOURS`), que por sí solas ya los topan en tres por noche. Quedan en **unos
+    2 en la noche 4, 2 o 3 en la 5 y 3 en la 6**. Lo que pierde cuando no le toca es la
+    oportunidad: se queda donde está. Sigue siendo una amenaza —lo caro es el 15 % y la linterna
+    muerta—, pero da tiempo de verlo en la escalera y bajarle el breaker.
   - **Susto del cortaso (sin muerte):** cuando el Mago entra a la oficina, la pantalla se va a negro, sale `jumpscare_audel_susto` 0.5 s con un chispazo y una risa, y después la linterna queda inservible. Con la linterna muerta **el pasillo se queda a oscuras**: no hay cono, no se ve quién está en el cristal y no se le pueden contar destellos a nadie. Eso es parte del castigo.
   - **Muerte por apagón:** cuando la energía llega a 0 % todo se apaga y empieza una
     secuencia de cuatro tiempos, en `blackout_death.gd`. Justo al apagarse todo, antes de la
@@ -660,12 +670,12 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     su puerto** —el centro de su borde de abajo, metido un 30 % de su alto— y no en el punto del
     que sale el cable, que está a media altura: con eso los del switch quedaban montados sobre la
     fila de LEDs en lugar de dentro de su puerto.
-    **La imagen `assets/art/office/rj45.png` es solo para el conector suelto**, el que cuelga y se
-    arrastra, que sí se ve entero: va girado hacia donde va su cable, a 1.2 veces el ancho del
-    puerto y con el color multiplicado por 0.5, porque la foto viene de día y el rack está casi a
-    oscuras. El PNG trae el conector **y su cable**, pero el cable lo dibuja el código, así que solo
-    se usa el trozo del conector, de la punta a donde empieza la funda azul: ese recorte se **mide**
-    con `tools/measure_office_layers.py` (`PLUG_BODY` en `patch_panel_view.gd`). Mientras está en la sala, no vigila la oficina.
+    **Ningún conector es una imagen.** Los sueltos —el que cuelga de su cable y el que llevas en la
+    mano— llevan **la misma forma dibujada** que los enchufados, girada hacia donde va su cable y
+    solo un poco más grande, porque se ven de cerca: 1.15 veces el ancho del puerto el que cuelga y
+    1.4 el de la mano (`LOOSE_PLUG_FIT` y `HELD_PLUG_FIT`). Con la imagen del RJ45 se veían enormes
+    y de frente, como una calcomanía; `assets/art/office/rj45.png` ya no se usa en ningún sitio.
+    Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
 - **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
 
@@ -750,11 +760,17 @@ si entra, no hay game over y la noche sigue. Vale para cualquier profe **menos M
 final es la pantalla de WASTED y no se interrumpe. Mientras corre, `is_rescuing` evita que otro
 profe mate, el reloj se detiene y los profes se quedan quietos.
 
-**Todo el rescate va pegado a una sola pista**, `extras/sergio_rescate.ogg` (18.8 s), que lleva
-dentro el suspenso, el aire del haz y el aura del tótem. La escena se cuelga de sus tiempos
+**Todo el rescate va pegado a una sola pista**, `extras/sergio_rescate.ogg` (17.5 s), que es la
+Rosa de Guadalupe y nada más: **ya no trae el aura del tótem**. La escena se cuelga de sus tiempos
 (`Sergio.RESCUE_BEAM_AT` 6 s y `RESCUE_TOTEM_AT` 14 s) y **acaba cuando acaba el audio**: ahí
 sigue la noche. Antes eran tres sonidos sueltos (`rosa_suspenso`, `rosa_aire` y `aura`) que se
 encimaban entre ellos; esos ids ya no se usan aquí y `aura` se quedó solo para la maquinita.
+
+**La oficina se queda sin nadie mientras corre.** Al congelarse el susto se esconden **todas las
+capas de profes, las siluetas y el ojo de Armando** (`office.set_rescue_active()`), y Sergio sube
+al final del contenido de la vista central, por encima de la oscuridad y del cono de la linterna:
+su haz es una luz, no algo a lo que haya que alumbrar. Sin eso, uno pegado al cristal o asomado al
+marco se dibujaba **delante** del haz y de Sergio. Al acabar todo vuelve a su sitio.
 
 1. **El susto congelado** (`scenes/night/sergio_rescue.gd`): el **primer cuadro** del jumpscare que
    iba a matarte —su variante `_a`— quieto y en blanco y negro, hasta el segundo **6**.
@@ -764,7 +780,10 @@ encimaban entre ellos; esos ids ya no se usan aquí y `aura` se quedó solo para
    encima del borde y **desciende flotando 1.5 s** con un vaivén que se va calmando, hasta el sitio
    exacto donde está Sergio en la capa; al llegar, **se funde en 0.3 s** con `centro_sergio.png`,
    que se queda mientras corre el tótem.
-3. **El tótem**, a los **14 s**, como el de Minecraft y con filtro nearest: aparece chiquito al centro, **crece con
+3. **El tótem**, a los **14 s**, como el de Minecraft y con filtro nearest. **En el instante en que
+   se activa suena `totem_reventando`**, su tronido, con `play()` a secas y no en la secuencia del
+   rescate, que lo dejaría esperando el final de la música: es lo único que va encima de la pista.
+   Aparece chiquito al centro, **crece con
    un rebote** hasta el **45 % del alto** (0.35 s), **tiembla 1.2 s**, y **gira sobre su eje
    vertical** (la escala X de 1 a −1 y de vuelta, **dos veces**) mientras se encoge y sale volando
    hacia arriba (0.9 s). Todo el rato suelta **70 partículas cuadradas** verdes y amarillas que
@@ -947,7 +966,16 @@ Se prueba desde F1 → Eventos → **"Probar Momo"**.
 
 Las imágenes están en `assets/art/jumpscares/`: `jumpscare_<id>.png` y `jumpscare_<id>_a.png` para barcosa, urena, rochis, juan, armando, cometrabas y audel, más `audel_susto` y `mamador_militares`.
 
-La animación de cada muerte es la misma: la variante `_a` durante 0.12 s, corte a la imagen final con un zoom de 1.0 a 1.15 en 0.5 s, temblor fuerte, un destello blanco de un cuadro y un grito; después estática y la pantalla de game over con su causa.
+La animación de cada muerte es la misma: la variante `_a` durante 0.12 s y corte a la imagen final,
+que **se queda 1.5 s** (`MAIN_TIME`) con su zoom de 1.0 a 1.15 y su temblor, un destello blanco de
+un cuadro y el grito; después 0.9 s de estática y la pantalla de game over con su causa. Medio
+segundo no daba tiempo ni a ver de quién era la cara.
+
+**El grito no se corta.** Entra en la secuencia `susto` y se le deja acabar: sigue sonando por
+encima de la estática y de la pantalla de game over hasta que termina —la risa de Ureña dura 4.5 s,
+más que todo el salto—. La estática que se oye en el game over espera su turno en la misma
+secuencia, y lo único que lo calla es salir de ahí con "Repetir la noche" o "Volver al menú"
+(`game_over.gd`, en su `_exit_tree`).
 
 **El grito va siempre y a 0 dB**, encima de la estática: nunca se oye solo el siseo. Lo elige
 `Sounds.scream_for(slug)`: el grito propio del profe (`grito_<id>`) si está grabado y, si no,

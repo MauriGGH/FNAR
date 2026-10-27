@@ -19,7 +19,6 @@ const PORT_COUNT: int = 12
 
 # Sin extensión: valen png, jpg o jpeg.
 const BACKGROUND_PATH: String = "res://assets/art/office/sala_servidores"
-const PLUG_TEXTURE_PATH: String = "res://assets/art/office/rj45"
 const ZONES_PATH: String = "res://data/sala_servidores_zonas.json"
 
 # --- Geometría ---------------------------------------------------------------
@@ -70,34 +69,20 @@ const SWAY_SPEED: float = 1.3
 ## gordo y con los colores lavados, y parecía un tubo blanco.
 const CORD_WIDTH: float = 4.5
 const CORD_SEGMENTS: int = 20
-## La caja con la que se agarra un conector suelto. No es lo que se dibuja: el
-## conector es la imagen, mucho más larga; esto es solo el bocado del mouse
-## alrededor de su punta.
+## La caja con la que se agarra un conector suelto: el bocado del mouse
+## alrededor de su punta, no lo que se dibuja.
 const PLUG_SIZE: Vector2 = Vector2(30.0, 23.0)
 
-## **La imagen del conector es solo para el que traes en la mano.** Un RJ45 de
-## frente, con sus contactos dorados, puesto en los 24 puertos se veía como una
-## calcomanía pegada encima del rack: de un puerto enchufado no se ve el
-## conector, se ve **lo que le sobresale por detrás**, y eso se dibuja por
-## código aquí abajo.
+# --- Los conectores, dibujados por código ------------------------------------
+## **Ningún conector es una imagen.** `assets/art/office/rj45.png` era un RJ45
+## de frente, con sus contactos dorados y la luz del día: enchufado parecía una
+## calcomanía pegada encima del rack, y colgando de su cable se veía enorme.
+## Ya no se usa en ningún sitio.
 ##
-## `assets/art/office/rj45.png` trae el conector y su cable, con la punta hacia
-## arriba. El cable lo dibuja el código, así que solo se usa el trozo del
-## conector: de la punta hasta donde empieza la funda azul. Ese recorte está
-## **medido** con `tools/measure_office_layers.py` (los píxeles opacos y la
-## primera fila en la que manda el azul), no adivinado.
-const PLUG_IMAGE_SIZE: Vector2 = Vector2(160.0, 420.0)
-const PLUG_BODY: Rect2 = Rect2(30.0, 40.0, 101.0, 159.0)
-## Lo ancho que se dibuja el de la mano, en fracción del ancho del puerto: un
-## poco más grande que el puerto, que es como se ve algo que tienes cerca.
-const PLUG_PORT_FIT: float = 1.2
-## Y lo oscuro que va, para la luz que hay en el rack. La imagen viene de día.
-const PLUG_TINT: Color = Color(0.5, 0.5, 0.5)
-
-# --- El conector enchufado, dibujado --------------------------------------
-## Lo que sobresale de un puerto: el culote del conector y, detrás, la funda
-## del cable, un poco más ancha. Nada de contactos dorados: esos miran hacia
-## adentro del puerto y no se ven.
+## Lo que se dibuja es el culote del conector y, detrás, la funda del cable, un
+## poco más ancha. Nada de contactos dorados: esos miran hacia adentro del
+## puerto y no se ven. El suelto y el de la mano llevan **la misma forma**, solo
+## un poco más grande (LOOSE_PLUG_FIT), porque los tienes más cerca.
 ##
 ## Los anchos van en fracción del ancho del puerto. El de la funda no pasa de
 ## 0.76 a propósito: los puertos del switch están a 0.0268 de paso con 0.0263
@@ -117,6 +102,10 @@ const SEATED_INSET: float = 0.3
 ## conectores parecían papelitos de colores pegados en la lámina.
 const SEATED_BODY_DARKEN: float = 0.68
 const SEATED_BOOT_DARKEN: float = 0.56
+## Lo más grande que se dibuja el suelto y el de la mano, en fracción del
+## ancho del puerto. El de la mano va un poco por delante del que solo cuelga.
+const LOOSE_PLUG_FIT: float = 1.15
+const HELD_PLUG_FIT: float = 1.4
 
 const CLICK_TIME: float = 0.3
 const SPARK_TIME: float = 0.45
@@ -152,7 +141,6 @@ const HIGHLIGHT: Color = Color(1.0, 1.0, 1.0, 0.32)
 
 var _model: PatchPanelModel = null
 var _has_background: bool = false
-var _plug_texture: Texture2D = null
 var _pp_rects: Array[Rect2] = []
 var _gi_rects: Array[Rect2] = []
 var _pp_centers: PackedVector2Array = PackedVector2Array()
@@ -173,7 +161,6 @@ func _ready() -> void:
 	_model = GameManager.patch_panel
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_has_background = GameAssets.has_texture(BACKGROUND_PATH)
-	_plug_texture = GameAssets.load_texture(PLUG_TEXTURE_PATH)
 	_load_zones()
 	resized.connect(_load_zones)
 
@@ -568,14 +555,15 @@ func _draw_cords() -> void:
 			"highlight": false, "aim": Vector2.UP, "width": pp_width})
 		plugs.append({"at": end_point, "color": color,
 			"highlight": camera == _hover_camera or camera == _drag_camera, "label": camera,
+			"held": camera == _drag_camera,
 			"aim": _tip_aim(loose, false), "width": pp_width})
 
 	for plug: Dictionary in plugs:
 		# El extremo suelto es el que se agarra, así que es el único que se
 		# ve entero; los demás están metidos en su puerto.
 		if plug.has("label"):
-			_draw_held_plug(plug["at"], plug["color"], bool(plug["highlight"]),
-				plug["aim"] as Vector2, float(plug["width"]))
+			_draw_loose_plug(plug["at"], plug["color"], bool(plug["highlight"]),
+				plug["aim"] as Vector2, float(plug["width"]), bool(plug["held"]))
 			_draw_cord_label(plug["at"], int(plug["label"]))
 		else:
 			_draw_seated_plug(plug["at"], plug["color"],
@@ -629,17 +617,33 @@ func _cord_order() -> Array[Dictionary]:
 
 
 ## Un conector enchufado: lo único que se ve de él es lo que le sobresale al
-## puerto. Se dibuja por código, en el color del cable y oscurecido, con la
-## funda detrás un poco más ancha.
+## puerto, derecho y del ancho de su puerto.
 func _draw_seated_plug(center: Vector2, color: Color, aim: Vector2,
 		port_width: float) -> void:
-	# El origen queda en la boca del puerto y el conector crece hacia atrás,
-	# o sea en contra de `aim`, que es a donde apunta la punta.
+	_draw_plug_shape(center, color, aim, port_width)
+
+
+## El suelto y el de la mano: la misma forma, solo un poco más grande, porque
+## se ven de cerca. Van girados hacia donde va su cable, que es lo único que
+## los diferencia de un enchufado.
+func _draw_loose_plug(center: Vector2, color: Color, highlighted: bool,
+		aim: Vector2, port_width: float, held: bool) -> void:
+	_draw_plug_shape(center, color, aim,
+		port_width * (HELD_PLUG_FIT if held else LOOSE_PLUG_FIT))
+	if highlighted:
+		DrawKit.soft_outline(self, _plug_rect(center).grow(3.0), HIGHLIGHT)
+
+
+## La forma de un conector, dibujada por código: el culote en el color del
+## cable y oscurecido, y detrás la funda, un poco más ancha. El origen queda en
+## la punta y crece hacia atrás, o sea en contra de `aim`.
+func _draw_plug_shape(center: Vector2, color: Color, aim: Vector2,
+		width: float) -> void:
 	canvas_transform_to(center, aim)
-	var body: float = port_width * SEATED_BODY_WIDTH
-	var boot: float = port_width * SEATED_BOOT_WIDTH
-	var body_long: float = port_width * SEATED_BODY_LENGTH
-	var boot_long: float = port_width * SEATED_BOOT_LENGTH
+	var body: float = width * SEATED_BODY_WIDTH
+	var boot: float = width * SEATED_BOOT_WIDTH
+	var body_long: float = width * SEATED_BODY_LENGTH
+	var boot_long: float = width * SEATED_BOOT_LENGTH
 	# La funda primero, que va más atrás y queda debajo.
 	DrawKit.gradient_rect(self, Rect2(Vector2(-boot * 0.5, body_long),
 		Vector2(boot, boot_long)),
@@ -649,37 +653,10 @@ func _draw_seated_plug(center: Vector2, color: Color, aim: Vector2,
 		Vector2(body, body_long)),
 		color.darkened(SEATED_BODY_DARKEN - 0.12),
 		color.darkened(SEATED_BODY_DARKEN + 0.12))
-	# Un filo claro en el canto de arriba: es lo que lo despega de la lámina.
+	# Un filo claro en el canto de la punta: es lo que lo despega del fondo.
 	draw_rect(Rect2(Vector2(-body * 0.5, 0.0), Vector2(body, 1.0)),
 		color.darkened(0.3))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-## El de la mano (o colgando de su cable): ese sí es la imagen, porque se ve
-## entero. Va girado hacia donde va el cable, un poco más grande que el puerto
-## y oscurecido para la luz del rack.
-func _draw_held_plug(center: Vector2, color: Color, highlighted: bool,
-		aim: Vector2, port_width: float) -> void:
-	if _plug_texture == null:
-		var rect: Rect2 = _plug_rect(center)
-		DrawKit.rect_shadow(self, rect, Vector2(2.0, 4.0))
-		DrawKit.gradient_rect(self, rect, color.lightened(0.18), color.darkened(0.4))
-		DrawKit.soft_outline(self, rect, color.lightened(0.3))
-		DrawKit.gradient_rect(self, Rect2(rect.position + Vector2(5.0, -5.0),
-			Vector2(rect.size.x - 10.0, 6.0)), color.lightened(0.25), color)
-		if highlighted:
-			DrawKit.soft_outline(self, rect.grow(3.0), HIGHLIGHT)
-		return
-	var scale: float = port_width * PLUG_PORT_FIT / PLUG_BODY.size.x
-	draw_set_transform(center, aim.angle() + PI * 0.5, Vector2(scale, scale))
-	# La punta queda en el origen y el conector se va hacia atrás, siguiendo
-	# el cable, que sale por donde el recorte acaba.
-	draw_texture_rect_region(_plug_texture,
-		Rect2(Vector2(-PLUG_BODY.size.x * 0.5, 0.0), PLUG_BODY.size), PLUG_BODY,
-		PLUG_TINT)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if highlighted:
-		DrawKit.soft_outline(self, _plug_rect(center).grow(3.0), HIGHLIGHT)
 
 
 ## Deja el lienzo con el origen en `at` y el eje Y hacia atrás de `aim`.

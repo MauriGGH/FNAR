@@ -8,11 +8,7 @@ Saca dos cosas, que luego se copian a mano a data/office_layers.gd:
    de los píxeles que no son transparentes), en coordenadas normalizadas. El
    juego lo usa para saber si el cono de la linterna le está dando a ese profe.
 
-2. El conector RJ45 (`assets/art/office/rj45.png`): lo que de verdad se pinta
-   dentro del PNG, para poder girarlo y escalarlo por su punta en el patch
-   panel. Va a scenes/server_room/patch_panel_view.gd.
-
-3. Dónde tiene el ojo Armando: el píxel naranja más brillante de centro_armando,
+2. Dónde tiene el ojo Armando: el píxel naranja más brillante de centro_armando,
    que es donde el juego pinta el puntito que parpadea en la oscuridad.
 
 Uso:  python3 tools/measure_office_layers.py
@@ -149,39 +145,6 @@ def main():
             if wide > 0 and tall > 0:
                 clashes.append(f"{names[i]} con {names[j]}")
     print("  # se enciman: " + (", ".join(clashes) if clashes else "ninguna"))
-
-    print()
-    print("## El conector RJ45 (en píxeles de la imagen)")
-    plug = OFFICE_DIR / "rj45.png"
-    if not plug.is_file():
-        print("  # falta rj45.png")
-    else:
-        with Image.open(plug) as handle:
-            image = handle.convert("RGBA")
-            alpha = image.getchannel("A")
-            box = alpha.point(lambda value: 255 if value >= ALPHA_FLOOR else 0).getbbox()
-            size = image.size
-        if box is None:
-            print("  # rj45.png está vacío")
-        else:
-            left, top, right, bottom = box
-            print("  PLUG_IMAGE_SIZE: Vector2(%.1f, %.1f)" % size)
-            # El PNG trae conector y cable; el juego solo usa el conector, que
-            # acaba donde empieza la funda azul.
-            pixels = image.load()
-            boot = bottom
-            for y in range(top, bottom):
-                row = [pixels[x, y] for x in range(size[0])
-                       if pixels[x, y][3] >= ALPHA_FLOOR]
-                if not row:
-                    continue
-                red = sum(p[0] for p in row) / len(row)
-                blue = sum(p[2] for p in row) / len(row)
-                if blue > red + 40:
-                    boot = y
-                    break
-            print("  PLUG_BODY: Rect2(%.1f, %.1f, %.1f, %.1f)"
-                  % (left, top, right - left, boot - top))
 
     print()
     print("## El ojo de Armando")

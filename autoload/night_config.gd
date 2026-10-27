@@ -140,6 +140,27 @@ const CORTASO_POWER_LOSS: float = 15.0
 ## Lo que la linterna queda inservible después del cortaso.
 const FLASHLIGHT_DISABLED_TIME: float = 45.0
 
+## **Cuántos cortasos caben en una noche.** Con el dado pelón el Mago bajaba
+## del techo en cuanto le tocaba, y en las noches altas eso eran quince o
+## dieciséis cortasos: a 15 % de energía cada uno, no había manera. Ahora se
+## frena por dos lados, los dos aquí:
+##
+## - aunque le gane el dado, solo baja a la escalera esta parte de las veces;
+## - y entre un cortaso y el siguiente tienen que pasar al menos
+##   CORTASO_COOLDOWN_HOURS horas de juego, así que nunca pueden ser más de
+##   tres por noche.
+##
+## Sigue siendo una amenaza —lo caro es el 15 % y la linterna muerta—, pero da
+## tiempo de verlo en la escalera y bajarle el breaker.
+const CORTASO_DESCENT_CHANCE: int = 50
+const CORTASO_COOLDOWN_HOURS: float = 2.0
+
+
+## Lo que tiene que pasar entre dos cortasos, en segundos de verdad. Va contra
+## la hora de juego, así que en modo prueba se acorta con ella.
+static func cortaso_cooldown() -> float:
+	return CORTASO_COOLDOWN_HOURS * hour_duration()
+
 
 ## Cuánto dura una hora de juego en segundos reales. Solo para el reloj.
 static func hour_duration() -> float:
