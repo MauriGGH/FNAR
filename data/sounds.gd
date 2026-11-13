@@ -977,22 +977,22 @@ const CATALOG: Dictionary = {
 	},
 	"mamador_delito": {
 		"file": "voces/mamador_delito.ogg", "bus": "Voces",
-		"volume_db": -4.5, "generator": "",
+		"volume_db": -2.5, "generator": "",
 		"desc": "Mamador al pillarte: «¡Delito federal!». Va antes de la irrupción.",
 	},
 	"mamador_ok_1": {
 		"file": "voces/mamador_ok_1.ogg", "bus": "Voces",
-		"volume_db": -2.0, "generator": "",
+		"volume_db": -2.5, "generator": "",
 		"desc": "Mamador conforme: «Sin novedad. Me retiro.»",
 	},
 	"mamador_ok_2": {
 		"file": "voces/mamador_ok_2.ogg", "bus": "Voces",
-		"volume_db": -3.0, "generator": "",
+		"volume_db": -1.5, "generator": "",
 		"desc": "Mamador conforme: «Nada de inteligencia artificial. Así me gusta.»",
 	},
 	"mamador_ok_3": {
 		"file": "voces/mamador_ok_3.ogg", "bus": "Voces",
-		"volume_db": -2.0, "generator": "",
+		"volume_db": -2.5, "generator": "",
 		"desc": "Mamador conforme: «Todo en orden. Sigan así.»",
 	},
 	"llamada_noche1": {

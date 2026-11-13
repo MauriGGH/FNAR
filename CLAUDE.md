@@ -202,7 +202,7 @@ Los niveles a los que se llegó, de más fuerte a más bajo:
 
 | Grupo | Nivel en el juego | Qué hay |
 | --- | --- | --- |
-| Voces | **−17 a −19 LUFS** | las llamadas a −6 dB (la del Mencho −19.6, ya trae su filtro), las líneas de Ureña con su volumen cada una para caer en −18.5 como «es impresionante», y las de Mamador igual (`mamador_delito` −4.5, `mamador_ok_1..3` −2, −3 y −2) |
+| Voces | **−17 a −19 LUFS** | las llamadas a −6 dB (la del Mencho −19.6, ya trae su filtro), las líneas de Ureña con su volumen cada una para caer en −18.5 como «es impresionante», y las de Mamador igual (`mamador_delito` −2.5, `mamador_ok_1..3` −2.5, −1.5 y −2.5) |
 | Pasos de Barcosa | −23.5 | `barcosa_corre` se queda arriba a propósito: es el aviso de cerrar |
 | Lejanos sueltos | **−26** | los seis de ambiente y el módem de Armando; cada 40 a 90 s |
 | Respiración de Juan | −27 | |
@@ -292,10 +292,10 @@ provisional por código; **las voces no**, por lo de arriba.
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 |
 | `rochis_extra_1..3` | `voces/rochis_extra_N.ogg` | Voces | −2 | no | **sin grabar**: más frases para ese mismo botón (ver abajo) |
 | `urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`, `urena_adios_*` | `voces/<id>.ogg` | Voces | −4 a −7.5 | no | la llamada de Ureña, línea por línea; cada una con su volumen para quedar a la par de Rochis |
-| `mamador_delito` | `voces/mamador_delito.ogg` | Voces | −4.5 | no | «¡Delito federal!», **antes** de la irrupción |
+| `mamador_delito` | `voces/mamador_delito.ogg` | Voces | −2.5 | no | «¡Delito federal!», **antes** de la irrupción |
 | `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | −6 | no | la llamada con la que empieza esa noche |
 | `telefono_colgar` | `telefono_colgar.ogg` | Efectos | −6 | no | al acabar o silenciar una llamada |
-| `mamador_ok_1..3` | `voces/<id>.ogg` | Voces | −2 a −3 | no | ver **Líneas sueltas de profe** |
+| `mamador_ok_1..3` | `voces/<id>.ogg` | Voces | −1.5 a −2.5 | no | ver **Líneas sueltas de profe** |
 
 ## Llamadas de inicio de noche
 
@@ -1093,7 +1093,7 @@ Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 
 | Cuándo | Qué pasa |
 | --- | --- |
-| antes | **Lo que grita y la irrupción**: pantalla en negro, `mamador_delito` («¡Delito federal!», 1.3 s), después `mamador_brecha` (la puerta derribada y los gritos del operativo, 3.8 s) y un flash blanco de un cuadro. **Dura lo que duren los dos**, uno detrás de otro: van en la misma secuencia, así que la irrupción espera a la frase y el golpe de WASTED espera a la irrupción. Solo lo lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
+| antes | **Lo que grita y la irrupción**: pantalla en negro, `mamador_delito` («¡Delito federal!», 0.9 s), después `mamador_brecha` (la puerta derribada y los gritos del operativo, 3.8 s) y un flash blanco de un cuadro. **Dura lo que duren los dos**, uno detrás de otro: van en la misma secuencia, así que la irrupción espera a la frase y el golpe de WASTED espera a la irrupción. Solo lo lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
 | 0.0 s | `jumpscare_mamador_militares` a pantalla completa, con un zoom de 1.0 a 1.08 que no para en toda la secuencia |
 | 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo |
 | 1.2 s | Entra una franja negra (alfa 0.55) de lado a lado, centrada, de alto 16 % de la pantalla, con fade de 0.3 s |
