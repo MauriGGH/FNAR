@@ -1,0 +1,12 @@
+# Subtítulos llamada noche 4 — formato m:ss.cc|texto (voz de ElevenLabs, tiempos medidos sobre el audio)
+@offset=0
+0:00.00|¿Bueno? Hola. Eh, rápido, que hoy no tengo mucho tiempo.
+0:04.16|Pasó algo en la sala de juntas. Encontraron... cosas. Velas, sal, un dibujo en la mesa. La universidad dice que fue una broma de alumnos. Entonces fue una broma de alumnos, ¿de acuerdo? Si alguien te pregunta, tú no viste nada.
+0:17.01|Bueno. Hoy se despierta el Mago Eléctrico. Vive en el techo, cámara 6, y baja por la escalera, cámara 5. Si lo ves en la escalera, baja el breaker. Se asusta y se regresa.
+0:27.48|Si llega a entrar, te deja sin linterna. Y sin linterna... bueno. Ya sabes para qué sirve la linterna.
+0:33.72|También le da por jugar con el pararrayos. Si se te caen cámaras, ve a la sala de servidores y reconecta los cables como dice la hoja del rack.
+0:43.17|Ah, y el profe Armando ya encontró la asistente de la PC. Si te tapa la pantalla, escribe "APÁGATE". Rápido.
+0:49.12|Esa junta... nadie sabe quién la convocó. Ni quién apartó la sala. Bueno. Alguien sabe. Siempre alguien sabe.
+0:58.99|Y no fue la primera vez que se juntaron. Unas semanas antes vieron a varios profes en Los Rojos, ya muy noche. Nadie sabe qué hacían... pero todos se lo imaginan.
+1:10.84|Alguien escuchó que estaban con unas... "trabas". Bueno, eso ya es chisme.
+1:15.82|Cuídate. Te hablo mañana.

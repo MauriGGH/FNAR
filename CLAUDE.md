@@ -188,7 +188,7 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (120 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
+**El catálogo** (123 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
 inventario completo de pendientes y provisionales en `docs/pendientes.md`). Casi todos tienen
 provisional por código; **las voces no**, por lo de arriba.
 
@@ -196,7 +196,7 @@ provisional por código; **las voces no**, por lo de arriba.
 | --- | --- | --- | --- | --- | --- |
 | `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | −14 | sí | toda la noche; se calla con el apagón |
 | `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
-| `estatica_camara` | `estatica_camara.ogg` | Ambiente | −22 | sí | mientras el monitor está abierto |
+| `estatica_camara` | `estatica_camara.ogg` | Ambiente | −30 | sí | mientras el monitor está abierto |
 | `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
 | `tic_boom_1..3`, `tic_golpe_metal`, `tic_vidrio`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_piano`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno de los diez al azar en cada uno |
 | `tic_rechinido` | `menu/tic_rechinido.ogg` | Efectos | −4 | no | **fuera del sorteo**: sonaba a puerta y en el menú no hay ninguna |
@@ -210,12 +210,15 @@ provisional por código; **las voces no**, por lo de arriba.
 | `telefono_timbre` | `telefono_timbre.ogg` | Efectos | −6 | sí | mientras el teléfono suena |
 | `tono_ocupado` | `tono_ocupado.ogg` | Efectos | −6 | no | al colgarle a Ureña |
 | `ticket_nuevo` | `ticket_nuevo.ogg` | Efectos | −4 | no | llega un ticket |
-| `puerta_cortina` | `puerta_cortina.ogg` | Efectos | −5 | no | la cortina al bajar o subir |
+| `puerta_cortina` | `puerta_cortina.ogg` | Efectos | −5 | no | la cortina al subir, y al bajar 7 de cada 10 veces |
+| `puerta_cortina_2` | `puerta_cortina_2.ogg` | Efectos | −5 | no | la otra toma, al bajar 3 de cada 10 veces (`Sounds.shutter_sound()`) |
 | `golpes_cortina` | `golpes_cortina.ogg` | Efectos | −3 | no | cada golpe de Barcosa |
 | `golpe_metal_1`…`3` | `golpe_metal_N.ogg` | Efectos | −3 | no | cada porrazo de Barcosa, uno al azar sin repetir |
 | `llavero` | `llavero.ogg` | Lejos | −4 | no | el llavero de Mamador, con sus pasos al moverse |
 | `extras_musica` | `extras_musica.ogg` | Música | −14 | sí | música de Extras y de la Custom Night |
 | `camara_cambio` | `camara_cambio.ogg` | Efectos | −10 | no | abrir cámaras y cambiar de una a otra |
+| `camara_sin_senal` | `camara_sin_senal.ogg` | Efectos | −8 | no | una vez cada que el monitor pasa a enseñar SIN SEÑAL |
+| `juan_respiracion` | `voces/juan_respiracion.ogg` | Voces | −12 | sí | Juan pegado al cristal; mientras suena se calla `juan_teclado` |
 | `linterna_click` | `linterna_click.ogg` | Efectos | −14 | no | prender y apagar la linterna |
 | `breaker_palanca` | `breaker_palanca.ogg` | Efectos | −6 | no | bajar el breaker |
 | `se_aleja` | `se_aleja.ogg` | Efectos | −3 | no | uno del cristal se va con el cuarto destello |
@@ -330,6 +333,12 @@ mientras el profe esté ahí.
 
 Los archivos van en `assets/audio/lejos/<id>.ogg`. Mientras no estén, suenan los provisionales de
 `tone_builder.gd`.
+
+**Juan en el cristal** también lo lleva `distant_sounds.gd`, aunque no es lejano: mientras está
+pegado al cristal suena `juan_respiracion` en bucle, bajito (−12 dB) y por el bus Voces
+(`GLASS_LOOPS`), y se corta en cuanto se va. Para que no se encime con su tecleo, mientras suena se
+calla `juan_teclado` aunque quede alguien en la sala de juntas (`SILENCED_BY`). Durante un rescate
+de Sergio no suena.
 
 ## Líneas sueltas de profe
 
@@ -617,8 +626,10 @@ queda nada delante de la puerta que tape la lámina.
 
 La lámina es su propia capa, `assets/art/office/cortina_capa.png`, del tamaño de la vista y ya
 colocada en su sitio (ocupa x 407, y 250, 150 x 271 sobre la imagen de 1375x768). Al cerrar la
-chapa se va revelando de arriba hacia abajo en **0.6 s**, con el sonido `puerta_cortina`; al abrir,
-a la inversa. Al terminar de bajar, la vista central cambia a las fotos `*_cerrada` (la oscura y la
+chapa se va revelando de arriba hacia abajo en **0.6 s**, con el sonido `puerta_cortina` o, 3 de cada 10
+veces, su segunda toma `puerta_cortina_2` (lo sortea `Sounds.shutter_sound()`); al abrir, a la
+inversa y siempre con la primera. **El sonido lo pide solo la lámina** (`door_shutter.gd`): antes
+también lo pedía `night.gd` y sonaba dos veces. Al terminar de bajar, la vista central cambia a las fotos `*_cerrada` (la oscura y la
 iluminada) y la capa deja de dibujarse, porque a partir de ahí la cortina la trae el fondo.
 
 Mientras se mueve, la lámina tiene **sus dos fotos, igual que el fondo**:
@@ -694,6 +705,10 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
     secuencia, el jugador se salva** y todo se calla.
   - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7).
+    Cada vez que el monitor **pasa a enseñar SIN SEÑAL** suena una vez `camara_sin_senal`: se cae la
+    cámara que estás mirando (cuando se aclara la estática de la descarga y sale el cartel), abres el
+    monitor sobre una caída o cambias a una. Cambiar a una buena o cerrar el monitor lo corta; que se
+    caiga otra que no estás viendo no suena (`_announce_no_signal()` en `camera_system.gd`).
     **Los conectores enchufados y el de la mano no se dibujan igual.** De un puerto ocupado no se
     ve el conector, se ve **lo que le sobresale por detrás**: un culote corto del color del cable y
     muy oscurecido, con la funda detrás un poco más ancha y sin contactos dorados, y **derecho**,
@@ -712,7 +727,7 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     y de frente, como una calcomanía; `assets/art/office/rj45.png` ya no se usa en ningún sitio.
     Mientras está en la sala, no vigila la oficina.
 - **Come Trabas (rol Puppet; antes era Santi, un alumno de Sistemas):** un ritual cuyo responsable es un misterio (se reserva para una secuela) encerró el alma de Santi dentro de la botarga de la mascota de la universidad. La botarga está sentada en una silla del cubículo 3 (CAM 4) con una llave de cuerda en la espalda; mientras tiene cuerda, toca una canción de cajita musical sin nombre (`assets/audio/cajita_musical.ogg` cuando exista) y sigue desplomada. La cuerda se descarga con el tiempo; se le da cuerda manteniendo un botón en la CAM 4, con un indicador circular. En cero, la botarga levanta la cabeza, se levanta y va por el jugador: jumpscare de la botarga y game over con causa "Come Trabas". Estados visibles en CAM 4: desplomada, cabeza levantándose, silla vacía. Las Trabas (criaturas que salían de su boca) quedan fuera de esta entrega y se reservan para una segunda; el nombre del personaje se mantiene. De quién es esa canción de cajita musical es un secreto para la segunda entrega: no se menciona en ningún texto del juego, solo se oye.
-- **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". No usa la reserva del pasillo.
+- **Juan.exe (rol Bonnie clásico):** profe sencillo, sin mecánica especial. Empieza en la sala de juntas; ruta CAM 13 → 1 → 2 → cristal. En el cristal solo se ve con la linterna y se aleja con 4 destellos, igual que Ureña; si no, game over "Juan.exe". Mientras está ahí se le oye respirar (`juan_respiracion`, ver **Música y sonidos lejanos**). No usa la reserva del pasillo.
 
 **Susto en el cristal** (Ureña, Juan.exe y Armando, en `glass_stalker.gd`): cada uno lleva un
 "susto" de 0 a 1 que **no se ve**. Con la linterna encendida sube, y al apagarla baja, pero mucho

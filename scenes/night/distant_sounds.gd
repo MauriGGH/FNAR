@@ -32,6 +32,19 @@ const ROOM_LOOPS: Dictionary = {
 	"techo": "audel_chispa",
 }
 
+## Lo que suena mientras un profe esté pegado al cristal de la oficina, por el
+## nombre corto de su imagen. Hoy solo Juan.exe: Ureña y Armando no lo llevan.
+const GLASS_LOOPS: Dictionary = {
+	"juan": "juan_respiracion",
+}
+
+## Lo que se calla mientras suena cada uno de los de arriba, para que no se
+## encimen. Juan respirando en el cristal manda sobre su tecleo de la sala de
+## juntas: si lo uno está, lo otro no.
+const SILENCED_BY: Dictionary = {
+	"juan_respiracion": ["juan_teclado"],
+}
+
 var _ambient_left: float = 0.0
 ## slug -> cuánto falta para que ese profe pueda volver a sonar.
 var _cooldowns: Dictionary = {}
@@ -67,6 +80,13 @@ func refresh_room_loops(animatronics: Array[Animatronic]) -> void:
 		var sound_id: String = str(ROOM_LOOPS.get(animatronic.current_room, ""))
 		if not sound_id.is_empty() and not sound_id in wanted:
 			wanted.append(sound_id)
+		var glass_id: String = _glass_loop_for(animatronic)
+		if not glass_id.is_empty() and not glass_id in wanted:
+			wanted.append(glass_id)
+	for loud: String in SILENCED_BY:
+		if loud in wanted:
+			for quiet: String in SILENCED_BY[loud]:
+				wanted.erase(quiet)
 	for sound_id: String in wanted:
 		if not sound_id in _active_loops:
 			AudioManager.play_loop(sound_id)
@@ -74,6 +94,16 @@ func refresh_room_loops(animatronics: Array[Animatronic]) -> void:
 		if not sound_id in wanted:
 			AudioManager.stop(sound_id)
 	_active_loops = wanted
+
+
+## El bucle que le toca a este profe por estar pegado al cristal, o "" si no
+## lo está o no tiene. Durante un rescate de Sergio no suena: la oficina se
+## queda sin nadie y la pista del rescate va sola.
+func _glass_loop_for(animatronic: Animatronic) -> String:
+	var stalker: GlassStalker = animatronic as GlassStalker
+	if stalker == null or not stalker.is_at_glass() or GameManager.is_rescuing:
+		return ""
+	return str(GLASS_LOOPS.get(stalker.image_slug(), ""))
 
 
 func _process(delta: float) -> void:

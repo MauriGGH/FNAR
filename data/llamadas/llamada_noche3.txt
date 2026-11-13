@@ -1,0 +1,11 @@
+# Subtítulos llamada noche 3 — formato m:ss.cc|texto (voz de ElevenLabs, tiempos medidos sobre el audio)
+@offset=0
+0:00.00|¿Bueno? ¿Bueno? Hola. Noche tres. Vas muy bien, de verdad. La mayoría no... bueno. Vas muy bien.
+0:06.43|Hoy se despiertan dos más, así que ponle atención a esto.
+0:10.09|El profe Ureña empieza en los baños, cámara 12. Es lento, pero llega. Si lo ves en el cristal, linterna, igual que a los otros.
+0:19.37|También te va a llamar. Por teléfono. Te va a ofrecer... trabajitos. Tú sé educado. No le sigas el juego, pero tampoco le cuelgues. Se ofende. Y cuando se ofende... viene.
+0:31.11|Luego está el profe Rochis, en el cubículo 2, cámara 3. Casi no se mueve. Se la pasa sentado viendo la foto de su esposa, Mónica. Que en paz descanse.
+0:41.81|Si ves que se empieza a levantar, ponle el audio desde la cámara. El de "es impresionante". Es su frase. Lo calma. Eso sí, no se lo pongas si está sentado. No le gusta que lo interrumpan.
+0:53.95|Es un buen profe. Mucha gente no lo entiende.
+0:57.09|Ah, y si oyes una cajita de música sonando sola, es la botarga. El mecanismo que trae adentro. No es nada. No le busques letra.
+1:06.56|Bueno, te dejo. Buenas noches.

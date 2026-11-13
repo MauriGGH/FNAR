@@ -11,32 +11,17 @@ corre `godot --headless --import`. No hay que tocar código.
 Esta lista la escribe el panel de pruebas (F1 → Audio → «Escribir la lista de
 audios que faltan»); no se edita a mano.
 
-Faltan **28 de 120**. Generado desde el catálogo.
+Faltan **14 de 123**. Generado desde el catálogo.
 
 ## Sin archivo y sin provisional (no suena nada)
 
-| id | archivo que se espera | bus | cómo debe sonar |
-| --- | --- | --- | --- |
-| `rochis_extra_1` | `voces/rochis_extra_1.ogg` | Voces | Otra frase de Rochis para el botón de la CAM 4, en su mismo tono de asombro (1 de 3). |
-| `rochis_extra_2` | `voces/rochis_extra_2.ogg` | Voces | Otra frase de Rochis para el botón de la CAM 4 (2 de 3), distinta a la 1. |
-| `rochis_extra_3` | `voces/rochis_extra_3.ogg` | Voces | Otra frase de Rochis para el botón de la CAM 4 (3 de 3), distinta a las otras dos. |
-| `urena_saludo` | `voces/urena_saludo.ogg` | Voces | Ureña saludando por teléfono, sin el nombre ni la cuenta de tareas. |
-| `llamada_noche2` | `llamadas/llamada_noche2.ogg` | Voces | La llamada entera de la noche 2 (solo voz). Guion en docs/guion_voces.md. |
-| `llamada_noche3` | `llamadas/llamada_noche3.ogg` | Voces | La llamada entera de la noche 3 (solo voz). Guion en docs/guion_voces.md. |
-| `llamada_noche4` | `llamadas/llamada_noche4.ogg` | Voces | La llamada entera de la noche 4 (solo voz). Guion en docs/guion_voces.md. |
-| `llamada_noche5` | `llamadas/llamada_noche5.ogg` | Voces | La llamada entera de la noche 5 (solo voz). Guion en docs/guion_voces.md. |
-| `llamada_noche6` | `llamadas/llamada_noche6.ogg` | Voces | La llamada entera de la noche 6 (solo voz). Guion en docs/guion_voces.md. |
+Ninguno.
 
 ## Sin archivo, pero con provisional por código
 
 | id | archivo que se espera | bus | cómo debe sonar |
 | --- | --- | --- | --- |
-| `ticket_nuevo` | `ticket_nuevo.ogg` | Efectos | Campanita corta de aviso de sistema, dos notas que suben. |
 | `tono_ocupado` | `tono_ocupado.ogg` | Efectos | Tono de ocupado de teléfono fijo, dos o tres pitidos. |
-| `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | Zumbido de lámparas y ventilador de oficina, en bucle sin corte. |
-| `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | Aire de pasillo vacío de noche, en bucle sin corte, muy tenue. |
-| `totem_reventando` | `extras/totem_reventando.ogg` | Efectos | El tronido del tótem al reventar: un golpe seco con cola, un segundo. |
-| `estatica_camara` | `estatica_camara.ogg` | Ambiente | Estática de televisión vieja, en bucle sin corte, suave. |
 | `arcade_nivel1` | `arcade_nivel1.ogg` | Música | Chiptune de 8 bits de la maquinita, nivel 1: alegre, de posada. |
 | `arcade_nivel2` | `arcade_nivel2.ogg` | Música | La misma idea para el nivel 2, pero ya desafinada: algo va mal. |
 | `arcade_nivel3` | `arcade_nivel3.ogg` | Música | Nivel 3: sin melodía, solo un zumbido grave que no para. |

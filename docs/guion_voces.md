@@ -288,7 +288,7 @@ Tono: plano, como si leyera. No tiene mecánica propia y hoy no dice nada.
 
 | Qué | Archivo | Cuándo | Estado |
 | --- | --- | --- | --- |
-| Respiración en el cristal | `voces/juan_respiracion.ogg` | Llega al cristal; hoy solo sale el aviso «[respiración en el cristal]» | **[FALTA ENGANCHAR]** |
+| Respiración en el cristal | `voces/juan_respiracion.ogg` | En bucle y bajita mientras está pegado al cristal; se corta cuando se va | **enganchada** |
 | Grito del jumpscare | `voces/grito_juan.ogg` | Si no lo ahuyentas con la linterna a tiempo | **[FALTA ENGANCHAR]** |
 
 ---

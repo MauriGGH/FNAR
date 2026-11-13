@@ -1,9 +1,9 @@
 # Pendientes y provisionales
 
 Inventario de lo que falta y lo que está puesto de mentiras, sacado **del propio código y del
-disco** el 27 de octubre de 2026 (tercera pasada, después de limpiar el catálogo y de apartar las
-frases extra de Rochis), no de la memoria de nadie. Si algo de aquí ya no cuadra, es que
-el juego cambió: vuelve a correr las comprobaciones que están al final de cada tabla.
+disco** el 12 de noviembre de 2026 (cuarta pasada, con los lotes de audio 11 y 12 instalados), no
+de la memoria de nadie. Si algo de aquí ya no cuadra, es que el juego cambió: vuelve a correr las
+comprobaciones que están al final de cada tabla.
 
 **Nada de esto cambia el juego.** Es solo la lista.
 
@@ -11,7 +11,7 @@ el juego cambió: vuelve a correr las comprobaciones que están al final de cada
 
 ## 1. Audios
 
-Los 119 ids de `data/sounds.gd`. Tres estados posibles:
+Los 123 ids de `data/sounds.gd`. Tres estados posibles:
 
 - **archivo real** — el `.ogg` está en `assets/audio/` y suena ese.
 - **provisional** — no hay archivo, suena lo que genera `scripts/audio/tone_builder.gd` por código
@@ -22,22 +22,17 @@ Los 119 ids de `data/sounds.gd`. Tres estados posibles:
 La columna "dónde se usa" es el script que lo pide. Cuando el id no se pide por su constante sino
 que lo resuelve una función (los gritos, los golpes, los tics), ahí va la función.
 
-#### Durante la noche — 95 ids (78 reales, 8 provisionales, 9 faltan)
+#### Durante la noche — 99 ids (94 reales, 5 provisionales, 0 faltan)
 
 | id | archivo esperado | dónde se usa | estado |
 | --- | --- | --- | --- |
-| `ambiente_oficina` | `ambiente_oficina.ogg` | scenes/night/night.gd | provisional (`office_ambience`) |
-| `ambiente_pasillo` | `ambiente_pasillo.ogg` | scenes/night/night.gd | provisional (`hallway_ambience`) |
 | `armando_modem` | `lejos/armando_modem.ogg` | scenes/night/distant_sounds.gd | provisional (`far_modem`) |
-| `llamada_noche2` | `llamadas/llamada_noche2.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
-| `llamada_noche3` | `llamadas/llamada_noche3.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
-| `llamada_noche4` | `llamadas/llamada_noche4.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
-| `llamada_noche5` | `llamadas/llamada_noche5.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
-| `llamada_noche6` | `llamadas/llamada_noche6.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **FALTA** |
-| `ticket_nuevo` | `ticket_nuevo.ogg` | scenes/night/night.gd | provisional (`ticket_chime`) |
+| `carta_pone` | `carta_pone.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
+| `carta_toma` | `carta_toma.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
 | `tono_ocupado` | `tono_ocupado.ogg` | scenes/phone/phone_call.gd | provisional (`busy_tone`) |
 | `urena_banos` | `lejos/urena_banos.ogg` | scenes/night/distant_sounds.gd | provisional (`far_water`) |
-| `urena_saludo` | `voces/urena_saludo.ogg` | scenes/phone/phone_call.gd | **FALTA** |
+| `ambiente_oficina` | `ambiente_oficina.ogg` | scenes/night/night.gd | **archivo real** |
+| `ambiente_pasillo` | `ambiente_pasillo.ogg` | scenes/night/night.gd | **archivo real** |
 | `apagon_frase` | `apagon_frase.ogg` | scenes/night/night.gd | **archivo real** |
 | `armando_glitch_bucle` | `armando_glitch_bucle.ogg` | scenes/pc_screen/armando_takeover.gd | **archivo real** |
 | `armando_windows_crash` | `armando_windows_crash.ogg` | scenes/pc_screen/armando_takeover.gd | **archivo real** |
@@ -48,8 +43,7 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `cajita_musical_apagon` | `cajita_musical.ogg` | data/music_box.gd · scenes/night/blackout_death.gd | **archivo real** |
 | `cajita_musical_aviso` | `cajita_musical.ogg` | scenes/night/blackout_death.gd · scenes/night/night.gd | **archivo real** |
 | `camara_cambio` | `camara_cambio.ogg` | scenes/night/night.gd | **archivo real** |
-| `carta_pone` | `carta_pone.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
-| `carta_toma` | `carta_toma.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
+| `camara_sin_senal` | `camara_sin_senal.ogg` | scenes/camera_system/camera_system.gd | **archivo real** |
 | `cortaso` | `cortaso.ogg` | scenes/night/mod_menu.gd · scripts/characters/audel.gd | **archivo real** |
 | `descarga_pararrayos` | `descarga_pararrayos.ogg` | scenes/night/mod_menu.gd · scripts/characters/audel.gd | **archivo real** |
 | `es_impresionante` | `es_impresionante.ogg` | scripts/characters/rochis.gd | **archivo real** |
@@ -69,6 +63,7 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `grito_juan` | `gritos/grito_juan.ogg` | `Sounds.scream_for()` · scenes/night/jumpscare_overlay.gd | **archivo real** |
 | `grito_rochis` | `gritos/grito_rochis.ogg` | `Sounds.scream_for()` · scenes/night/jumpscare_overlay.gd | **archivo real** |
 | `grito_urena` | `gritos/grito_urena.ogg` | `Sounds.scream_for()` · scenes/night/jumpscare_overlay.gd | **archivo real** |
+| `juan_respiracion` | `voces/juan_respiracion.ogg` | scenes/night/distant_sounds.gd | **archivo real** |
 | `juan_teclado` | `lejos/juan_teclado.ogg` | scenes/night/distant_sounds.gd | **archivo real** |
 | `lejos_pasos_arriba` | `lejos/lejos_pasos_arriba.ogg` | scenes/night/distant_sounds.gd · scenes/night/mod_menu.gd | **archivo real** |
 | `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | scenes/night/distant_sounds.gd · scenes/night/mod_menu.gd | **archivo real** |
@@ -80,6 +75,11 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `llamada_juguete` | `llamadas/llamada_juguete.ogg` | data/night_calls.gd · scenes/night/mod_menu.gd | **archivo real** |
 | `llamada_mencho` | `llamadas/llamada_mencho.ogg` | data/night_calls.gd · scenes/night/mod_menu.gd · scenes/night/night.gd | **archivo real** |
 | `llamada_noche1` | `llamadas/llamada_noche1.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **archivo real** |
+| `llamada_noche2` | `llamadas/llamada_noche2.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **archivo real** |
+| `llamada_noche3` | `llamadas/llamada_noche3.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **archivo real** |
+| `llamada_noche4` | `llamadas/llamada_noche4.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **archivo real** |
+| `llamada_noche5` | `llamadas/llamada_noche5.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **archivo real** |
+| `llamada_noche6` | `llamadas/llamada_noche6.ogg` | `NightCalls` · scenes/phone/phone_call.gd | **archivo real** |
 | `llavero` | `llavero.ogg` | — | **archivo real** |
 | `mamador_ok_1` | `voces/mamador_ok_1.ogg` | `VoiceLines` · scenes/night/voice_line.gd | **archivo real** |
 | `mamador_ok_2` | `voces/mamador_ok_2.ogg` | `VoiceLines` · scenes/night/voice_line.gd | **archivo real** |
@@ -87,14 +87,14 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `mamador_pasos` | `lejos/mamador_pasos.ogg` | scenes/night/distant_sounds.gd | **archivo real** |
 | `momo_cancion` | `extras/momo_cancion.ogg` | scenes/night/momo_event.gd · scenes/night/night.gd | **archivo real** |
 | `pasos_acercandose` | `pasos_acercandose.ogg` | scenes/night/blackout_death.gd | **archivo real** |
-| `puerta_cortina` | `puerta_cortina.ogg` | scenes/night/night.gd · scenes/office/door_shutter.gd | **archivo real** |
-| `rochis_extra_1` | `voces/rochis_extra_1.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **FALTA** |
-| `rochis_extra_2` | `voces/rochis_extra_2.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **FALTA** |
-| `rochis_extra_3` | `voces/rochis_extra_3.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **FALTA** |
+| `puerta_cortina` | `puerta_cortina.ogg` | `Sounds.shutter_sound()` · scenes/office/door_shutter.gd | **archivo real** |
+| `puerta_cortina_2` | `puerta_cortina_2.ogg` | `Sounds.shutter_sound()` · scenes/office/door_shutter.gd | **archivo real** |
+| `rochis_extra_1` | `voces/rochis_extra_1.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **archivo real** |
+| `rochis_extra_2` | `voces/rochis_extra_2.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **archivo real** |
+| `rochis_extra_3` | `voces/rochis_extra_3.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd | **archivo real** |
 | `rochis_silla` | `lejos/rochis_silla.ogg` | scenes/night/night.gd | **archivo real** |
 | `se_aleja` | `se_aleja.ogg` | scripts/characters/glass_stalker.gd | **archivo real** |
 | `sergio_rescate` | `extras/sergio_rescate.ogg` | scenes/night/sergio_rescue.gd | **archivo real** |
-| `totem_reventando` | `extras/totem_reventando.ogg` | scenes/night/sergio_rescue.gd | **falta**, suena el provisional del golpe grave |
 | `sonido_perturbador` | `extras/sonido_perturbador.ogg` | scenes/camera_system/camera_system.gd | **archivo real** |
 | `telefono_colgar` | `telefono_colgar.ogg` | scenes/phone/call_subtitles.gd | **archivo real** |
 | `telefono_timbre` | `telefono_timbre.ogg` | scenes/night/night.gd | **archivo real** |
@@ -108,6 +108,8 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `tic_raspon` | `menu/tic_raspon.ogg` | scenes/night/mod_menu.gd | **archivo real** |
 | `tic_vidrio` | `menu/tic_vidrio.ogg` | scenes/night/mod_menu.gd | **archivo real** |
 | `tic_whoosh_golpe` | `menu/tic_whoosh_golpe.ogg` | scenes/night/mod_menu.gd | **archivo real** |
+| `ticket_nuevo` | `ticket_nuevo.ogg` | scenes/night/night.gd | **archivo real** |
+| `totem_reventando` | `extras/totem_reventando.ogg` | scenes/night/sergio_rescue.gd | **archivo real** |
 | `urena_adios_colgado` | `voces/urena_adios_colgado.ogg` | scenes/phone/phone_call.gd | **archivo real** |
 | `urena_adios_esquivo` | `voces/urena_adios_esquivo.ogg` | data/urena_questions.gd | **archivo real** |
 | `urena_adios_foto` | `voces/urena_adios_foto.ogg` | data/urena_questions.gd | **archivo real** |
@@ -122,12 +124,13 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `urena_reaccion_esquiva` | `voces/urena_reaccion_esquiva.ogg` | data/urena_questions.gd | **archivo real** |
 | `urena_reaccion_grosero` | `voces/urena_reaccion_grosero.ogg` | data/urena_questions.gd | **archivo real** |
 | `urena_reaccion_sigue` | `voces/urena_reaccion_sigue.ogg` | data/urena_questions.gd | **archivo real** |
+| `urena_saludo` | `voces/urena_saludo.ogg` | scenes/phone/phone_call.gd | **archivo real** |
 
-#### En los dos sitios — 5 ids (4 reales, 1 provisionales, 0 faltan)
+#### En los dos sitios — 5 ids (5 reales, 0 provisionales, 0 faltan)
 
 | id | archivo esperado | dónde se usa | estado |
 | --- | --- | --- | --- |
-| `estatica_camara` | `estatica_camara.ogg` | scenes/main_menu/main_menu.gd · scenes/night/night.gd | provisional (`camera_static`) |
+| `estatica_camara` | `estatica_camara.ogg` | scenes/main_menu/main_menu.gd · scenes/night/night.gd | **archivo real** |
 | `estatica_inquietante` | `estatica_inquietante.ogg` | scenes/game_over/game_over.gd · scenes/night/mod_menu.gd · scripts/ui/menu_backdrop.gd | **archivo real** |
 | `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | scenes/game_over/game_over.gd · scenes/night/mod_menu.gd | **archivo real** |
 | `menu_glitch_largo` | `menu_glitch_largo.ogg` | scenes/night/mod_menu.gd · scripts/ui/menu_backdrop.gd | **archivo real** |
@@ -157,19 +160,21 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `tic_rechinido` | `menu/tic_rechinido.ogg` | `Sounds.menu_tic()` · scripts/ui/menu_backdrop.gd | **archivo real** |
 | `wasted` | `wasted.ogg` | scenes/ui/wasted_screen.gd | **archivo real** |
 
-### Los tres que conviene mirar
+### Los que conviene mirar
 
 | id | qué pasa |
 | --- | --- |
 | `grito` | solo sale como **último recurso** de `Sounds.scream_for()`. Con los siete gritos propios grabados, hoy no se oye nunca. |
 | `golpes_cortina` | es el respaldo de `Sounds.metal_hit()`. Con los tres `golpe_metal_N` ya grabados, **hoy no se oye nunca**. |
 | `llavero` | se pide con el id escrito a pelo en `night.gd` (`DISTANT_WITH_MOVE`), no por su constante. **Ya tiene archivo** (apareció el 26 de octubre), así que suena. |
+| `estatica_camara` | el archivo nuevo dura 0.5 s y **trae un fundido en las dos puntas**: entra en unos 10 ms y se apaga en los últimos 20 a 25 ms. En bucle eso es un bajón de nivel **dos veces por segundo**. No hace clic, pero puede oírse como un aleteo; a −30 dB y debajo de todo lo demás apenas se nota. Si molesta, hay que exportarlo sin fundidos o más largo. |
+| `totem_reventando` | dura **4.3 s** y entra a los 14 s de una pista de 17.5: su cola se pasa **0.8 s** del final del rescate y se oye ya con la noche andando. Va suelto (`play()` a secas) y nadie lo corta. |
 
 ---
 
 ## 2. Voces
 
-Las 26 líneas habladas que quedan en el juego, con su texto completo para poder grabarlas.
+Las 29 líneas habladas que quedan en el juego, con su texto completo para poder grabarlas.
 
 **Barcosa y Armando ya no hablan.** Sus diez audios se borraron de `assets/audio/voces/` y sus ids
 salieron del catálogo: Barcosa sigue gritando **por escrito** cuando aporrea la cortina, y la frase
@@ -183,10 +188,13 @@ Estados:
 - **reservada** — el audio está, pero todavía no tiene id porque falta decidir dónde va.
 - **FALTA el archivo** — tiene id, no tiene audio: hoy solo sale el subtítulo.
 
-**Todas se generaron con `tools/generar_voces.py`**: edge-tts (voz `es-MX-JorgeNeural`, con la
-velocidad y el tono de cada personaje en su diccionario `VOCES`) y, **solo para Rochis**, pasándola
-después por el modelo de Applio. Eso sale de leer el script, no de escuchar los archivos: si
-regrabas alguno encima con tu voz, aquí seguirá diciendo lo mismo.
+**De dónde salen:** las primeras tomas las generó `tools/generar_voces.py` (edge-tts, voz
+`es-MX-JorgeNeural`, con la velocidad y el tono de cada personaje en su diccionario `VOCES`, y
+Applio encima **solo para Rochis**). Desde entonces han ido llegando archivos nuevos: en el árbol de
+trabajo están modificadas las de Mamador, las de Ureña y «es impresionante», y `urena_saludo`,
+`rochis_extra_1..3` y `juan_respiracion` entraron sin pasar por el script (el script no conoce las
+de Rochis, salta la respiración y con `urena_saludo` se topó con un 403). Este inventario mira el
+disco, no escucha: no sabe con qué se hizo cada archivo.
 
 | id | archivo esperado | dónde se usa | estado | texto |
 | --- | --- | --- | --- | --- |
@@ -195,11 +203,14 @@ regrabas alguno encima con tu voz, aquí seguirá diciendo lo mismo.
 | `barcosa_puerta_3` | `voces/barcosa_puerta_3.ogg` | scripts/characters/barcosa.gd → `Hud/VoiceLine` (**solo subtítulo**) | **sin voz a propósito**: Barcosa no habla | «Diez minutos. Le estoy pidiendo diez minutos.» |
 | `barcosa_se_va` | `voces/barcosa_se_va.ogg` | scripts/characters/barcosa.gd → `Hud/VoiceLine` (**solo subtítulo**) | **sin voz a propósito**: Barcosa no habla | «Bueno, ya. Quedan todos con falta.» |
 | `es_impresionante` | `es_impresionante.ogg` | scripts/characters/rochis.gd (botón de la CAM 3) | **enganchada** | «Es impresionante» |
-| `juan_respiracion` | `voces/juan_respiracion.ogg` | aviso en el cristal (hoy solo texto) | acotación, no es línea: no se graba | «[respiración en el cristal]» |
+| `juan_respiracion` | `voces/juan_respiracion.ogg` | scenes/night/distant_sounds.gd, en bucle mientras Juan está en el cristal | **enganchada**: no es una línea sino su respiración, pero va por Voces | «[respiración en el cristal]» |
 | `mamador_delito` | `voces/mamador_delito.ogg` | scenes/ui/wasted_screen.gd, antes de `mamador_brecha` | **enganchada** | «¡Delito federal!» |
 | `mamador_ok_1` | `voces/mamador_ok_1.ogg` | scripts/characters/mamador.gd → `Hud/VoiceLine` | **enganchada** | «Sin novedad. Me retiro.» |
 | `mamador_ok_2` | `voces/mamador_ok_2.ogg` | scripts/characters/mamador.gd → `Hud/VoiceLine` | **enganchada** | «Nada de inteligencia artificial. Así me gusta.» |
 | `mamador_ok_3` | `voces/mamador_ok_3.ogg` | scripts/characters/mamador.gd → `Hud/VoiceLine` | **enganchada** | «Todo en orden. Sigan así.» |
+| `rochis_extra_1` | `voces/rochis_extra_1.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd (botón de la CAM 3, al azar) | **enganchada** | *no está escrito en el repo* |
+| `rochis_extra_2` | `voces/rochis_extra_2.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd (botón de la CAM 3, al azar) | **enganchada** | *no está escrito en el repo* |
+| `rochis_extra_3` | `voces/rochis_extra_3.ogg` | `Sounds.rochis_line()` · scripts/characters/rochis.gd (botón de la CAM 3, al azar) | **enganchada** | *no está escrito en el repo* |
 | `santi_voces` | `voces/santi_voces.ogg` | **sin enganchar a propósito**: falta decidir dónde va | grabada, **reservada**: sin id todavía | «Voces, muchas voces» |
 | `urena_adios_colgado` | `voces/urena_adios_colgado.ogg` | scenes/phone/phone_call.gd (despedida) | **enganchada** | «¿Me colgaste? ...Ahorita voy para allá.» |
 | `urena_adios_esquivo` | `voces/urena_adios_esquivo.ogg` | scenes/phone/phone_call.gd (despedida) | **enganchada** | «Ay, qué serio... la oferta sigue en pie.» |
@@ -215,7 +226,7 @@ regrabas alguno encima con tu voz, aquí seguirá diciendo lo mismo.
 | `urena_reaccion_esquiva` | `voces/urena_reaccion_esquiva.ogg` | scenes/phone/phone_call.gd (reacción) | **enganchada** | «Ay, qué serio...» |
 | `urena_reaccion_grosero` | `voces/urena_reaccion_grosero.ogg` | scenes/phone/phone_call.gd (reacción) | **enganchada** | «Qué grosero eres...» |
 | `urena_reaccion_sigue` | `voces/urena_reaccion_sigue.ogg` | scenes/phone/phone_call.gd (reacción) | **enganchada** | «¡Así me gusta!» |
-| `urena_saludo` | `voces/urena_saludo.ogg` | scenes/phone/phone_call.gd (saludo) | **FALTA el archivo** | «¡Quihubo! Ya vi que andas muy trabajador... qué aplicadito.» |
+| `urena_saludo` | `voces/urena_saludo.ogg` | scenes/phone/phone_call.gd (saludo) | **enganchada** | «¡Quihubo! Ya vi que andas muy trabajador... qué aplicadito.» |
 
 **Para grabarlas:** `.ogg` mono a 44.1 kHz en `assets/audio/voces/`, con el nombre exacto de la
 columna. El bus es Voces. Para regenerarlas con voz sintética:
@@ -224,13 +235,15 @@ lo que falte (nunca pisa un archivo que ya exista salvo con `--forzar`).
 
 ### Lo que falta de voces
 
-- **`urena_saludo`** es la única línea con id y sin audio. El intento de generarla con edge-tts
-  devolvió **HTTP 403** del servidor de Microsoft (el paquete está al día, 7.2.8: es un bloqueo del
-  otro lado, no del script). Mientras tanto el saludo sale **solo escrito**, que además es donde va
-  el nombre del jugador.
+**Nada con id.** Todas las líneas que el juego pide ya tienen su archivo.
+
 - **`santi_voces`** está grabada y reservada: no tiene id todavía porque falta decidir en qué
   momento suena.
-- `juan_respiracion` no es una línea: es una acotación entre corchetes, y el generador la salta.
+- **`rochis_extra_1..3`** ya entran al sorteo del botón de Rochis junto con «es impresionante»:
+  `Sounds.rochis_line()` mete las que tengan archivo, sin tocar código. Lo que dicen no está
+  escrito en ningún sitio del repo; si se quiere en el guion, hay que transcribirlas.
+- **`juan_respiracion`** suena en bucle a −12 dB por el bus Voces mientras Juan está en el cristal,
+  y mientras suena se calla `juan_teclado` (`SILENCED_BY` en `distant_sounds.gd`).
 - **Ya no se usa la síntesis de voz de Godot en ningún sitio** (`DisplayServer.tts_*` no aparece en
   todo el proyecto). Antes la usaban la llamada de Ureña, el botón de Rochis y las líneas sueltas.
 
@@ -272,11 +285,11 @@ donde entra Momo, que tiene su propia imagen).
 | `assets/art/minijuego/sprites/llave.png` | la llave de cuerda de la botarga; ningún nivel la dibuja |
 | `assets/art/minijuego/sprites/traje_walk.png` | el de traje caminando; los niveles usan `traje_side` y `traje_back` |
 | `assets/art/office/layers/centro_barcosa.png` | desactivada: ahora Barcosa aporrea detrás de la cortina y no se dibuja |
-| `assets/art/office/layers/derecha_rochis.png` | desactivada: es de la oficina vieja |
+| `assets/art/office/rj45.png` | los conectores del patch panel se dibujan por código; ya no se pide en ningún sitio y se puede borrar |
 
 ### 3.4 Lo que dibuja el código (candidatos a hacerse a mano)
 
-**38 archivos** tienen un `_draw()` propio. Esto no está "mal": en muchos casos dibujar por código
+**41 archivos** tienen un `_draw()` propio. Esto no está "mal": en muchos casos dibujar por código
 es lo correcto (barras, medidores, texto). La lista es para saber **qué podría sustituirse por arte**
 si algún día quieres.
 
@@ -305,18 +318,18 @@ si algún día quieres.
 
 | noche | audio esperado | subtítulos esperados | estado |
 | --- | --- | --- | --- |
-| 1 | `llamadas/llamada_noche1.ogg` | `data/llamadas/llamada_noche1.txt` | **las dos cosas están** (59 líneas, 5:36) |
-| 2 | `llamadas/llamada_noche2.ogg` | `data/llamadas/llamada_noche2.txt` | **faltan las dos**, y el guion tampoco está escrito |
-| 3 | `llamadas/llamada_noche3.ogg` | `data/llamadas/llamada_noche3.txt` | **faltan las dos**, y el guion tampoco está escrito |
-| 4 | `llamadas/llamada_noche4.ogg` | `data/llamadas/llamada_noche4.txt` | **faltan las dos**, y el guion tampoco está escrito |
-| 5 | `llamadas/llamada_noche5.ogg` | `data/llamadas/llamada_noche5.txt` | **faltan las dos**, y el guion tampoco está escrito |
-| 6 | `llamadas/llamada_noche6.ogg` | `data/llamadas/llamada_noche6.txt` | **faltan las dos**, y el guion tampoco está escrito |
+| 1 | `llamadas/llamada_noche1.ogg` | `data/llamadas/llamada_noche1.txt` | **las dos cosas están** (15 líneas, 1:37) |
+| 2 | `llamadas/llamada_noche2.ogg` | `data/llamadas/llamada_noche2.txt` | **las dos cosas están** (8 líneas, 1:12) |
+| 3 | `llamadas/llamada_noche3.ogg` | `data/llamadas/llamada_noche3.txt` | **las dos cosas están** (9 líneas, 1:08) |
+| 4 | `llamadas/llamada_noche4.ogg` | `data/llamadas/llamada_noche4.txt` | **las dos cosas están** (10 líneas, 1:18) |
+| 5 | `llamadas/llamada_noche5.ogg` | `data/llamadas/llamada_noche5.txt` | **las dos cosas están** (6 líneas, 0:51) |
+| 6 | `llamadas/llamada_noche6.ogg` | `data/llamadas/llamada_noche6.txt` | **las dos cosas están** (0:42; estática y una voz al revés, con un solo subtítulo: «(estática)») |
 | — | `llamadas/llamada_mencho.ogg` | no lleva (un solo subtítulo corto en código) | **está** |
 | — | `llamadas/llamada_juguete.ogg` | no lleva (un solo subtítulo corto en código) | **está** |
 
 Una noche **tiene llamada solo si existe su `.ogg`**: si falta, el teléfono no suena esa noche y no
-pasa nada más. El guion de las noches 2 a 6 está marcado *por escribir* en
-[docs/guion_voces.md](guion_voces.md).
+pasa nada más. El texto de cada una vive en su `.txt`. **[docs/guion_voces.md](guion_voces.md)
+todavía marca las noches 2 a 6 como *por escribir***, y eso ya no es verdad.
 
 Recordatorios del formato, que son fáciles de olvidar:
 
@@ -332,16 +345,32 @@ Recordatorios del formato, que son fáciles de olvidar:
 
 | Bloque | Total | Listo | Provisional | Falta |
 | --- | --- | --- | --- | --- |
-| **Audios** (ids del catálogo) | 119 | 92 con archivo real | 18 con provisional por código | **9 sin nada** |
-| **Voces** (líneas que quedan) | 26 | 19 enganchadas | 4 sin voz a propósito · 1 reservada | **1** (`urena_saludo`) |
-| | | | | *(la 26.ª, `juan_respiracion`, es una acotación: no se graba)* |
+| **Audios** (ids del catálogo) | 123 | 109 con archivo real | 14 con provisional por código | **0 sin nada** |
+| **Voces** (líneas que quedan) | 29 | 24 enganchadas | 4 sin voz a propósito · 1 reservada | **0** |
 | **Imágenes** (bloques que pide el código) | 15 bloques | **15 completos** | 4 cosas se dibujan por código pudiendo ser arte | — |
-| **Llamadas** | 6 noches + 2 raras | noche 1 y las 2 raras | — | **5 noches** (audio, subtítulos y guion) |
+| **Llamadas** | 6 noches + 2 raras | **las 8** | — | **0** |
 
-**Los 9 audios que no suenan nada:** `rochis_extra_1..3` (apartados a propósito, para frases de
-Rochis que se grabarán después), `urena_saludo`, y las cinco llamadas de las noches 2 a 6.
+**Audios que no suenan nada: ninguno.** Los 14 que siguen con provisional son los ocho de la
+maquinita (chiptune por código, que es como se diseñó), `carta_toma` y `carta_pone`,
+`tono_ocupado`, y **tres que se quedan así a propósito**: `urena_banos`, `armando_modem` y
+`menu_blip` (decidido el 12 de noviembre).
 
-**Lo que cambió desde la primera pasada:**
+**Lo que cambió en esta pasada (12 de noviembre, lotes de audio 11 y 12):**
+
+- Dejan atrás su provisional `ambiente_oficina` (60 s) y `ambiente_pasillo` (57 s), los dos en
+  bucle sin salto: medida la unión, el paso de la última muestra a la primera cae dentro de lo
+  normal entre dos muestras seguidas y el nivel no baja. También `estatica_camara`,
+  `ticket_nuevo` y `totem_reventando`; de esos, dos traen un detalle (ver **Los que conviene mirar**).
+- Ya están las llamadas de las noches 2 a 6 con sus subtítulos, `urena_saludo` y
+  `rochis_extra_1..3`.
+- Tres ids nuevos: `juan_respiracion` (Juan en el cristal), `camara_sin_senal` (el monitor pasa a
+  SIN SEÑAL) y `puerta_cortina_2` (segunda toma al bajar la cortina, 3 de cada 10 veces).
+- La cortina **sonaba dos veces en cada movimiento**: la pedían `door_shutter.gd` y `night.gd`.
+  Al ser el mismo id no se notaba; con dos tomas se habrían encimado. Ahora solo la pide la lámina.
+- Corregido un error de la pasada anterior: `derecha_rochis.png` **sí se usa** (es la capa de Rochis
+  en la vista derecha). La que no se usa es `office/rj45.png`.
+
+**En las pasadas anteriores:**
 
 - Fuera las voces de **Barcosa** (4) y **Armando** (6): borradas del disco y del catálogo.
 - Dentro las **15 de Ureña** y la de **Mamador**, ya enganchadas.
@@ -361,10 +390,12 @@ Rochis que se grabarán después), `urena_saludo`, y las cinco llamadas de las n
 
 **Lo más barato de arreglar, por orden:**
 
-1. **`urena_saludo`** — la única voz con id y sin audio. La vas a regrabar con los demás.
-2. **Decidir dónde va `santi_voces`** — el audio ya está, solo falta el momento.
-3. **`rochis_extra_1..3`** — tres frases cortas, en el mismo tono que «es impresionante».
-4. **Los cinco guiones de llamada** — es escribir, y el formato ya está resuelto.
+1. **Decidir dónde va `santi_voces`** — el audio ya está, solo falta el momento.
+2. **Poner al día [docs/guion_voces.md](guion_voces.md)** — sigue con las llamadas 2 a 6 *por
+   escribir* y sin las frases de Rochis.
+3. **`estatica_camara` sin fundidos**, si el aleteo del bucle llega a notarse.
+4. **`tono_ocupado` y las dos cartas** — los únicos provisionales que no se quedan a propósito,
+   fuera de la maquinita.
 
 ### Cómo rehacer este inventario
 

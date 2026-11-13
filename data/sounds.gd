@@ -139,6 +139,11 @@ const HALLWAY_AMBIENCE: String = "ambiente_pasillo"
 ## El timbre del teléfono, en bucle mientras suena.
 const PHONE_RING: String = "telefono_timbre"
 const DOOR_SHUTTER: String = "puerta_cortina"
+## La otra toma de la cortina. Solo se usa al **bajarla**: 3 de cada 10 veces
+## suena esta y el resto la de siempre. Al subirla suena siempre la de siempre.
+## Ver `shutter_sound()`.
+const DOOR_SHUTTER_ALT: String = "puerta_cortina_2"
+const DOOR_SHUTTER_ALT_CHANCE: float = 0.3
 const DOOR_BANGS: String = "golpes_cortina"
 ## Los tres golpes de metal de Barcosa contra la cortina: se alterna entre
 ## ellos sin repetir el mismo dos veces seguidas.
@@ -150,6 +155,9 @@ const FLASHLIGHT_CLICK: String = "linterna_click"
 const BREAKER_LEVER: String = "breaker_palanca"
 ## El siseo de fondo mientras el monitor está abierto.
 const CAMERA_STATIC: String = "estatica_camara"
+## El tono de "sin señal": suena una vez cada vez que el monitor pasa a enseñar
+## SIN SEÑAL (se cae la cámara que estás viendo, la abres o cambias a una caída).
+const CAMERA_NO_SIGNAL: String = "camara_sin_senal"
 ## La maquinita: su música por nivel (chiptune de 8 bits generado por código) y
 ## sus pitidos. El nivel 3 no lleva melodía, solo un zumbido grave.
 const ARCADE_MUSIC: Array[String] = [
@@ -224,6 +232,9 @@ const FAR_MAMADOR_STEPS: String = "mamador_pasos"
 const FAR_KEYS: String = "llavero"
 const FAR_URENA_BATHROOM: String = "urena_banos"
 const FAR_JUAN_KEYBOARD: String = "juan_teclado"
+## La respiración de Juan.exe pegado al cristal: en bucle y bajita mientras esté
+## ahí. Es suya y va por Voces, no por Lejos: lo tienes a un metro, tras el vidrio.
+const JUAN_BREATHING: String = "juan_respiracion"
 const FAR_ARMANDO_MODEM: String = "armando_modem"
 const FAR_AUDEL_SPARK: String = "audel_chispa"
 const FAR_ROCHIS_CHAIR: String = "rochis_silla"
@@ -353,6 +364,18 @@ static func metal_hit(last: String = "") -> String:
 static func scream_for(slug: String) -> String:
 	var own: String = "grito_%s" % slug
 	return own if AudioManager.has_real_file(own) else SCREAM
+
+
+## La toma de la cortina que le toca a este movimiento. Al subirla, la de
+## siempre; al bajarla, `puerta_cortina_2` el 30 % de las veces. Si la segunda
+## no está en assets/audio/ no entra al sorteo. `roll` es de 0 a 1 y solo se
+## pasa en las pruebas; sin él se tira el dado.
+static func shutter_sound(closing: bool, roll: float = -1.0) -> String:
+	if not closing or not AudioManager.has_real_file(DOOR_SHUTTER_ALT):
+		return DOOR_SHUTTER
+	if roll < 0.0:
+		roll = randf()
+	return DOOR_SHUTTER_ALT if roll < DOOR_SHUTTER_ALT_CHANCE else DOOR_SHUTTER
 
 
 ## La frase que suelta Rochis al darle al botón: «es impresionante» y, cuando
@@ -591,6 +614,11 @@ const CATALOG: Dictionary = {
 		"volume_db": -5.0, "generator": "door_shutter",
 		"desc": "Cortina metálica de local bajando o subiendo, con su traqueteo.",
 	},
+	"puerta_cortina_2": {
+		"file": "puerta_cortina_2.ogg", "bus": "Efectos",
+		"volume_db": -5.0, "generator": "",
+		"desc": "Segunda toma de la cortina al bajar (30 % de las veces), 1.6 s. Sin ella baja siempre la primera.",
+	},
 	"golpes_cortina": {
 		"file": "golpes_cortina.ogg", "bus": "Efectos",
 		"volume_db": -3.0, "generator": "door_bang",
@@ -674,7 +702,7 @@ const CATALOG: Dictionary = {
 	"totem_reventando": {
 		"file": "extras/totem_reventando.ogg", "bus": "Efectos",
 		"volume_db": -2.0, "generator": "low_hit",
-		"desc": "El tronido del tótem al reventar: un golpe seco con cola, un segundo.",
+		"desc": "El tronido del tótem al reventar: un golpe seco con una cola larga, 4.3 s.",
 	},
 	"aura": {
 		"file": "extras/aura.ogg", "bus": "Música",
@@ -690,6 +718,11 @@ const CATALOG: Dictionary = {
 		"file": "estatica_camara.ogg", "bus": "Ambiente",
 		"volume_db": -30.0, "generator": "camera_static",
 		"desc": "Estática de televisión vieja, en bucle sin corte, suave.",
+	},
+	"camara_sin_senal": {
+		"file": "camara_sin_senal.ogg", "bus": "Efectos",
+		"volume_db": -8.0, "generator": "",
+		"desc": "El tono de una cámara que se queda sin señal, 2.2 s: suena una vez al pasar a SIN SEÑAL.",
 	},
 	"arcade_nivel1": {
 		"file": "arcade_nivel1.ogg", "bus": "Música",
@@ -810,6 +843,11 @@ const CATALOG: Dictionary = {
 		"file": "lejos/armando_modem.ogg", "bus": "Lejos",
 		"volume_db": -5.0, "generator": "far_modem", "pan": PAN_CENTER,
 		"desc": "Módem de 56k negociando, distorsionado y lejos.",
+	},
+	"juan_respiracion": {
+		"file": "voces/juan_respiracion.ogg", "bus": "Voces",
+		"volume_db": -12.0, "generator": "",
+		"desc": "Respiración lenta de Juan.exe tras el cristal, 5.6 s, en bucle y bajita. Sin provisional: es una voz.",
 	},
 	"audel_chispa": {
 		"file": "lejos/audel_chispa.ogg", "bus": "Lejos",
@@ -983,6 +1021,8 @@ const LOOPING: Array[String] = [
 	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica_final",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
 	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
+	# Juan respirando pegado al cristal, mientras siga ahí.
+	"juan_respiracion",
 	"arcade_nivel1", "arcade_nivel2", "arcade_nivel3",
 	# El zumbido de Armando dura lo que dure su toma de pantalla.
 	"armando_glitch_bucle",

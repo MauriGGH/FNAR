@@ -1,0 +1,10 @@
+# Subtítulos llamada noche 2 — formato m:ss.cc|texto (voz de ElevenLabs, tiempos medidos sobre el audio)
+@offset=0
+0:00.00|¿Bueno? ¿Bueno? Bueno, si estás oyendo esto y llegaste a la segunda noche... felicidades.
+0:09.09|No... no voy a hablar tanto esta vez. Los profes se ponen más activos conforme avanza la semana. Eh, sería buena idea que revises las cámaras mientras te hablo, nomás para ver que cada quien esté en su lugar, ¿sabes?
+0:21.32|Bueno. Hoy hay que estar pendientes del profe Barcosa. Está en la sala de servicio del salón B, cámara 10. Es... un caso especial. No le gusta que lo vigilen, pero si dejas de vigilarlo mucho tiempo, se... impacienta.
+0:32.07|Si oyes pasos corriendo en el pasillo, cierra la cortina. Rápido. Va a tocar, va a gritar, a lo mejor te pide unos minutos para pasar lista. No abras.
+0:42.07|El profe Armando también empieza a moverse hoy. Igual que con Juan: si lo ves en el cristal, linterna hasta que se vaya. Si te habla de inteligencia artificial, tú nomás... asiente.
+0:53.43|Ah, y si entran llamadas raras al conmutador, números equivocados y eso... tú cuelga. No es nada.
+1:00.43|Y sigue dándole cuerda a la botarga, ¿eh? Esa botarga la usaba un alumno, en los eventos. Bueno, eso no importa ahorita.
+1:08.28|Bueno, ya te dejo. Revisa la cámara 10 seguido. Buenas noches.

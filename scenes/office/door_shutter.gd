@@ -99,7 +99,7 @@ func set_closed(closed: bool) -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	if moved:
-		AudioManager.play(Sounds.DOOR_SHUTTER)
+		_play_shutter_sound(closed)
 	if not closed:
 		# Al empezar a subir, el fondo vuelve a ser el de la puerta abierta y
 		# esta capa se encarga otra vez de la lámina.
@@ -114,6 +114,17 @@ func set_closed(closed: bool) -> void:
 	_tween.tween_property(self, "progress", 1.0, CLOSE_TIME) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	_tween.tween_callback(_on_closed)
+
+
+## El sonido de la lámina. Al bajar sale una de las dos tomas (ver
+## `Sounds.shutter_sound()`); la otra se calla por si seguía sonando, que
+## abrir y cerrar rápido no deje dos cortinas encimadas.
+func _play_shutter_sound(closing: bool) -> void:
+	var id: String = Sounds.shutter_sound(closing)
+	for other: String in [Sounds.DOOR_SHUTTER, Sounds.DOOR_SHUTTER_ALT]:
+		if other != id:
+			AudioManager.stop(other)
+	AudioManager.play(id)
 
 
 ## Ya tocó el piso: el fondo pasa a las fotos con la cortina pintada.

@@ -70,6 +70,9 @@ var is_open: bool = false
 var current_camera: int = DEFAULT_CAMERA
 
 var _animatronics: Array[Animatronic] = []
+## true mientras el monitor ya está enseñando SIN SEÑAL y ya sonó su tono: el
+## repintado de la cámara pasa muchas veces por ahí y el tono es de una sola vez.
+var _no_signal_announced: bool = false
 var _camera_buttons: Dictionary = {}  # número de cámara -> Button
 var _camera_areas: Dictionary = {}    # número de cámara -> MinimapArea
 var _map_size: Vector2 = Vector2(640.0, 440.0)
@@ -174,6 +177,7 @@ func close() -> void:
 	is_open = false
 	visible = false
 	_interference_active = false
+	_announce_no_signal(false)
 	audio_control.visible = false
 	closed.emit()
 
@@ -185,6 +189,9 @@ func switch_to_camera(camera: int) -> void:
 	current_camera = camera
 	_ambient_event = {}
 	_ambient_event_left = 0.0
+	# Cada cámara a la que cambias es una imagen nueva: si también está caída, su
+	# tono suena de nuevo desde el principio en vez de seguir el de la anterior.
+	_announce_no_signal(false)
 	_roll_glimpse()
 	_refresh_view()
 	_play_strong_static()
@@ -310,6 +317,10 @@ func _refresh_camera_content() -> void:
 	var room: String = Rooms.room_of_camera(current_camera)
 	# El vistazo de reojo manda sobre todo lo demás mientras dura.
 	if _glimpse_left > 0.0:
+		# Si la cámara a la que cambiaste está buena, el tono de SIN SEÑAL de la
+		# anterior no puede seguir sonando por debajo del vistazo.
+		if not GameManager.patch_panel.is_camera_down(current_camera):
+			_announce_no_signal(false)
 		feed_image.texture = _glimpse
 		feed_image.visible = true
 		camera_overlay.hide_region()
@@ -326,9 +337,11 @@ func _refresh_camera_content() -> void:
 		saturated_label.visible = false
 		no_signal_label.visible = true
 		_set_static_strength(NO_SIGNAL_STATIC)
+		_announce_no_signal(true)
 		_refresh_occupants(room)
 		return
 	no_signal_label.visible = false
+	_announce_no_signal(false)
 	# Demasiados profes juntos: no hay imagen para eso, se satura.
 	if is_saturated(current_camera):
 		feed_image.visible = false
@@ -353,6 +366,22 @@ func _refresh_camera_content() -> void:
 	_refresh_overlay(state, texture != null)
 	_refresh_fallback_label(state, is_exact, room)
 	_refresh_occupants(room)
+
+
+## El tono de "sin señal": suena **una vez** al pasar a SIN SEÑAL, ya sea
+## porque la cámara que miras se cae con la descarga (cuando la estática se
+## aclara y sale el cartel), porque abres el monitor sobre una caída o porque
+## cambias a una. Cambiar a otra cámara o cerrar el monitor lo corta.
+func _announce_no_signal(is_down: bool) -> void:
+	if is_down:
+		if _no_signal_announced or not is_open:
+			return
+		_no_signal_announced = true
+		AudioManager.play(Sounds.CAMERA_NO_SIGNAL)
+		return
+	if _no_signal_announced:
+		_no_signal_announced = false
+		AudioManager.stop(Sounds.CAMERA_NO_SIGNAL)
 
 
 ## La etiqueta provisional: solo sale cuando la imagen no es la del estado.

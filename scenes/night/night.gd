@@ -601,7 +601,7 @@ func _on_power_changed(percent: float) -> void:
 ## La puerta la necesitan la energía y los profes que llegan a ella.
 func _on_door_toggled(is_closed: bool) -> void:
 	PowerManager.set_door_closed(is_closed)
-	AudioManager.play(Sounds.DOOR_SHUTTER)
+	# El sonido de la cortina lo pone la propia lámina (door_shutter.gd).
 	for animatronic: Animatronic in _animatronics:
 		animatronic.set_door_closed(is_closed)
 

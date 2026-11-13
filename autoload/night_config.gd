@@ -23,7 +23,7 @@ extends RefCounted
 # constantes. Así se puede desarrollar con el panel puesto sin miedo a que se
 # vaya en un release.
 const TEST_MODE: bool = false
-const DEBUG_KEYS: bool = false
+const DEBUG_KEYS: bool = true
 
 
 ## true si el panel de pruebas está disponible: solo dentro del editor.
