@@ -4,7 +4,7 @@
 
 Un juego de terror de supervivencia al estilo *Five Nights at Freddy's 2*, hecho en Godot, ambientado en un campus universitario. Eres el guardia nocturno de la Coordinación de Sistemas: de 12 AM a 6 AM tienes que vigilar las cámaras, cuidar la energía, hacer tu trabajo y que no te alcancen las almas de unos profesores que ya no se fueron a casa.
 
-> **Estado: v0.9.0-beta.** Se juega de principio a fin, con las seis noches. Lo que todavía falta está en [Conocido](#conocido).
+> **Estado: v0.9.1-beta.** Se juega de principio a fin, con las seis noches. Lo que todavía falta está en [Conocido](#conocido).
 
 ## Descargar
 
@@ -12,8 +12,8 @@ Baja el archivo de tu sistema desde la página de [**Releases**](https://github.
 
 | Sistema | Archivo | Tamaño |
 | --- | --- | --- |
-| Windows (64 bits) | `FiveNightsAtRochas_v0.9.0-beta_windows.zip` | 235 MB |
-| Linux (64 bits) | `FiveNightsAtRochas_v0.9.0-beta_linux.zip` | 226 MB |
+| Windows (64 bits) | `FiveNightsAtRochas_v0.9.1-beta_windows.zip` | 241 MB |
+| Linux (64 bits) | `FiveNightsAtRochas_v0.9.1-beta_linux.zip` | 232 MB |
 
 - **Windows:** el ejecutable no está firmado, así que SmartScreen puede avisar. Pulsa *Más información* y luego *Ejecutar de todas formas*.
 - **Linux:** dale permiso de ejecución con `chmod +x FiveNightsAtRochas.x86_64`.
@@ -122,12 +122,9 @@ Y si dejas la puerta cerrada cuando no debías:
 
 ## Conocido
 
-Es una beta. Lo que falta es, sobre todo, sonido:
+Es una beta. Lo poco que falta es sonido:
 
-- **Solo la noche 1 tiene llamada de inicio.** De la 2 a la 6 el teléfono no suena al empezar, porque esas grabaciones todavía no existen.
-- **El saludo de Ureña no tiene voz:** su primera frase se lee en el subtítulo pero no se oye. El resto de su llamada sí.
-- **Algunos sonidos son provisionales**, hechos por código mientras se graban los de verdad: el ambiente de la oficina y del pasillo, la estática de las cámaras, los pitidos de los menús, el aviso de ticket nuevo y toda la música de la maquinita.
-- A **Rochis** le faltan frases: su botón dice siempre lo mismo.
+- **Quedan unos pocos sonidos provisionales**, hechos por código mientras se graban los de verdad: el agua de los baños, el módem de Armando, los pitidos de los menús, el tono de ocupado del teléfono y las cartas de la baraja. La música de la maquinita es chiptune hecho por código, y así se queda.
 
 Si encuentras un fallo o algo que no cuadra, abre un [issue](https://github.com/MauriGGH/FNAR/issues) y cuéntanos qué noche era y qué estabas haciendo. El historial de versiones está en [CHANGELOG.md](CHANGELOG.md).
 

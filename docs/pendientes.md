@@ -323,13 +323,13 @@ si algún día quieres.
 | 3 | `llamadas/llamada_noche3.ogg` | `data/llamadas/llamada_noche3.txt` | **las dos cosas están** (9 líneas, 1:08) |
 | 4 | `llamadas/llamada_noche4.ogg` | `data/llamadas/llamada_noche4.txt` | **las dos cosas están** (10 líneas, 1:18) |
 | 5 | `llamadas/llamada_noche5.ogg` | `data/llamadas/llamada_noche5.txt` | **las dos cosas están** (6 líneas, 0:51) |
-| 6 | `llamadas/llamada_noche6.ogg` | `data/llamadas/llamada_noche6.txt` | **las dos cosas están** (0:42; estática y una voz al revés, con un solo subtítulo: «(estática)») |
+| 6 | `llamadas/llamada_noche6.ogg` | `data/llamadas/llamada_noche6.txt` | **las dos cosas están** (0:42; estática y una voz de robot al revés, con un solo subtítulo: «(estática)») |
 | — | `llamadas/llamada_mencho.ogg` | no lleva (un solo subtítulo corto en código) | **está** |
 | — | `llamadas/llamada_juguete.ogg` | no lleva (un solo subtítulo corto en código) | **está** |
 
 Una noche **tiene llamada solo si existe su `.ogg`**: si falta, el teléfono no suena esa noche y no
-pasa nada más. El texto de cada una vive en su `.txt`. **[docs/guion_voces.md](guion_voces.md)
-todavía marca las noches 2 a 6 como *por escribir***, y eso ya no es verdad.
+pasa nada más. Las seis están grabadas con ElevenLabs. El texto de cada una vive en su `.txt`, y
+[docs/guion_voces.md](guion_voces.md) lleva el texto final de las seis, sin los tiempos.
 
 Recordatorios del formato, que son fáciles de olvidar:
 
@@ -391,8 +391,8 @@ maquinita (chiptune por código, que es como se diseñó), `carta_toma` y `carta
 **Lo más barato de arreglar, por orden:**
 
 1. **Decidir dónde va `santi_voces`** — el audio ya está, solo falta el momento.
-2. **Poner al día [docs/guion_voces.md](guion_voces.md)** — sigue con las llamadas 2 a 6 *por
-   escribir* y sin las frases de Rochis.
+2. **Transcribir las frases extra de Rochis** en [docs/guion_voces.md](guion_voces.md): las
+   llamadas ya están, pero lo que dicen `rochis_extra_1..3` no está escrito en ningún sitio.
 3. **`estatica_camara` sin fundidos**, si el aleteo del bucle llega a notarse.
 4. **`tono_ocupado` y las dos cartas** — los únicos provisionales que no se quedan a propósito,
    fuera de la maquinita.

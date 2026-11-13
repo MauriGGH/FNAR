@@ -272,7 +272,8 @@ corta en cualquier momento.
 - Van **abajo al centro**, como mucho dos líneas, en VT323 sobre un fondo semitransparente
   (`scenes/phone/call_subtitles.gd`). El tiempo se lee de la posición del audio, no de un
   contador propio, así que no se desfasan si el juego da un tirón.
-- El guion completo para grabar las noches que faltan está en `docs/guion_voces.md`.
+- Las seis están grabadas (ElevenLabs); la 6 es estática y una voz de robot al revés, con un solo
+  subtítulo, «(estática)». El texto final de cada una está en `docs/guion_voces.md`.
 
 La llamada de Ureña es otra cosa: conversación con respuestas, en la ventanita de la esquina y
 **con sus grabaciones**, una por línea (`urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`,

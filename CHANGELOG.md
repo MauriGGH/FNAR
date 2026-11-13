@@ -1,5 +1,33 @@
 # Historial de cambios
 
+## v0.9.1-beta — 12 de noviembre de 2026
+
+Una versión de sonido. Casi todo lo que faltaba por oírse en la 0.9.0 ya está.
+
+### Novedades desde la 0.9.0
+
+- **Las seis noches tienen llamada.** El teléfono suena al empezar cada noche,
+  de la 1 a la 6, con voz y subtítulos. La de la primera noche se volvió a
+  grabar: más corta y más al grano. La de la sexta no se parece a las demás.
+- **Voces nuevas** para Mamador, Ureña y Rochis. Ureña ya saluda en voz alta
+  cuando llama.
+- **Rochis tiene más frases.** El botón de su cámara ya no dice siempre lo
+  mismo.
+- **Sonidos de verdad donde había provisionales:** el zumbido de la oficina, el
+  aire del pasillo, la estática de las cámaras, el aviso de ticket nuevo y el
+  tronido del tótem.
+- **A Juan.exe se le oye respirar** cuando está pegado al cristal, aunque la
+  linterna esté apagada.
+- **Las cámaras suenan cuando se quedan sin señal**, al aparecer el cartel.
+- **La cortina no suena siempre igual** al bajarla.
+
+### Conocido
+
+- **Quedan unos pocos sonidos provisionales**, hechos por código: el agua de los
+  baños, el módem de Armando, los pitidos de los menús, el tono de ocupado del
+  teléfono y las cartas de la baraja. La música de la maquinita es chiptune
+  hecho por código, y así se queda.
+
 ## v0.9.0-beta — 27 de octubre de 2026
 
 Primera versión jugable de principio a fin. Son las seis noches completas, con
