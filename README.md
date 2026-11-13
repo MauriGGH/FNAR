@@ -4,7 +4,7 @@
 
 Un juego de terror de supervivencia al estilo *Five Nights at Freddy's 2*, hecho en Godot, ambientado en un campus universitario. Eres el guardia nocturno de la Coordinación de Sistemas: de 12 AM a 6 AM tienes que vigilar las cámaras, cuidar la energía, hacer tu trabajo y que no te alcancen las almas de unos profesores que ya no se fueron a casa.
 
-> **Estado: v0.9.1-beta.** Se juega de principio a fin, con las seis noches. Lo que todavía falta está en [Conocido](#conocido).
+> **Estado: v0.9.2-beta.** Se juega de principio a fin, con las seis noches. Lo que todavía falta está en [Conocido](#conocido).
 
 ## Descargar
 
@@ -12,8 +12,8 @@ Baja el archivo de tu sistema desde la página de [**Releases**](https://github.
 
 | Sistema | Archivo | Tamaño |
 | --- | --- | --- |
-| Windows (64 bits) | `FiveNightsAtRochas_v0.9.1-beta_windows.zip` | 241 MB |
-| Linux (64 bits) | `FiveNightsAtRochas_v0.9.1-beta_linux.zip` | 232 MB |
+| Windows (64 bits) | `FiveNightsAtRochas_v0.9.2-beta_windows.zip` | 243 MB |
+| Linux (64 bits) | `FiveNightsAtRochas_v0.9.2-beta_linux.zip` | 234 MB |
 
 - **Windows:** el ejecutable no está firmado, así que SmartScreen puede avisar. Pulsa *Más información* y luego *Ejecutar de todas formas*.
 - **Linux:** dale permiso de ejecución con `chmod +x FiveNightsAtRochas.x86_64`.

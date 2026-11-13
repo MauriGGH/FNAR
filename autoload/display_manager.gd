@@ -42,9 +42,26 @@ func apply(enabled: bool) -> void:
 	fullscreen_changed.emit(enabled)
 
 
+## Se pone en cuanto se pide cerrar la ventana o este nodo sale del árbol: a
+## partir de ahí F11 ya no hace nada.
+var _closing: bool = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_EXIT_TREE:
+		_closing = true
+
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key == null or not key.pressed or key.echo or key.keycode != TOGGLE_KEY:
 		return
+	# Un F11 que llega mientras el juego se cierra se ignora. En el ejecutable
+	# exportado, llamar a set_input_as_handled() sobre un viewport que ya no
+	# existe no da un error: tumba el juego (segfault).
+	if _closing or not is_inside_tree():
+		return
 	toggle()
-	get_viewport().set_input_as_handled()
+	var viewport: Viewport = get_viewport()
+	if viewport != null:
+		viewport.set_input_as_handled()

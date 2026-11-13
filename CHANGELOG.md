@@ -1,5 +1,35 @@
 # Historial de cambios
 
+## v0.9.2-beta — 13 de noviembre de 2026
+
+Ajustes después de jugar las primeras noches: cómo suena la oficina y cuánto
+aprieta cada noche.
+
+### Novedades desde la 0.9.1
+
+- **El juego tiene ícono**, en la ventana y en el ejecutable.
+- **La oficina suena viva.** El ventilador, la lámpara y el cuarto suben y bajan
+  cada uno a su ritmo, y de vez en cuando el ventilador se fuerza o la lámpara
+  parpadea. Los ruidos lejanos del edificio se oyen más y más seguido.
+- **Volúmenes nivelados.** Las voces quedan por encima de todo, las llamadas ya
+  no tapan la oficina y Ureña suena igual de fuerte que Rochis.
+- **Mamador recupera su voz de antes.**
+- **El Mago Eléctrico tira menos cables:** una cámara por descarga (dos en la
+  última noche) y con bastante tiempo entre una y otra. En la hoja del rack, el
+  puerto que se cayó viene marcado a lápiz.
+- **Ureña llama más:** desde la noche 3, una o dos veces por noche, y hasta
+  tres en las últimas. Nunca encima de otra llamada.
+- **Barcosa ya no se frena con vistazos.** Hay que mirarlo un momento para que
+  retroceda, y aun así a veces sale corriendo por su cuenta.
+- **Dificultad nueva en las noches 1 a 5.** La primera sigue siendo tranquila,
+  la segunda ya aprieta y la tercera se puede perder.
+
+### Conocido
+
+- Siguen los mismos sonidos provisionales que en la 0.9.1: el agua de los
+  baños, el módem de Armando, los pitidos de los menús, el tono de ocupado del
+  teléfono y las cartas de la baraja.
+
 ## v0.9.1-beta — 12 de noviembre de 2026
 
 Una versión de sonido. Casi todo lo que faltaba por oírse en la 0.9.0 ya está.

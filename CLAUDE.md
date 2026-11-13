@@ -36,7 +36,7 @@ ya tienen `.gdignore`, así que el editor ni los ve).
 **El ícono** es `icon.png` (512x512, el de la ventana y el de Linux, en
 `application/config/icon`) e `icon.ico` (256/128/64/48/32/16, el del .exe, en
 `application/icon` del preset de Windows). El preset de Windows lleva además
-`file_version` y `product_version` en `0.9.1.0`, que es lo que enseña Windows en
+`file_version` y `product_version` en `0.9.2.0`, que es lo que enseña Windows en
 las propiedades del .exe: ahí solo valen números, así que el "-beta" no entra.
 Al cambiar de versión hay que subir los dos a mano.
 
