@@ -2,10 +2,11 @@ class_name Barcosa
 extends Animatronic
 
 ## Barcosa (rol Foxy). Se esconde en la sala de servicio del salón B y sube de
-## etapa **cuando pasa demasiado tiempo sin que lo revisen** por la CAM 10:
-## nada de dados. Verlo en la cámara pone la cuenta a cero, así que revisarlo
-## seguido lo deja donde está; lo que aguanta cada noche lo dice
-## `NightConfig.barcosa_stage_time()`.
+## etapa **cuando pasa demasiado tiempo sin que lo revisen** por la CAM 10 (lo
+## dice `NightConfig.barcosa_stage_time()`) y, además, **cuando le gana su
+## dado**, aunque lo estés mirando. Verlo solo cuenta si son
+## `NightConfig.BARCOSA_WATCH_TIME` segundos seguidos, y entonces lo baja **una**
+## etapa y pone la cuenta a cero. Los números están en night_config.gd.
 ##
 ## Desde la etapa 2 sale corriendo por el pasillo hasta la puerta, y mientras
 ## corre se oyen sus pasos acercándose, para que se pueda reaccionar sin estar
@@ -67,6 +68,11 @@ var _step_timer: float = 0.0
 ## El golpe de metal que sonó la última vez, para no repetirlo.
 var _last_hit: String = ""
 var _unwatched: float = 0.0
+## Lo que llevas viéndolo sin quitar la cámara, y si esa mirada ya contó.
+var _watched_for: float = 0.0
+var _look_counted: bool = false
+## Lo que falta para su siguiente dado.
+var _dice_left: float = NightConfig.BARCOSA_DICE_INTERVAL
 var _stage_time: float = NightConfig.BARCOSA_EASY_STAGE_TIME
 ## Lo que tarda esta noche en cruzar el pasillo entero.
 var _run_time: float = NightConfig.BARCOSA_EASY_RUN_TIME
@@ -94,6 +100,9 @@ func start() -> void:
 	super()
 	_state = State.STALKING
 	_unwatched = 0.0
+	_watched_for = 0.0
+	_look_counted = false
+	_dice_left = NightConfig.BARCOSA_DICE_INTERVAL
 	_stage_time = NightConfig.barcosa_stage_time(ai_level)
 	_run_time = NightConfig.barcosa_run_time(ai_level)
 	_set_stage(STAGE_HIDDEN)
@@ -111,12 +120,29 @@ func _process(delta: float) -> void:
 			_process_banging(delta)
 
 
-## La cuenta del tiempo sin verlo. Mirarlo por la CAM 10 la pone a cero; al
-## llenarse, sube una etapa (o sale corriendo, si ya estaba en la última).
+## Su dado y la cuenta del tiempo sin verlo. Una mirada de 1.5 s seguidos lo
+## baja una etapa y pone la cuenta a cero; una ojeada más corta no cuenta y la
+## cuenta sigue corriendo. Al llenarse, sube una etapa (o sale corriendo, si ya
+## estaba en la última).
 func _process_stalking(delta: float) -> void:
+	_dice_left -= delta
+	if _dice_left <= 0.0:
+		_dice_left = NightConfig.BARCOSA_DICE_INTERVAL
+		if _wins_dice():
+			advance()
+			if _state != State.STALKING:
+				return
 	if is_being_watched():
-		_unwatched = 0.0
-		return
+		_watched_for += delta
+		if _watched_for >= NightConfig.BARCOSA_WATCH_TIME:
+			if not _look_counted:
+				_look_counted = true
+				_set_stage(stage - 1)
+			_unwatched = 0.0
+			return
+	else:
+		_watched_for = 0.0
+		_look_counted = false
 	_unwatched += delta
 	if _unwatched < _stage_time:
 		return
@@ -124,9 +150,14 @@ func _process_stalking(delta: float) -> void:
 	advance()
 
 
-## Ya no tira dados: su avance es el tiempo sin que lo revisen.
+## El dado de la clase base no lo usa: el suyo va aparte, en _process_stalking.
 func can_move() -> bool:
 	return false
+
+
+## Su dado: sube una etapa aunque lo estés viendo. Con nivel 0 nunca gana.
+func _wins_dice() -> bool:
+	return randi_range(1, 100) <= roundi(float(effective_ai_level()) * NightConfig.BARCOSA_DICE_PER_LEVEL)
 
 
 ## Le ganó el dado: sube una etapa o, si ya está en la 2, sale corriendo.
@@ -177,8 +208,10 @@ func debug_text() -> String:
 		State.BANGING:
 			return "golpeando la puerta (%.1f s)" % maxf(BANG_TIME - _bang_elapsed, 0.0)
 		_:
-			var text: String = "etapa %d (%s), %.0f/%.0f s sin verlo" % [
-				stage, STAGE_NAMES[stage], _unwatched, _stage_time]
+			var text: String = "etapa %d (%s), %.0f/%.0f s sin verlo, dado en %.0f s" % [
+				stage, STAGE_NAMES[stage], _unwatched, _stage_time, _dice_left]
+			if _watched_for > 0.0 and not _look_counted:
+				text += ", mirándolo %.1f s" % _watched_for
 			if stage == STAGE_LEAVING and not GameManager.is_hallway_free():
 				text += " esperando el pasillo"
 			return text
@@ -263,6 +296,8 @@ func _go_home() -> void:
 	GameManager.release_hallway(self)
 	_state = State.STALKING
 	_unwatched = 0.0
+	_watched_for = 0.0
+	_look_counted = false
 	move_to_step(STEP_SALON_B)
 	_set_stage(STAGE_HIDDEN)
 

@@ -26,13 +26,17 @@ const ALL_KEYS: Array[String] = [
 const FIRST_NIGHT: int = 1
 const LAST_NIGHT: int = 6
 
-## Mientras no exista el menú (hito 6), la noche de prueba sale de aquí.
+## Subidos tras jugar las noches 1 a 3: la 1 tranquila, la 2 con algo de
+## presión y la 3 con riesgo de perder. Se ajustaron con una simulación de
+## noches completas (cuántas veces llega cada uno a atacar); el resultado está
+## en CLAUDE.md, en «Niveles de IA por noche». Los profes que una noche no
+## estaban activos siguen sin estarlo: las llamadas los presentan en su noche.
 const LEVELS: Dictionary = {
-	1: {BARCOSA: 0, MAMADOR: 3, URENA: 0, ROCHIS: 0, AUDEL: 0, COME_TRABAS: 0, JUAN_EXE: 2, ARMANDO: 0},
-	2: {BARCOSA: 3, MAMADOR: 5, URENA: 0, ROCHIS: 0, AUDEL: 0, COME_TRABAS: 0, JUAN_EXE: 4, ARMANDO: 2},
-	3: {BARCOSA: 5, MAMADOR: 7, URENA: 4, ROCHIS: 3, AUDEL: 0, COME_TRABAS: 1, JUAN_EXE: 6, ARMANDO: 4},
-	4: {BARCOSA: 8, MAMADOR: 9, URENA: 7, ROCHIS: 6, AUDEL: 5, COME_TRABAS: 1, JUAN_EXE: 8, ARMANDO: 6},
-	5: {BARCOSA: 11, MAMADOR: 12, URENA: 10, ROCHIS: 10, AUDEL: 9, COME_TRABAS: 2, JUAN_EXE: 10, ARMANDO: 9},
+	1: {BARCOSA: 0, MAMADOR: 4, URENA: 0, ROCHIS: 0, AUDEL: 0, COME_TRABAS: 0, JUAN_EXE: 3, ARMANDO: 0},
+	2: {BARCOSA: 5, MAMADOR: 6, URENA: 0, ROCHIS: 0, AUDEL: 0, COME_TRABAS: 0, JUAN_EXE: 5, ARMANDO: 3},
+	3: {BARCOSA: 7, MAMADOR: 8, URENA: 6, ROCHIS: 4, AUDEL: 0, COME_TRABAS: 1, JUAN_EXE: 7, ARMANDO: 6},
+	4: {BARCOSA: 9, MAMADOR: 10, URENA: 8, ROCHIS: 7, AUDEL: 6, COME_TRABAS: 1, JUAN_EXE: 9, ARMANDO: 7},
+	5: {BARCOSA: 12, MAMADOR: 13, URENA: 11, ROCHIS: 10, AUDEL: 10, COME_TRABAS: 2, JUAN_EXE: 11, ARMANDO: 10},
 	6: {BARCOSA: 15, MAMADOR: 16, URENA: 15, ROCHIS: 15, AUDEL: 14, COME_TRABAS: 3, JUAN_EXE: 14, ARMANDO: 13},
 }
 

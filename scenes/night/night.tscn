@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://scenes/night/night.gd" id="1_night"]
 [ext_resource type="Script" path="res://scenes/ui/static_frames.gd" id="90_staticframes"]
@@ -30,6 +30,7 @@
 [ext_resource type="Script" path="res://scenes/phone/call_subtitles.gd" id="74_subs"]
 [ext_resource type="Script" path="res://scenes/night/voice_line.gd" id="75_voice"]
 [ext_resource type="Script" path="res://scenes/night/distant_sounds.gd" id="76_far"]
+[ext_resource type="Script" path="res://scenes/night/office_ambience.gd" id="77_amb"]
 [ext_resource type="Script" path="res://scenes/night/controls_card.gd" id="77_cards"]
 [ext_resource type="Script" path="res://scenes/ui/wasted_screen.gd" id="78_wasted"]
 [ext_resource type="Script" path="res://scenes/night/mod_menu.gd" id="80_mod"]
@@ -97,6 +98,9 @@ display_name = "Armando Prompts"
 
 [node name="DistantSounds" type="Node" parent="."]
 script = ExtResource("76_far")
+
+[node name="OfficeAmbience" type="Node" parent="."]
+script = ExtResource("77_amb")
 
 [node name="Hud" type="CanvasLayer" parent="."]
 

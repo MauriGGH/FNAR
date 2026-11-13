@@ -27,7 +27,8 @@ const MOVE_INTERVAL: float = 6.0
 const CORTASO_TIME: float = 1.6
 
 ## De cada 100 oportunidades que no usa para moverse, cuántas acaban en
-## descarga. Solo cuenta mientras está en el techo.
+## descarga. Solo cuenta mientras está en el techo y si ya pasó el descanso de
+## la última (NightConfig.discharge_cooldown()).
 const DISCHARGE_CHANCE: int = 40
 
 const DISCHARGE_NOTICE: String = "[chispazo en el techo]"
@@ -50,6 +51,8 @@ var _cortaso_elapsed: float = 0.0
 var _cooldown_left: float = 0.0
 ## Lo que le queda al chispazo que se ve en la CAM 6.
 var _discharge_left: float = 0.0
+## Lo que falta para que pueda soltar otra descarga.
+var _discharge_cooldown_left: float = 0.0
 
 
 ## Nombre corto para los archivos de imagen: cam07_audel.png y demás.
@@ -81,6 +84,7 @@ func start() -> void:
 	_state = State.WALKING
 	_cortaso_elapsed = 0.0
 	_cooldown_left = 0.0
+	_discharge_cooldown_left = 0.0
 
 
 func _process(delta: float) -> void:
@@ -90,6 +94,8 @@ func _process(delta: float) -> void:
 		_discharge_left = maxf(_discharge_left - delta, 0.0)
 	if _cooldown_left > 0.0:
 		_cooldown_left = maxf(_cooldown_left - delta, 0.0)
+	if _discharge_cooldown_left > 0.0:
+		_discharge_cooldown_left = maxf(_discharge_cooldown_left - delta, 0.0)
 	match _state:
 		State.WALKING:
 			super(delta)  # El dado de la IA de la clase base
@@ -106,14 +112,19 @@ func try_move() -> bool:
 		return true
 	if _state != State.WALKING or _route_index != STEP_TECHO:
 		return false
+	if _discharge_cooldown_left > 0.0:
+		return false
 	if randi_range(1, 100) <= DISCHARGE_CHANCE:
 		cause_discharge()
 	return false
 
 
-## La descarga: tumba de 1 a 3 cámaras y avisa para el destello y la estática.
+## La descarga: tumba una cámara (una o dos en la última noche) y avisa para
+## el destello y la estática. El panel de pruebas la llama directo, sin
+## esperar el descanso.
 func cause_discharge() -> void:
 	var affected: PackedInt32Array = GameManager.patch_panel.cause_discharge(GameManager.current_night)
+	_discharge_cooldown_left = NightConfig.discharge_cooldown()
 	# Mientras dura, la CAM 6 lo enseña soltando el chispazo.
 	_discharge_left = DISCHARGE_TIME
 	if affected.is_empty():
@@ -169,6 +180,8 @@ func debug_text() -> String:
 	var text: String = "en %s" % Rooms.display_name(current_room)
 	if _cooldown_left > 0.0:
 		text += ", descansando (%.0f s)" % _cooldown_left
+	if _discharge_cooldown_left > 0.0:
+		text += ", sin descarga (%.0f s)" % _discharge_cooldown_left
 	if PowerManager.is_flashlight_disabled:
 		text += ", linterna muerta"
 	var down: Array = GameManager.patch_panel.disconnected

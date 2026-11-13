@@ -10,9 +10,8 @@ signal discharge_happened(cameras: PackedInt32Array)
 signal camera_restored(camera: int)
 
 const PORT_COUNT: int = 12
-## Cuántas cámaras tumba una descarga.
+## Cuántas cámaras tumba una descarga lo dice NightConfig.discharge_max_cameras().
 const MIN_AFFECTED: int = 1
-const MAX_AFFECTED: int = 3
 ## Antes de esta noche, la CAM 4 nunca se desconecta.
 const CAM4_SAFE_BEFORE_NIGHT: int = 5
 const PROTECTED_CAMERA: int = 4
@@ -128,13 +127,21 @@ func camera_at_gi(gi_port: int) -> int:
 	return 0
 
 
+## true si la hoja tiene que llevar marcado el puerto de esa cámara: está caída
+## por una descarga, así que el renglón de la hoja dice la verdad. Las de la
+## tarea de reetiquetar no se marcan: ahí la hoja miente a propósito.
+func is_marked_on_sheet(camera: int) -> bool:
+	return is_camera_down(camera) and not camera in swapped_sheet
+
+
 ## true si ese puerto del switch tiene su cable puesto.
 func is_gi_connected(gi_port: int) -> bool:
 	var camera: int = camera_at_gi(gi_port)
 	return camera != 0 and not is_camera_down(camera)
 
 
-## La descarga del pararrayos: tumba de 1 a 3 cámaras que todavía estén bien.
+## La descarga del pararrayos: tumba una cámara que todavía esté bien (una o
+## dos en la última noche).
 ## Devuelve las que se cayeron ahora.
 func cause_discharge(night: int) -> PackedInt32Array:
 	var available: Array[int] = []
@@ -148,7 +155,8 @@ func cause_discharge(night: int) -> PackedInt32Array:
 		return PackedInt32Array()
 
 	available.shuffle()
-	var count: int = mini(randi_range(MIN_AFFECTED, MAX_AFFECTED), available.size())
+	var count: int = mini(randi_range(MIN_AFFECTED, NightConfig.discharge_max_cameras(night)),
+		available.size())
 	var affected: PackedInt32Array = PackedInt32Array()
 	for i: int in count:
 		disconnected.append(available[i])

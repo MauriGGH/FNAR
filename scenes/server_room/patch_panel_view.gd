@@ -136,6 +136,11 @@ const PAPER: Color = Color(0.82, 0.8, 0.74)
 const PAPER_SHADE: Color = Color(0.72, 0.7, 0.64)
 const PAPER_INK: Color = Color(0.21, 0.2, 0.19)
 const TAPE: Color = Color(0.8, 0.79, 0.7, 0.3)
+## El círculo a lápiz con el que alguien marcó en la hoja el puerto de una
+## cámara caída: grafito, medio transparente, para que se note sin gritar.
+const PENCIL: Color = Color(0.32, 0.33, 0.4, 0.62)
+const PENCIL_WIDTH: float = 1.3
+const PENCIL_SEGMENTS: int = 22
 const SPARK_COLOR: Color = Color(0.88, 0.92, 0.95)
 const HIGHLIGHT: Color = Color(1.0, 1.0, 1.0, 0.32)
 
@@ -785,6 +790,28 @@ func _draw_sheet_table(sheet: Rect2) -> void:
 			"%02d" % _model.pp_of(camera), "%02d" % _model.sheet_gi_of(camera)])
 		for column: int in columns.size():
 			_draw_centered(font, Vector2(columns[column], y), values[column], body_size, PAPER_INK)
+		if _model.is_marked_on_sheet(camera):
+			_draw_pencil_circle(font, Vector2(columns[columns.size() - 1], y), values[2], body_size, camera)
+
+
+## Un círculo a mano alrededor de un número de la hoja: dos pasadas de lápiz
+## que no cierran igual, como cuando alguien lo marca de prisa. La variación
+## sale de la cámara, así que no tiembla de un cuadro a otro.
+func _draw_pencil_circle(font: Font, baseline: Vector2, text: String, font_size: int,
+		camera: int) -> void:
+	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
+	var center: Vector2 = baseline - Vector2(0.0, font_size * 0.3)
+	var radius: Vector2 = Vector2(width * 0.5 + font_size * 0.35, font_size * 0.55)
+	for stroke: int in 2:
+		var start: float = sin(float(camera) * 3.1 + stroke) * 0.6 - PI * 0.5
+		var span: float = TAU * (1.06 + 0.05 * stroke)
+		var wobble: float = 0.06 + 0.03 * stroke
+		var points: PackedVector2Array = PackedVector2Array()
+		for i: int in PENCIL_SEGMENTS + 1:
+			var angle: float = start + span * float(i) / float(PENCIL_SEGMENTS)
+			var squash: float = 1.0 + wobble * sin(angle * 2.0 + float(camera))
+			points.append(center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y) * squash)
+		draw_polyline(points, PENCIL, PENCIL_WIDTH, true)
 
 
 func _draw_centered(font: Font, center: Vector2, text: String, font_size: int, color: Color) -> void:

@@ -105,12 +105,24 @@ static func glass_margin(night: int) -> float:
 
 
 # --- Barcosa ------------------------------------------------------------------
-## Barcosa no avanza de etapa con un dado: avanza cuando pasa demasiado tiempo
-## **sin que lo revises** por la CAM 10, y verlo pone la cuenta otra vez a cero.
-## Lo que aguanta sale de su nivel, que es lo que cambia por noche: con el de la
-## noche 2 (3) son 45 s por etapa, y con el de la noche 6 (15), 15 s. Las de en
-## medio se interpolan, y en una Custom Night con el nivel al tope nunca baja de
-## BARCOSA_MIN_STAGE_TIME, para que siga siendo jugable.
+## Barcosa sube de etapa por dos lados:
+##
+## - **El tiempo sin que lo revises** por la CAM 10. Lo que aguanta sale de su
+##   nivel: con nivel 3 son 45 s por etapa y con 15, 15 s (la noche 2 lleva 5,
+##   unos 40 s; la 3 lleva 7, unos 35 s). Las de en medio se interpolan, y en una Custom Night con el
+##   nivel al tope nunca baja de BARCOSA_MIN_STAGE_TIME.
+## - **Su dado**, que tira aunque lo estés mirando: cada BARCOSA_DICE_INTERVAL
+##   segundos, `randi_range(1, 100) <= nivel * BARCOSA_DICE_PER_LEVEL` lo sube
+##   una etapa. Por eso a veces sale corriendo por mucho que lo vigiles, y hay
+##   que cerrar la cortina sí o sí.
+##
+## Mirarlo **solo cuenta si lo ves BARCOSA_WATCH_TIME segundos seguidos**, y
+## entonces lo baja **una** etapa (no a cero) y pone a cero la cuenta del tiempo.
+## Para bajarlo otra etapa hay que quitar la cámara y volver a verlo.
+const BARCOSA_WATCH_TIME: float = 1.5
+const BARCOSA_DICE_INTERVAL: float = 15.0
+const BARCOSA_DICE_PER_LEVEL: float = 3.0
+
 const BARCOSA_EASY_LEVEL: int = 3
 const BARCOSA_HARD_LEVEL: int = 15
 const BARCOSA_EASY_STAGE_TIME: float = 45.0
@@ -118,7 +130,7 @@ const BARCOSA_HARD_STAGE_TIME: float = 15.0
 const BARCOSA_MIN_STAGE_TIME: float = 8.0
 
 ## Y lo que tarda en cruzar el pasillo desde que sale hasta que llega a la
-## puerta: 6 s con el nivel de la noche 2 y 3 s con el de la 6. Ese es el tiempo
+## puerta: 6 s con nivel 3 y 3 s con nivel 15 (5.5 s en la noche 2, 5 s en la 3). Ese es el tiempo
 ## que tienes para cerrar cuando lo oyes venir corriendo.
 const BARCOSA_EASY_RUN_TIME: float = 6.0
 const BARCOSA_HARD_RUN_TIME: float = 3.0
@@ -142,6 +154,26 @@ static func barcosa_stage_time(ai_level: int) -> float:
 static func barcosa_run_time(ai_level: int) -> float:
 	return maxf(lerpf(BARCOSA_EASY_RUN_TIME, BARCOSA_HARD_RUN_TIME,
 		_barcosa_t(ai_level)), BARCOSA_MIN_RUN_TIME)
+
+
+# --- Descarga del pararrayos -------------------------------------------------
+## Cada descarga tumba **una sola cámara**, y en la última noche (o una Custom
+## Night) una o dos. Antes eran de una a tres, y reconectar tres seguidas
+## dejaba la oficina sola demasiado rato.
+const DISCHARGE_CAMERAS: int = 1
+const DISCHARGE_CAMERAS_LAST_NIGHT: int = 2
+## Entre una descarga y la siguiente pasan al menos estas horas de juego.
+const DISCHARGE_COOLDOWN_HOURS: float = 2.0
+
+
+## Cuántas cámaras puede tumbar una descarga esa noche, como mucho.
+static func discharge_max_cameras(night: int) -> int:
+	return DISCHARGE_CAMERAS_LAST_NIGHT if night >= LAST_NIGHT else DISCHARGE_CAMERAS
+
+
+## Lo que tiene que pasar entre dos descargas, en segundos de verdad.
+static func discharge_cooldown() -> float:
+	return DISCHARGE_COOLDOWN_HOURS * hour_duration()
 
 
 # --- Breaker y cortaso -------------------------------------------------------

@@ -11,7 +11,7 @@ comprobaciones que están al final de cada tabla.
 
 ## 1. Audios
 
-Los 123 ids de `data/sounds.gd`. Tres estados posibles:
+Los 124 ids de `data/sounds.gd`. Tres estados posibles:
 
 - **archivo real** — el `.ogg` está en `assets/audio/` y suena ese.
 - **provisional** — no hay archivo, suena lo que genera `scripts/audio/tone_builder.gd` por código
@@ -22,7 +22,7 @@ Los 123 ids de `data/sounds.gd`. Tres estados posibles:
 La columna "dónde se usa" es el script que lo pide. Cuando el id no se pide por su constante sino
 que lo resuelve una función (los gritos, los golpes, los tics), ahí va la función.
 
-#### Durante la noche — 99 ids (94 reales, 5 provisionales, 0 faltan)
+#### Durante la noche — 100 ids (95 reales, 5 provisionales, 0 faltan)
 
 | id | archivo esperado | dónde se usa | estado |
 | --- | --- | --- | --- |
@@ -31,8 +31,9 @@ que lo resuelve una función (los gritos, los golpes, los tics), ahí va la func
 | `carta_toma` | `carta_toma.ogg` | scenes/office/uno_desk.gd | provisional (`typewriter_key`) |
 | `tono_ocupado` | `tono_ocupado.ogg` | scenes/phone/phone_call.gd | provisional (`busy_tone`) |
 | `urena_banos` | `lejos/urena_banos.ogg` | scenes/night/distant_sounds.gd | provisional (`far_water`) |
-| `ambiente_oficina` | `ambiente_oficina.ogg` | scenes/night/night.gd | **archivo real** |
-| `ambiente_pasillo` | `ambiente_pasillo.ogg` | scenes/night/night.gd | **archivo real** |
+| `ambiente_lampara` | `ambiente_lampara.ogg` | scenes/night/office_ambience.gd | **archivo real** |
+| `ambiente_oficina` | `ambiente_oficina.ogg` | scenes/night/office_ambience.gd | **archivo real** |
+| `ambiente_pasillo` | `ambiente_pasillo.ogg` | scenes/night/office_ambience.gd | **archivo real** |
 | `apagon_frase` | `apagon_frase.ogg` | scenes/night/night.gd | **archivo real** |
 | `armando_glitch_bucle` | `armando_glitch_bucle.ogg` | scenes/pc_screen/armando_takeover.gd | **archivo real** |
 | `armando_windows_crash` | `armando_windows_crash.ogg` | scenes/pc_screen/armando_takeover.gd | **archivo real** |
@@ -345,7 +346,7 @@ Recordatorios del formato, que son fáciles de olvidar:
 
 | Bloque | Total | Listo | Provisional | Falta |
 | --- | --- | --- | --- | --- |
-| **Audios** (ids del catálogo) | 123 | 109 con archivo real | 14 con provisional por código | **0 sin nada** |
+| **Audios** (ids del catálogo) | 124 | 110 con archivo real | 14 con provisional por código | **0 sin nada** |
 | **Voces** (líneas que quedan) | 29 | 24 enganchadas | 4 sin voz a propósito · 1 reservada | **0** |
 | **Imágenes** (bloques que pide el código) | 15 bloques | **15 completos** | 4 cosas se dibujan por código pudiendo ser arte | — |
 | **Llamadas** | 6 noches + 2 raras | **las 8** | — | **0** |

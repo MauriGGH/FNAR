@@ -33,6 +33,13 @@ queda sin zonas de clic y las llamadas sin subtítulos. `docs/`, `tools/`,
 `art_refs/` y `builds/` se quedan fuera por `exclude_filter` (y los dos últimos
 ya tienen `.gdignore`, así que el editor ni los ve).
 
+**El ícono** es `icon.png` (512x512, el de la ventana y el de Linux, en
+`application/config/icon`) e `icon.ico` (256/128/64/48/32/16, el del .exe, en
+`application/icon` del preset de Windows). El preset de Windows lleva además
+`file_version` y `product_version` en `0.9.1.0`, que es lo que enseña Windows en
+las propiedades del .exe: ahí solo valen números, así que el "-beta" no entra.
+Al cambiar de versión hay que subir los dos a mano.
+
 **Las plantillas de exportación** se instalan desde el editor (Editor →
 Administrar plantillas de exportación → Descargar e instalar) o a mano, dejando
 el contenido del `.tpz` de esa versión exacta en
@@ -188,21 +195,60 @@ exacto que se espera. Se regenera desde F1 → Audio; no se edita a mano.
 sirve igual en el menú principal y en la pausa de una noche sin cambiar de escena. Lleva los cinco
 deslizadores y la pantalla completa, y todo se guarda al momento.
 
-**El catálogo** (123 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
+**Mezcla.** Los volúmenes del catálogo están **medidos en el juego**, no puestos a ojo: se graba
+cada sonido solo por el Master (todos los deslizadores al 100 %) y se mide en LUFS con ffmpeg
+(`ebur128`). Ojo: un .ogg mono suena unos 3 dB más fuerte en el juego que lo que mide el archivo.
+Los niveles a los que se llegó, de más fuerte a más bajo:
+
+| Grupo | Nivel en el juego | Qué hay |
+| --- | --- | --- |
+| Voces | **−17 a −19 LUFS** | las llamadas a −6 dB (la del Mencho −19.6, ya trae su filtro), las líneas de Ureña con su volumen cada una para caer en −18.5 como «es impresionante», y las de Mamador igual (`mamador_delito` −4.5, `mamador_ok_1..3` −2, −3 y −2) |
+| Pasos de Barcosa | −23.5 | `barcosa_corre` se queda arriba a propósito: es el aviso de cerrar |
+| Lejanos sueltos | **−26** | los seis de ambiente y el módem de Armando; cada 40 a 90 s |
+| Respiración de Juan | −27 | |
+| Bucles de sitio | **−34** | el lavabo de Ureña y el chispazo del techo; el tecleo de la sala de juntas, más bajo |
+| Ambiente de la oficina | **−34** las tres capas juntas | ventilador −36, cuarto −37, lámpara −44 (muy de fondo, por debajo del ventilador) |
+
+Las voces quedan **16 dB por encima del ambiente** y 8 por encima de los lejanos. Antes no había
+orden: el agua del lavabo (el provisional) sonaba a −16, más fuerte que las voces, y era lo que
+hacía que **la noche 3 sonara distinta**: es la primera con Ureña en los baños. Y el ambiente se
+había quedado en −44 porque su volumen estaba pensado para el provisional, mucho más fuerte que el
+archivo de verdad.
+
+**El ambiente de la oficina** lo lleva `scenes/night/office_ambience.gd` (`OfficeAmbience`, un nodo
+de la noche) y **es igual todas las noches**: lo que cambia de una noche a otra son solo los
+sonidos de los profes. Son tres capas: el ventilador (`ambiente_oficina`), el zumbido de la lámpara
+(`ambiente_lampara`, aparte para que pueda parpadear sola) y el tono del cuarto
+(`ambiente_pasillo`). **El zumbido va solo en la capa de la lámpara:** el `ambiente_oficina.ogg`
+traía uno mezclado en las mismas frecuencias (120, 240 y 360 Hz, de 21 a 27 dB por encima del
+ruido) y se le quitó con filtros muy estrechos (sox + ffmpeg `equalizer`, filtrando tres vueltas
+seguidas y quedándose con la del medio para no romper el empalme); el original está en el historial
+de git. **No es plano:** cada capa sube y baja **±3 dB** con un ciclo de **15 a 40 s**
+que se vuelve a sortear en cada vuelta, y arrancan **desfasadas**, así que nunca suben juntas. Cada
+**20 a 60 s** pasa algo chico: o **el ventilador se fuerza** (baja de tono a 0.93 y vuelve, en 2 o
+3 s) o **la lámpara parpadea** (su zumbido salta de −16 a +2 dB a pedazos durante medio segundo o
+uno). No hacen nada en el juego. Sin corriente —el breaker o la energía en 0— se callan el
+ventilador y la lámpara, y el cuarto se sigue oyendo. Lo mueve con
+`AudioManager.set_volume_offset(id, dB)`, que corre un sonido sobre su volumen de catálogo sin
+tocar el catálogo (y `stop()` lo devuelve). En F1 → Audio: «El ventilador se fuerza», «La lámpara
+parpadea», «Escribir cómo van las capas» y «Un lejano al azar, ya».
+
+**El catálogo** (124 ids; la lista de lo que falta está en `docs/audios_faltantes.md`, y el
 inventario completo de pendientes y provisionales en `docs/pendientes.md`). Casi todos tienen
 provisional por código; **las voces no**, por lo de arriba.
 
 | id | archivo | bus | dB | bucle | cuándo suena |
 | --- | --- | --- | --- | --- | --- |
-| `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | −14 | sí | toda la noche; se calla con el apagón |
-| `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −20 | sí | toda la noche |
+| `ambiente_oficina` | `ambiente_oficina.ogg` | Ambiente | −3.5 | sí | el ventilador, toda la noche; se calla sin corriente (ver **Mezcla**) |
+| `ambiente_lampara` | `ambiente_lampara.ogg` | Ambiente | −22 | sí | el zumbido de la lámpara (45 s), toda la noche; se calla sin corriente |
+| `ambiente_pasillo` | `ambiente_pasillo.ogg` | Ambiente | −2 | sí | el tono del cuarto, toda la noche; sigue sin corriente |
 | `estatica_camara` | `estatica_camara.ogg` | Ambiente | −30 | sí | mientras el monitor está abierto |
 | `menu_blip` | `menu_blip.ogg` | Efectos | −16 | sí | moverse por un menú y aceptar (lo mismo, más agudo) |
 | `tic_boom_1..3`, `tic_golpe_metal`, `tic_vidrio`, `tic_raspon`, `tic_golpe_eco`, `tic_whoosh_golpe`, `tic_piano`, `tic_estatica` | `menu/<id>.ogg` | Efectos | −4 | no | el golpe del tic del menú: uno de los diez al azar en cada uno |
 | `tic_rechinido` | `menu/tic_rechinido.ogg` | Efectos | −4 | no | **fuera del sorteo**: sonaba a puerta y en el menú no hay ninguna |
 | `estatica_inquietante` | `estatica_inquietante.ogg` | Efectos | −14 | no | de fondo en el tic «ultra» del menú |
 | `estatica_inquietante_gameover` | `estatica_inquietante.ogg` | Efectos | −16 | no | debajo de la estática del game over (mismo archivo) |
-| `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −6 | no | pasos recorriendo el pasillo, con los demás ambientales |
+| `lejos_pasos_pasillo` | `lejos/lejos_pasos_pasillo.ogg` | Lejos | −5 | no | pasos recorriendo el pasillo, con los demás ambientales |
 | `menu_musica_final` | `menu/menu_musica_final.ogg` | Música | −4 | sí | la música del menú principal, la única |
 | `tecla_maquina_1`…`3` | `tecla_maquina_N.ogg` | Efectos | −12 | no | cada tecla al escribir el nombre en la solicitud |
 | `cajita_musical` | `cajita_musical.ogg` | Música | −16 | sí | la botarga, mientras le quede cuerda |
@@ -245,11 +291,11 @@ provisional por código; **las voces no**, por lo de arriba.
 | `carta_toma`, `carta_pone` | `carta_<id>.ogg` | Efectos | −16 / −12 | no | agarrar y soltar una carta de la baraja decomisada |
 | `es_impresionante` | `es_impresionante.ogg` | Voces | −2 | no | el botón de la CAM 3 |
 | `rochis_extra_1..3` | `voces/rochis_extra_N.ogg` | Voces | −2 | no | **sin grabar**: más frases para ese mismo botón (ver abajo) |
-| `urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`, `urena_adios_*` | `voces/<id>.ogg` | Voces | 0 | no | la llamada de media noche de Ureña, línea por línea |
-| `mamador_delito` | `voces/mamador_delito.ogg` | Voces | 0 | no | «¡Delito federal!», **antes** de la irrupción |
-| `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | 0 | no | la llamada con la que empieza esa noche |
+| `urena_saludo`, `urena_linea1..7`, `urena_reaccion_*`, `urena_adios_*` | `voces/<id>.ogg` | Voces | −4 a −7.5 | no | la llamada de Ureña, línea por línea; cada una con su volumen para quedar a la par de Rochis |
+| `mamador_delito` | `voces/mamador_delito.ogg` | Voces | −4.5 | no | «¡Delito federal!», **antes** de la irrupción |
+| `llamada_noche1`…`6` | `llamadas/llamada_nocheN.ogg` | Voces | −6 | no | la llamada con la que empieza esa noche |
 | `telefono_colgar` | `telefono_colgar.ogg` | Efectos | −6 | no | al acabar o silenciar una llamada |
-| `mamador_ok_1..3` | `voces/<id>.ogg` | Voces | 0 | no | ver **Líneas sueltas de profe** |
+| `mamador_ok_1..3` | `voces/<id>.ogg` | Voces | −2 a −3 | no | ver **Líneas sueltas de profe** |
 
 ## Llamadas de inicio de noche
 
@@ -313,8 +359,7 @@ pila (`ComeTrabas.music_pitch()`, que vale igual para la de la CAM 4 y para el a
 falta se cae a los tiempos del provisional de `tone_builder.gd`. Las chispas del apagón parpadean
 **una por pulso** con esos tiempos.
 
-No hay ningún otro bucle con melodía. El zumbido de lámparas y ventilador (`ambiente_oficina`) se
-queda como estaba. **De qué canción se trata no se dice en ningún texto**: ni el nombre, ni el
+No hay ningún otro bucle con melodía. **De qué canción se trata no se dice en ningún texto**: ni el nombre, ni el
 número, ni el autor. Solo se oye.
 
 **Sonidos lejanos** (`scenes/night/distant_sounds.gd`): cada profe tiene el suyo, con probabilidad
@@ -330,7 +375,7 @@ mientras el profe esté ahí.
 | `armando_modem` | Al cambiar de cuarto | Módem negociando, distorsionado |
 | `audel_chispa` | En bucle, mientras está en el techo | Zumbido eléctrico y un trueno |
 | `rochis_silla` | Al cambiar de etapa en la silla | Rechinido de silla |
-| `lejos_portazo`, `lejos_silla`, `lejos_pasos_arriba`, `lejos_risa`, `lejos_platos`, `lejos_pasos_pasillo` | Uno al azar cada 40 a 120 s | Ambiente de un edificio vacío |
+| `lejos_portazo`, `lejos_silla`, `lejos_pasos_arriba`, `lejos_risa`, `lejos_platos`, `lejos_pasos_pasillo` | Uno al azar cada 40 a 90 s, nunca el mismo dos veces seguidas | Ambiente de un edificio vacío |
 
 Los archivos van en `assets/audio/lejos/<id>.ogg`. Mientras no estén, suenan los provisionales de
 `tone_builder.gd`.
@@ -655,14 +700,23 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
 
 ## Personajes
 
-- **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B y sube de etapa
-  **por tiempo sin que lo revises**, no por el dado de la IA: hay que dejarlo sin mirar
-  `NightConfig.barcosa_stage_time()` segundos seguidos para que avance uno, y **verlo por la
-  CAM 10 pone la cuenta a cero**. Son 45 s por etapa con el nivel de la noche 2 y 15 s con el de la
-  6, interpolando por nivel (así vale también para la Custom Night, con un piso de 8 s).
-  Revisarlo cada 30 s lo deja clavado hasta la noche 4.
+- **Barcosa (rol Foxy):** se esconde en la sala de servicio del salón B y sube de etapa por
+  dos lados, los dos en `NightConfig`:
+  - **Por tiempo sin que lo revises:** dejarlo sin mirar `NightConfig.barcosa_stage_time()`
+    segundos lo sube una etapa. Son 45 s con nivel 3 y 15 s con nivel 15, interpolando (40 s en
+    la noche 2, 35 s en la 3; piso de 8 s para la Custom Night).
+  - **Por su dado, aunque lo estés mirando:** cada `BARCOSA_DICE_INTERVAL` (15 s) gana si
+    `randi_range(1, 100) <= nivel × BARCOSA_DICE_PER_LEVEL` (3), o sea 15 % en la noche 2, 21 %
+    en la 3 y 45 % en la 6. Por eso **a veces sale corriendo por mucho que lo vigiles** y hay que
+    cerrar la cortina sí o sí.
+  - **Mirarlo solo cuenta con 1.5 s seguidos** (`BARCOSA_WATCH_TIME`): una ojeada más corta no
+    hace nada y la cuenta sigue corriendo. Una mirada que cuenta lo **baja una etapa, no a cero**,
+    y pone la cuenta del tiempo a cero. Quedarse mirándolo no lo sigue bajando: para otra etapa
+    hay que quitar la cámara y volver.
+  El panel de pruebas (F1, su sección) enseña la etapa, la cuenta, lo que falta para el dado y
+  cuánto llevas mirándolo.
   Al salir corre por CAM 1 hasta la puerta y **tarda en llegar** `NightConfig.barcosa_run_time()`:
-  6 s en la noche 2 y 3 s en la 6. Desde que sale y hasta que llega **suena `barcosa_corre` en
+  6 s con nivel 3 y 3 s con nivel 15 (5.5 s en la noche 2, 5 s en la 3). Desde que sale y hasta que llega **suena `barcosa_corre` en
   bucle** (pasos acercándose), para poder reaccionar sin estar en las cámaras. Solo se detiene
   cerrando la puerta; golpea y habla 5 s, luego regresa. Puerta abierta = jumpscare.
   En la oficina se le ve **de silueta mientras corre por `pasillo_sur`** hacia la puerta. Cuando ya
@@ -671,7 +725,7 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
   `door_knocked` → `office.shake_curtain()`), y lo que grita (ver **Líneas sueltas de profe**).
 - **Mamador (rol Freddy):** empieza en la sala de juntas. Ruta CAM 13 → 1 → 2 → cristal; reserva el pasillo antes de entrar a pasillo_norte. Al llegar revisa **tres** cosas: la ventana de la IA abierta en la PC, la puerta cerrada y **la baraja de UNO afuera**. Con las dos primeras es game over "Delito federal" (llegan los militares); con la baraja, el mismo final pero con causa **"Ludopatía"** y el cartel de abajo "LUDOPATÍA" en vez de "DELITO FEDERAL". Si tienes las dos cosas afuera manda la baraja, porque ese cartel es el que vale la pena ver y el otro se consigue de sobra. Si no encuentra nada, dice su frase y se va. Tiene sonido propio de aviso.
 - **Ureña (rol Chica):** lento. Ruta CAM 12 → 11 (o salón sin cámara) → 2 → cristal. Se aleja con destellos de linterna (ver **Destellos en el cristal**).
-  - **Llamada de Ureña (comedia):** cada noche que Ureña está activo, puede llamar entre las 2 y las 4 AM (60 %; en noches 5 y 6 hasta dos llamadas). La llamada no bloquea el juego: Ureña habla en altavoz y sus textos salen en un recuadro pequeño en una esquina, mientras el jugador sigue usando cámaras, puerta y linterna. Saluda con el nombre del jugador, lo felicita por sus tareas y le hace 1 o 2 insinuaciones (banco en `data/urena_questions.gd`). Cada una tiene 3 respuestas barajadas, elegibles con las teclas 1, 2 y 3 o con clic, y 6 s para elegir: la correcta esquiva con educación (no pasa nada); `sigue_el_juego` quita 5 % de energía y deja la foto en el escritorio; `grosera` quita 5 % sin foto; sin respuesta cuenta como `sigue_el_juego`. Se puede colgar en cualquier momento (o no contestar), pero Ureña se ofende: deja la foto y su nivel sube +5 durante una hora de juego. Ya no hay game over por no contestar. Se despide según cómo le fue. Los demás profes siguen moviéndose.
+  - **Llamada de Ureña (comedia):** desde la **noche 3**, si Ureña está activo, llama **una o dos veces** por noche, y en las noches 5 y 6 **dos o tres**. **La primera siempre entre la 1 y las 2 AM**; las demás se reparten hasta las 5 AM, nunca a menos de 45 min de juego una de otra (`NightCalls.urena_call_times()`, con los números en `data/night_calls.gd`). **Nunca encima de otra llamada:** el teléfono es uno, así que si está sonando o hablando la de la noche, la del Mencho o una anterior, espera a que quede libre y después deja **10 s de respiro** (`PHONE_REST_TIME`) antes de timbrar. F1 → Eventos → «Escribir a qué horas llama esta noche» las imprime. La llamada no bloquea el juego: Ureña habla en altavoz y sus textos salen en un recuadro pequeño en una esquina, mientras el jugador sigue usando cámaras, puerta y linterna. Saluda con el nombre del jugador, lo felicita por sus tareas y le hace 1 o 2 insinuaciones (banco en `data/urena_questions.gd`). Cada una tiene 3 respuestas barajadas, elegibles con las teclas 1, 2 y 3 o con clic, y 6 s para elegir: la correcta esquiva con educación (no pasa nada); `sigue_el_juego` quita 5 % de energía y deja la foto en el escritorio; `grosera` quita 5 % sin foto; sin respuesta cuenta como `sigue_el_juego`. Se puede colgar en cualquier momento (o no contestar), pero Ureña se ofende: deja la foto y su nivel sube +5 durante una hora de juego. Ya no hay game over por no contestar. Se despide según cómo le fue. Los demás profes siguen moviéndose.
 - **Rochis (rol Bonnie):** en CAM 3 pasa de sentado a medio levantado a de pie. Mientras se levanta hay que reproducir el audio "es impresionante" hasta que se vuelva a sentar.
   El botón suelta **una de sus frases al azar** (`Sounds.rochis_line()`): hoy siempre
   «es impresionante», y en cuanto existan `voces/rochis_extra_1..3.ogg` entran al sorteo con ella.
@@ -705,7 +759,8 @@ Sin cámara: recepción (se ve desde la oficina), sala de servidores (antes cub�
     siempre. La causa del game over es "Mago Eléctrico". Pasa en todas las noches, aunque el Mago
     esté en nivel 0, porque el apagón es suyo. **Si dan las 6 AM en cualquier punto de la
     secuencia, el jugador se salva** y todo se calla.
-  - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta algunos patch cords en la sala de servidores. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7).
+  - **Descarga del pararrayos:** mientras el Mago Eléctrico está en el techo (CAM 6), de vez en cuando provoca una descarga que desconecta **un** patch cord en la sala de servidores (**uno o dos en la noche 6**, `NightConfig.discharge_max_cameras()`), y entre una descarga y la siguiente pasan **al menos 2 horas de juego** (`DISCHARGE_COOLDOWN_HOURS`), así que no hay más de tres por noche. Antes eran de una a tres cámaras sin descanso: en la simulación salían unas 20 descargas y 40 cámaras caídas por noche en la noche 4. El botón de F1 → Eventos → «Descarga del pararrayos» la suelta sin esperar el descanso (y lo arranca).
+    **Solo hay que reconectar las caídas**, y **en la hoja del rack su puerto va marcado** con un círculo a lápiz, gris y medio transparente, alrededor del número de la columna GI (`_draw_pencil_circle()` en `patch_panel_view.gd`, `PatchPanelModel.is_marked_on_sheet()`). Las cámaras de la tarea de **reetiquetar** no se marcan: ahí la hoja miente a propósito. Con la marca, reconectar una cámara es encontrar el cable suelto con su etiqueta, ver el círculo y llevarlo al puerto: unos 5 a 10 s contando la entrada a la sala. Suena `descarga_pararrayos` al soltarla, y `cortaso` cuando entra a la oficina a dejarte sin linterna. Las cámaras afectadas muestran "SIN SEÑAL" hasta que el jugador entra a la sala de servidores (vista derecha de la oficina) y reconecta cada cable en su puerto según la hoja de etiquetado pegada en el rack (por ejemplo, CAM 03 → PP-07 → SW1 Gi0/7).
     Cada vez que el monitor **pasa a enseñar SIN SEÑAL** suena una vez `camara_sin_senal`: se cae la
     cámara que estás mirando (cuando se aclara la estática de la descarga y sale el cartel), abres el
     monitor sobre una caída o cambias a una. Cambiar a una buena o cerrar el monitor lo corta; que se
@@ -1038,7 +1093,7 @@ Mamador no salta: su game over es la **pantalla de WASTED**, al estilo GTA
 
 | Cuándo | Qué pasa |
 | --- | --- |
-| antes | **Lo que grita y la irrupción**: pantalla en negro, `mamador_delito` («¡Delito federal!», 0.9 s), después `mamador_brecha` (la puerta derribada y los gritos del operativo, 3.8 s) y un flash blanco de un cuadro. **Dura lo que duren los dos**, uno detrás de otro: van en la misma secuencia, así que la irrupción espera a la frase y el golpe de WASTED espera a la irrupción. Solo lo lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
+| antes | **Lo que grita y la irrupción**: pantalla en negro, `mamador_delito` («¡Delito federal!», 1.3 s), después `mamador_brecha` (la puerta derribada y los gritos del operativo, 3.8 s) y un flash blanco de un cuadro. **Dura lo que duren los dos**, uno detrás de otro: van en la misma secuencia, así que la irrupción espera a la frase y el golpe de WASTED espera a la irrupción. Solo lo lleva Mamador: se pide con el parámetro `breach` de `WastedScreen.play()` |
 | 0.0 s | `jumpscare_mamador_militares` a pantalla completa, con un zoom de 1.0 a 1.08 que no para en toda la secuencia |
 | 0.4 s | La imagen se va a blanco y negro en 0.8 s y baja un poco de brillo |
 | 1.2 s | Entra una franja negra (alfa 0.55) de lado a lado, centrada, de alto 16 % de la pantalla, con fade de 0.3 s |
@@ -1142,14 +1197,39 @@ bandera `_swallow_click`). Sin eso, el mismo clic con el que sales de la PC te p
 
 | Noche | Barcosa | Mamador | Ureña | Rochis | Mago Eléctrico | Come Trabas | Juan.exe | Armando | Tareas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 0 | 3 | 0 | 0 | 0 | Lenta | 2 | 0 | 2 |
-| 2 | 3 | 5 | 0 | 0 | 0 | Lenta | 4 | 2 | 3 |
-| 3 | 5 | 7 | 4 | 3 | 0 | Media | 6 | 4 | 3 |
-| 4 | 8 | 9 | 7 | 6 | 5 | Media | 8 | 6 | 4 |
-| 5 | 11 | 12 | 10 | 10 | 9 | Rápida | 10 | 9 | 4 |
+| 1 | 0 | 4 | 0 | 0 | 0 | Lenta | 3 | 0 | 2 |
+| 2 | 5 | 6 | 0 | 0 | 0 | Lenta | 5 | 3 | 3 |
+| 3 | 7 | 8 | 6 | 4 | 0 | Media | 7 | 6 | 3 |
+| 4 | 9 | 10 | 8 | 7 | 6 | Media | 9 | 7 | 4 |
+| 5 | 12 | 13 | 11 | 10 | 10 | Rápida | 11 | 10 | 4 |
 | 6 | 15 | 16 | 15 | 15 | 14 | Muy rápida | 14 | 13 | 5 |
 
 La mecánica de Claudio de Armando solo se activa desde la noche 4.
+
+**Se subieron tras jugar las noches 1 a 3** (antes eran 0/3/0/0/0/2/0 en la 1, 3/5/0/0/0/4/2 en
+la 2 y 5/7/4/3/0/6/4 en la 3): la 1 tranquila, la 2 con algo de presión y la 3 con riesgo de
+perder. Los que una noche no estaban activos siguen sin estarlo, porque las llamadas los presentan
+en su noche. La 6 no cambió.
+
+**Cómo se ajustaron:** con una simulación de noches completas que usa los scripts de verdad de los
+profes (sin la escena) y un jugador sencillo que hace una ronda de cámaras cada 20 a 40 s (CAM 10
+2 s, CAM 3 hasta que Rochis se siente, CAM 4 hasta llenar la cuerda), da un destello al cristal
+cada 3 s, cierra la cortina al oír a Barcosa y le baja el breaker al Mago si lo ve en la escalera.
+400 noches de cada una, mismo jugador antes y después. Cuenta cuántas veces llega cada uno a su
+punto de ataque:
+
+| Noche | Barcosa sale | Mamador al cristal | Ureña al cristal | Juan al cristal | Armando al cristal | Rochis entra | Descargas | Sobrevive el jugador simulado |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0 → 0 | 3.2 → 4.2 | — | 1.9 → 2.8 | — | — | — | 98 % → 96 % |
+| 2 | 0 → 0.2 | 5.1 → 5.8 | — | 4.2 → 5.2 | 1.4 → 2.0 | — | — | 86 % → 79 % |
+| 3 | 0.3 → 1.0 | 6.7 → 7.2 | 3.4 → 5.0 | 6.2 → 6.9 | 2.7 → 3.9 | 0.3 → 0.7 | — | 38 % → 20 % |
+| 4 | 1.7 → 2.3 | 8.0 → 8.6 | 5.9 → 6.6 | 7.9 → 8.9 | 4.0 → 4.6 | 1.8 → 2.5 | 22 → 3 | 3 % → 0 % |
+| 5 | 3.2 → 4.0 | 9.6 → 10.2 | 8.4 → 9.1 | 9.6 → 10.7 | 5.9 → 6.5 | 5.6 → 5.5 | 16 → 3 | 0 % |
+| 6 | 6.0 → 8.0 | 11.5 → 11.6 | 12.0 → 12.1 | 12.9 → 13.0 | 8.4 → 8.5 | 10.2 → 10.3 | 8.5 → 2.6 | 0 % |
+
+El jugador simulado es **mucho peor que una persona** (sobre todo con Rochis, que es casi todo lo
+que lo mata de la noche 4 en adelante), así que su porcentaje no es el de un jugador de verdad: sirve
+para comparar antes y después, no como cifra absoluta. La simulación no está en el repo.
 
 **Custom Night** (`scenes/extras/custom_night.gd`): cada nivel de 0 a 20, con **el retrato de cada
 profe**, como en los juegos originales. Rejilla de 4 por 2: la cara arriba, el nombre en VT323

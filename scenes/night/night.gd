@@ -17,10 +17,6 @@ const RING_NOTICE: String = "[ring]"
 const NOTICE_SHORT: float = 0.9
 ## Lo que suena el teléfono de Ureña antes de matarte.
 const URENA_RING_TIME: float = 8.0
-## De cada 100 noches con Ureña activo, en cuántas llama.
-const URENA_CALL_CHANCE: int = 60
-## Desde esta noche puede llamar hasta dos veces.
-const URENA_TWO_CALLS_FROM_NIGHT: int = 5
 
 const STEPS_NOTICE: String = "[pasos]"
 const STEPS_NOTICE_TIME: float = 1.2
@@ -49,6 +45,7 @@ const FLASH_TIME: float = 0.28
 @onready var call_subtitles: Control = $Hud/CallSubtitles
 @onready var voice_line: Control = $Hud/VoiceLine
 @onready var distant: Node = $DistantSounds
+@onready var office_ambience: OfficeAmbience = $OfficeAmbience
 @onready var controls_card: Control = $Hud/ControlsCard
 @onready var wasted_screen: WastedScreen = $Hud/WastedScreen
 @onready var mod_menu: Control = $Hud/ModMenu
@@ -115,6 +112,8 @@ var totem_icon: TextureRect = null
 var _random_call_id: String = ""
 ## Las horas a las que va a llamar esta noche, de la más temprana a la última.
 var _urena_calls_at: PackedFloat32Array = PackedFloat32Array()
+## Lo que lleva el teléfono libre. Empieza alto: al principio no hay que esperar.
+var _phone_idle: float = NightCalls.PHONE_REST_TIME
 var _ticket_elapsed: float = 0.0
 ## Dónde estaba cada profe la última vez, para saber cuándo se movió, y en qué
 ## etapa iba Rochis, para el rechinido de su silla.
@@ -248,9 +247,9 @@ func _ready() -> void:
 			and not SaveGame.tutorial_seen:
 		SaveGame.mark_tutorial_seen()
 		controls_card.open(true)
-	# El ambiente de la oficina y del pasillo suena toda la noche.
-	AudioManager.play_loop(Sounds.OFFICE_AMBIENCE)
-	AudioManager.play_loop(Sounds.HALLWAY_AMBIENCE)
+	# El ambiente de la oficina suena toda la noche, igual en todas: ventilador,
+	# lámpara y cuarto, cada capa con su vaivén (office_ambience.gd).
+	office_ambience.start()
 
 
 ## Desde la pausa se puede volver a ver el recuadro de controles. Ahí el juego
@@ -654,8 +653,8 @@ func _on_flashlight_failed() -> void:
 
 # --- Teléfono -----------------------------------------------------------------
 
-## La llamada de la noche suena a los pocos segundos. La de Ureña, si toca,
-## en un momento al azar entre las 2 y las 4 AM.
+## La llamada de la noche suena a los pocos segundos. Las de Ureña, desde la
+## noche 3: la primera entre la 1 y las 2 AM (NightCalls.urena_call_times()).
 func _schedule_calls(night: int) -> void:
 	# Si esa noche no tiene guion, el teléfono no suena.
 	_nightly_call_left = NightCalls.CALL_DELAY if NightCalls.has_call(night) else -1.0
@@ -667,13 +666,7 @@ func _schedule_calls(night: int) -> void:
 	phone_call.reset_urena_lines()
 	if _urena == null or not _urena.is_active:
 		return
-	if randi_range(1, 100) > URENA_CALL_CHANCE:
-		return
-	# En las noches altas puede llamar dos veces, siempre entre 2 y 4 AM.
-	var calls: int = 2 if night >= URENA_TWO_CALLS_FROM_NIGHT else 1
-	for i: int in calls:
-		_urena_calls_at.append(randf_range(2.0, 4.0))
-	_urena_calls_at.sort()
+	_urena_calls_at = NightCalls.urena_call_times(night)
 
 
 func _process_calls(delta: float) -> void:
@@ -682,8 +675,13 @@ func _process_calls(delta: float) -> void:
 		if _nightly_call_left <= 0.0:
 			phone_call.queue_recording(GameManager.current_night, NightCalls.RING_TIME)
 		return
-	# El teléfono es uno: si está sonando o abierto, lo que toque espera.
+	# El teléfono es uno: si está sonando o abierto, lo que toque espera, y al
+	# quedar libre descansa un poco antes de volver a timbrar.
 	if phone_call.is_ringing or phone_call.is_open:
+		_phone_idle = 0.0
+		return
+	_phone_idle += delta
+	if _phone_idle < NightCalls.PHONE_REST_TIME:
 		return
 	if _mencho_call_at >= 0.0 and GameManager.night_progress() >= _mencho_call_at:
 		_mencho_call_at = -1.0
@@ -693,6 +691,16 @@ func _process_calls(delta: float) -> void:
 		return
 	_urena_calls_at.remove_at(0)
 	trigger_urena_call()
+
+
+## Para el panel de pruebas: las horas que le quedan a Ureña esta noche, como
+## texto ("1:24 AM, 3:10 AM").
+func debug_urena_schedule() -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for at: float in _urena_calls_at:
+		var hour: int = int(at)
+		parts.append("%d:%02d AM" % [12 if hour == 0 else hour, int((at - hour) * 60.0)])
+	return "ninguna" if parts.is_empty() else ", ".join(parts)
 
 
 ## Tecla 2, y también la llamada de la noche cuando le toca.
@@ -1007,6 +1015,7 @@ func _on_power_depleted() -> void:
 		return
 	camera_system.close()
 	pc_screen.close()
+	office_ambience.set_powered(false)
 	# Lo que se oye justo al apagarse todo, antes de que empiece la oscuridad.
 	# La frase abre la secuencia del apagón: la oscuridad no pasa a la cajita
 	# musical hasta que se acaba de decir (son 6 s y la oscuridad puede durar
@@ -1031,10 +1040,11 @@ func _on_jumpscare_finished() -> void:
 func _on_blackout_changed(is_blackout: bool) -> void:
 	office.set_blackout(is_blackout)
 	# Sin corriente no hay lámparas ni ventilador: el zumbido se va con la luz.
+	# Con la energía en 0 no vuelven aunque se acabe el corte del breaker.
 	if is_blackout:
-		AudioManager.stop(Sounds.OFFICE_AMBIENCE)
-	elif GameManager.is_night_active:
-		AudioManager.play_loop(Sounds.OFFICE_AMBIENCE)
+		office_ambience.set_powered(false)
+	elif GameManager.is_night_active and PowerManager.power > 0.0:
+		office_ambience.set_powered(true)
 	if not is_blackout:
 		return
 	camera_system.close()
@@ -1124,6 +1134,7 @@ func _end_night() -> void:
 	call_subtitles.mute()
 	voice_line.stop()
 	distant.stop_all()
+	office_ambience.stop()
 	controls_card.close_card()
 	wasted_screen.stop()
 	uno_desk.close()

@@ -7,14 +7,14 @@ extends Node
 ## Dos fuentes:
 ##   - Los profes: cada uno tiene su sonido, que suena al moverse o mientras
 ##     esté en cierto sitio. Lleva probabilidad, para que no cante siempre.
-##   - El ambiente: cada 40 a 120 s sale uno al azar de los cinco sueltos.
+##   - El ambiente: cada 40 a 90 s sale uno al azar de los seis sueltos.
 ##
 ## Todos los ids están en data/sounds.gd, así que meter los archivos de verdad
 ## es dejarlos en assets/audio/lejos/ y ya.
 
 ## Cada cuánto sale un ambiental.
 const MIN_AMBIENT_GAP: float = 40.0
-const MAX_AMBIENT_GAP: float = 120.0
+const MAX_AMBIENT_GAP: float = 90.0
 
 ## Probabilidad de que un profe suene cuando le toca. No siempre, para que no
 ## se vuelva un metrónomo.
@@ -50,6 +50,8 @@ var _ambient_left: float = 0.0
 var _cooldowns: Dictionary = {}
 ## Los bucles de sitio que están sonando ahora mismo.
 var _active_loops: Array[String] = []
+## El último ambiental que sonó, para no repetirlo seguido.
+var _last_ambient: String = ""
 
 
 func _ready() -> void:
@@ -118,12 +120,15 @@ func _process(delta: float) -> void:
 	play_ambient()
 
 
-## Uno de los cinco ambientales, al azar. También lo usa el panel de pruebas.
+## Uno de los seis ambientales, al azar, sin repetir el último. También lo usa el panel de pruebas.
 func play_ambient() -> void:
-	var ids: Array[String] = Sounds.FAR_AMBIENT
+	var ids: Array[String] = Sounds.FAR_AMBIENT.duplicate()
+	if ids.size() > 1:
+		ids.erase(_last_ambient)
 	if ids.is_empty():
 		return
-	AudioManager.play(ids[randi() % ids.size()])
+	_last_ambient = ids[randi() % ids.size()]
+	AudioManager.play(_last_ambient)
 
 
 ## Calla todo lo que esté sonando de lejos. Lo usa el fin de noche.

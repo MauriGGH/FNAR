@@ -38,6 +38,8 @@ static func build(generator: String) -> AudioStreamWAV:
 			return office_ambience()
 		"hallway_ambience":
 			return hallway_ambience()
+		"lamp_hum":
+			return lamp_hum()
 		"phone_ring":
 			return phone_ring()
 		"door_shutter":
@@ -370,6 +372,31 @@ static func office_ambience() -> AudioStreamWAV:
 			+ OFFICE_FAN_WOBBLE * sin(TAU * OFFICE_FAN_WOBBLE_HZ * t)
 		buffer[i] += fan[i] * OFFICE_FAN_GAIN * wobble
 	return _to_wav(_seamless(buffer, OFFICE_LENGTH))
+
+
+# --- Zumbido de lámpara ------------------------------------------------------
+## La lámpara fluorescente: 120 Hz (el doble de la red) y sus armónicos, más un
+## poco de rasposo que sale de recortar la onda. Todas las frecuencias caben un
+## número entero de veces en los 4 s, así que empalma sin entrecruzado.
+const LAMP_LENGTH: float = 4.0
+const LAMP_HZ: Array[float] = [120.0, 240.0, 360.0, 480.0, 600.0]
+const LAMP_GAINS: Array[float] = [0.5, 0.26, 0.16, 0.08, 0.05]
+## Cuánto se recorta la onda: más alto, más rasposo.
+const LAMP_DRIVE: float = 2.2
+const LAMP_BUZZ_MIX: float = 0.35
+
+
+static func lamp_hum() -> AudioStreamWAV:
+	var buffer: PackedFloat32Array = _buffer(LAMP_LENGTH)
+	for i: int in buffer.size():
+		var t: float = float(i) / float(SAMPLE_RATE)
+		var value: float = 0.0
+		for h: int in LAMP_HZ.size():
+			value += sin(TAU * LAMP_HZ[h] * t) * LAMP_GAINS[h]
+		# El recorte suave le da el chicharreo de la reactancia vieja.
+		var buzz: float = clampf(value * LAMP_DRIVE, -0.8, 0.8)
+		buffer[i] = value * (1.0 - LAMP_BUZZ_MIX) + buzz * LAMP_BUZZ_MIX
+	return _to_wav(buffer)
 
 
 # --- Ambiente del pasillo ----------------------------------------------------

@@ -273,6 +273,18 @@ func set_pitch(id: String, pitch: float) -> void:
 		player.pitch_scale = maxf(pitch, 0.01)
 
 
+## Mueve un sonido unos dB por encima o por debajo de su volumen de catálogo,
+## sin tocar el catálogo. Lo usa el ambiente de la oficina para que cada capa
+## suba y baje despacio. Si está a media fundida no se toca: manda el fundido.
+## stop() lo devuelve a su volumen de siempre.
+func set_volume_offset(id: String, offset_db: float) -> void:
+	if _fades.has(id):
+		return
+	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
+	if player != null:
+		player.volume_db = Sounds.volume_db(id) + offset_db
+
+
 func is_playing(id: String) -> bool:
 	var player: AudioStreamPlayer = _players.get(id, null) as AudioStreamPlayer
 	return player != null and player.playing

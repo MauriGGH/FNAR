@@ -349,6 +349,9 @@ func _build_events_section() -> void:
 	_add_button(body, "Llamar", func() -> void:
 		close()
 		_night.debug_urena_call(lines.get_selected_id()))
+	_add_button(body, "Escribir a qué horas llama esta noche", func() -> void:
+		print("[llamadas] Ureña llama a las: %s (va en %.2f)" % [
+			_night.debug_urena_schedule(), GameManager.night_progress()]))
 	_add_button(body, "Llamada de inicio de noche", func() -> void:
 		close()
 		_night.debug_night_call())
@@ -678,6 +681,16 @@ func _build_audio_section() -> void:
 		_last_debug_hit = Sounds.low_hit(_last_debug_hit)
 		print("[audio] golpe de alucinación: %s" % _last_debug_hit)
 		AudioManager.play(_last_debug_hit))
+
+	_add_label(body, "Ambiente de la oficina (tres capas, igual todas las noches):")
+	_add_button(body, "El ventilador se fuerza", func() -> void:
+		_night.office_ambience.debug_event(true))
+	_add_button(body, "La lámpara parpadea", func() -> void:
+		_night.office_ambience.debug_event(false))
+	_add_button(body, "Escribir cómo van las capas", func() -> void:
+		print("[audio] ambiente: %s" % _night.office_ambience.debug_text()))
+	_add_button(body, "Un lejano al azar, ya", func() -> void:
+		_night.distant.debug_clear_gaps())
 
 	_add_label(body, "El Mago Eléctrico:")
 	_add_button(body, "Descarga del pararrayos", func() -> void:

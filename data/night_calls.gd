@@ -40,6 +40,48 @@ const MENCHO_RING_TIME: float = 10.0
 const MENCHO_SUBTITLES: Array[Dictionary] = [{"at": 0.0, "text": "¿Bueno? ..."}]
 
 
+## **Las llamadas de Ureña.** Llama desde la noche 3 si está activo: una o dos
+## veces, y en las noches 5 y 6 dos o tres. La primera siempre entre la 1 y las
+## 2 AM; las demás se reparten hasta las 5 AM, nunca a menos de
+## URENA_CALL_GAP_HOURS una de otra. Que no se encimen con otra llamada lo
+## cuida el night.gd: el teléfono es uno y lo que toque espera a que quede
+## libre, más PHONE_REST_TIME de respiro.
+const URENA_CALLS_FROM_NIGHT: int = 3
+const URENA_CALLS_MIN: int = 1
+const URENA_CALLS_MAX: int = 2
+const URENA_MANY_CALLS_FROM_NIGHT: int = 5
+const URENA_MANY_CALLS_MIN: int = 2
+const URENA_MANY_CALLS_MAX: int = 3
+const URENA_FIRST_CALL_FROM: float = 1.0
+const URENA_FIRST_CALL_TO: float = 2.0
+const URENA_LAST_CALL_AT: float = 5.0
+const URENA_CALL_GAP_HOURS: float = 0.75
+## Lo que descansa el teléfono entre una llamada y la siguiente, sea de quien
+## sea, para que no timbre otra vez en cuanto cuelgas.
+const PHONE_REST_TIME: float = 10.0
+
+
+## A qué horas llama Ureña esa noche, ordenadas, de 0 (12 AM) a 6 (6 AM).
+## Vacío si esa noche no le toca.
+static func urena_call_times(night: int) -> PackedFloat32Array:
+	var times: PackedFloat32Array = PackedFloat32Array()
+	if night < URENA_CALLS_FROM_NIGHT:
+		return times
+	var count: int = randi_range(URENA_CALLS_MIN, URENA_CALLS_MAX)
+	if night >= URENA_MANY_CALLS_FROM_NIGHT:
+		count = randi_range(URENA_MANY_CALLS_MIN, URENA_MANY_CALLS_MAX)
+	times.append(randf_range(URENA_FIRST_CALL_FROM, URENA_FIRST_CALL_TO))
+	# Las demás: cada una en su tramo de lo que queda hasta las 5 AM, y nunca
+	# pegada a la anterior.
+	var from: float = times[0] + URENA_CALL_GAP_HOURS
+	var slot: float = (URENA_LAST_CALL_AT - from) / float(maxi(count - 1, 1))
+	for i: int in range(1, count):
+		var at: float = randf_range(from + slot * float(i - 1), from + slot * float(i))
+		at = maxf(at, times[i - 1] + URENA_CALL_GAP_HOURS)
+		times.append(minf(at, URENA_LAST_CALL_AT))
+	return times
+
+
 ## A qué hora de la noche le toca sonar esta vez.
 static func mencho_hour() -> float:
 	return randf_range(MENCHO_FROM_HOUR, MENCHO_TO_HOUR)

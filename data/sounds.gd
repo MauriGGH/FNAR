@@ -136,6 +136,9 @@ const GLASS_REPEL: String = "se_aleja"
 ## Ambiente, en bucle toda la noche.
 const OFFICE_AMBIENCE: String = "ambiente_oficina"
 const HALLWAY_AMBIENCE: String = "ambiente_pasillo"
+## La tercera capa del ambiente: el zumbido de las lámparas, aparte del
+## ventilador para que pueda parpadear sola. La mueve scenes/night/office_ambience.gd.
+const LAMP_HUM: String = "ambiente_lampara"
 ## El timbre del teléfono, en bucle mientras suena.
 const PHONE_RING: String = "telefono_timbre"
 const DOOR_SHUTTER: String = "puerta_cortina"
@@ -594,15 +597,23 @@ const CATALOG: Dictionary = {
 		"volume_db": 0.0, "generator": "low_hit",
 		"desc": "Golpe grave y seco, de los que pegan un susto. Medio segundo.",
 	},
+	# Las tres capas del ambiente de la oficina. Los volúmenes están medidos en
+	# el juego (ver «Mezcla» en CLAUDE.md): juntas dan unos −34 LUFS, 16 dB
+	# por debajo de las voces, y cada una sube y baja ±3 dB por su cuenta.
 	"ambiente_oficina": {
 		"file": "ambiente_oficina.ogg", "bus": "Ambiente",
-		"volume_db": -14.0, "generator": "office_ambience",
-		"desc": "Zumbido de lámparas y ventilador de oficina, en bucle sin corte.",
+		"volume_db": -3.5, "generator": "office_ambience",
+		"desc": "Ventilador y aire de oficina, en bucle sin corte. Sin zumbido de lámpara: ese va en ambiente_lampara (al archivo se le quitaron 120, 240 y 360 Hz).",
 	},
 	"ambiente_pasillo": {
 		"file": "ambiente_pasillo.ogg", "bus": "Ambiente",
-		"volume_db": -20.0, "generator": "hallway_ambience",
+		"volume_db": -2.0, "generator": "hallway_ambience",
 		"desc": "Aire de pasillo vacío de noche, en bucle sin corte, muy tenue.",
+	},
+	"ambiente_lampara": {
+		"file": "ambiente_lampara.ogg", "bus": "Ambiente",
+		"volume_db": -22.0, "generator": "lamp_hum",
+		"desc": "Zumbido de lámpara fluorescente (120 Hz y sus armónicos, con algo de rasposo), en bucle sin corte, solo. Archivo real: 45 s.",
 	},
 	"telefono_timbre": {
 		"file": "telefono_timbre.ogg", "bus": "Efectos",
@@ -676,7 +687,7 @@ const CATALOG: Dictionary = {
 	},
 	"llamada_juguete": {
 		"file": "llamadas/llamada_juguete.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La otra llamada rara, ya con efecto de teléfono. Se sortea con la del Mencho desde la noche 2.",
 	},
 	"descarga_pararrayos": {
@@ -691,7 +702,7 @@ const CATALOG: Dictionary = {
 	},
 	"llamada_mencho": {
 		"file": "llamadas/llamada_mencho.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "Número equivocado, ya con efecto de teléfono. Entra una vez por noche entre la 1 y las 5 AM.",
 	},
 	"sergio_rescate": {
@@ -831,7 +842,7 @@ const CATALOG: Dictionary = {
 	},
 	"urena_banos": {
 		"file": "lejos/urena_banos.ogg", "bus": "Lejos",
-		"volume_db": -5.0, "generator": "far_water", "pan": PAN_CENTER,
+		"volume_db": -23.5, "generator": "far_water", "pan": PAN_CENTER,
 		"desc": "Agua de lavabo corriendo, lejos, en bucle.",
 	},
 	"juan_teclado": {
@@ -841,7 +852,7 @@ const CATALOG: Dictionary = {
 	},
 	"armando_modem": {
 		"file": "lejos/armando_modem.ogg", "bus": "Lejos",
-		"volume_db": -5.0, "generator": "far_modem", "pan": PAN_CENTER,
+		"volume_db": -16.5, "generator": "far_modem", "pan": PAN_CENTER,
 		"desc": "Módem de 56k negociando, distorsionado y lejos.",
 	},
 	"juan_respiracion": {
@@ -851,7 +862,7 @@ const CATALOG: Dictionary = {
 	},
 	"audel_chispa": {
 		"file": "lejos/audel_chispa.ogg", "bus": "Lejos",
-		"volume_db": -3.0, "generator": "far_spark", "pan": PAN_LEFT,
+		"volume_db": 0.0, "generator": "far_spark", "pan": PAN_LEFT,
 		"desc": "Zumbido eléctrico con algún trueno, lejos, en bucle.",
 	},
 	"rochis_silla": {
@@ -861,17 +872,17 @@ const CATALOG: Dictionary = {
 	},
 	"lejos_portazo": {
 		"file": "lejos/lejos_portazo.ogg", "bus": "Lejos",
-		"volume_db": -3.0, "generator": "far_door_slam", "pan": PAN_CENTER,
+		"volume_db": -8.5, "generator": "far_door_slam", "pan": PAN_CENTER,
 		"desc": "Un portazo en otra parte del edificio.",
 	},
 	"lejos_silla": {
 		"file": "lejos/lejos_silla.ogg", "bus": "Lejos",
-		"volume_db": -5.0, "generator": "far_chair", "pan": PAN_LEFT,
+		"volume_db": 8.5, "generator": "far_chair", "pan": PAN_LEFT,
 		"desc": "Una silla arrastrada en otro cuarto.",
 	},
 	"lejos_pasos_pasillo": {
 		"file": "lejos/lejos_pasos_pasillo.ogg", "bus": "Lejos",
-		"volume_db": -6.0, "generator": "far_upstairs", "pan": PAN_CENTER,
+		"volume_db": -5.0, "generator": "far_upstairs", "pan": PAN_CENTER,
 		"desc": "Pasos recorriendo el pasillo, lejos, sin prisa. Se oyen y se van.",
 	},
 	"lejos_pasos_arriba": {
@@ -881,144 +892,145 @@ const CATALOG: Dictionary = {
 	},
 	"lejos_risa": {
 		"file": "lejos/lejos_risa.ogg", "bus": "Lejos",
-		"volume_db": -6.0, "generator": "far_laugh", "pan": PAN_RIGHT,
+		"volume_db": -7.0, "generator": "far_laugh", "pan": PAN_RIGHT,
 		"desc": "Una risa corta, muy lejos, imposible de ubicar.",
 	},
 	"lejos_platos": {
 		"file": "lejos/lejos_platos.ogg", "bus": "Lejos",
-		"volume_db": -6.0, "generator": "far_dishes", "pan": PAN_RIGHT,
+		"volume_db": 2.0, "generator": "far_dishes", "pan": PAN_RIGHT,
 		"desc": "Platos y cubiertos en la cafetería vacía.",
 	},
 	"urena_saludo": {
 		"file": "voces/urena_saludo.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -7.0, "generator": "",
 		"desc": "Ureña saludando por teléfono, sin el nombre ni la cuenta de tareas.",
 	},
 	"urena_linea1": {
 		"file": "voces/urena_linea1.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -4.5, "generator": "",
 		"desc": "Insinuación 1 de Ureña: los trabajitos extra en su cubículo.",
 	},
 	"urena_linea2": {
 		"file": "voces/urena_linea2.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -5.5, "generator": "",
 		"desc": "Insinuación 2 de Ureña: convertirte en mujer por una noche.",
 	},
 	"urena_linea3": {
 		"file": "voces/urena_linea3.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.5, "generator": "",
 		"desc": "Insinuación 3 de Ureña: subirte la calificación en su oficina.",
 	},
 	"urena_linea4": {
 		"file": "voces/urena_linea4.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -7.0, "generator": "",
 		"desc": "Insinuación 4 de Ureña: la foto de cuerpo completo.",
 	},
 	"urena_linea5": {
 		"file": "voces/urena_linea5.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "Insinuación 5 de Ureña: el disco duro.",
 	},
 	"urena_linea6": {
 		"file": "voces/urena_linea6.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -4.0, "generator": "",
 		"desc": "Insinuación 6 de Ureña: la conexión punto a punto.",
 	},
 	"urena_linea7": {
 		"file": "voces/urena_linea7.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -7.0, "generator": "",
 		"desc": "Insinuación 7 de Ureña: el cable y el conector.",
 	},
 	"urena_reaccion_esquiva": {
 		"file": "voces/urena_reaccion_esquiva.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.5, "generator": "",
 		"desc": "Reacción de Ureña cuando lo esquivas con educación: «Ay, qué serio...»",
 	},
 	"urena_reaccion_sigue": {
 		"file": "voces/urena_reaccion_sigue.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -7.5, "generator": "",
 		"desc": "Reacción de Ureña cuando le sigues el juego: «¡Así me gusta!»",
 	},
 	"urena_reaccion_grosero": {
 		"file": "voces/urena_reaccion_grosero.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -7.5, "generator": "",
 		"desc": "Reacción de Ureña cuando le contestas mal: «Qué grosero eres...»",
 	},
 	"urena_adios_esquivo": {
 		"file": "voces/urena_adios_esquivo.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.5, "generator": "",
 		"desc": "Despedida de Ureña si lo esquivaste todo: la oferta sigue en pie.",
 	},
 	"urena_adios_foto": {
 		"file": "voces/urena_adios_foto.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -5.5, "generator": "",
 		"desc": "Despedida de Ureña si le seguiste el juego: te dejó un regalito.",
 	},
 	"urena_adios_grosero": {
 		"file": "voces/urena_adios_grosero.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -5.0, "generator": "",
 		"desc": "Despedida de Ureña si le contestaste mal: eso se paga.",
 	},
 	"urena_adios_colgado": {
 		"file": "voces/urena_adios_colgado.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "Lo que dice Ureña por el altavoz si le cuelgas: «Ahorita voy para allá.»",
 	},
 	"mamador_delito": {
 		"file": "voces/mamador_delito.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -4.5, "generator": "",
 		"desc": "Mamador al pillarte: «¡Delito federal!». Va antes de la irrupción.",
 	},
 	"mamador_ok_1": {
 		"file": "voces/mamador_ok_1.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -2.0, "generator": "",
 		"desc": "Mamador conforme: «Sin novedad. Me retiro.»",
 	},
 	"mamador_ok_2": {
 		"file": "voces/mamador_ok_2.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -3.0, "generator": "",
 		"desc": "Mamador conforme: «Nada de inteligencia artificial. Así me gusta.»",
 	},
 	"mamador_ok_3": {
 		"file": "voces/mamador_ok_3.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -2.0, "generator": "",
 		"desc": "Mamador conforme: «Todo en orden. Sigan así.»",
 	},
 	"llamada_noche1": {
 		"file": "llamadas/llamada_noche1.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La llamada entera de la noche 1 (solo voz; el timbre lo pone el juego). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche2": {
 		"file": "llamadas/llamada_noche2.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La llamada entera de la noche 2 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche3": {
 		"file": "llamadas/llamada_noche3.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La llamada entera de la noche 3 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche4": {
 		"file": "llamadas/llamada_noche4.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La llamada entera de la noche 4 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche5": {
 		"file": "llamadas/llamada_noche5.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La llamada entera de la noche 5 (solo voz). Guion en docs/guion_voces.md.",
 	},
 	"llamada_noche6": {
 		"file": "llamadas/llamada_noche6.ogg", "bus": "Voces",
-		"volume_db": 0.0, "generator": "",
+		"volume_db": -6.0, "generator": "",
 		"desc": "La llamada entera de la noche 6 (solo voz). Guion en docs/guion_voces.md.",
 	},
 }
 
 ## Los que suenan en bucle: el AudioManager les marca el bucle al cargarlos.
 const LOOPING: Array[String] = [
-	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "menu_musica_final",
+	"cajita_musical", "cajita_musical_aviso", "ambiente_oficina", "ambiente_lampara",
+	"menu_musica_final",
 	"ambiente_pasillo", "telefono_timbre", "estatica_camara",
 	"urena_banos", "juan_teclado", "audel_chispa", "extras_musica",
 	# Juan respirando pegado al cristal, mientras siga ahí.

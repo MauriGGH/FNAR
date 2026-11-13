@@ -77,7 +77,7 @@ Ninguna amenaza se resuelve con la contramedida de otra.
 
 | Quién | Cómo llega | Qué hacer |
 | --- | --- | --- |
-| **Barcosa** | Se esconde en el salón B (CAM 10). Si lo dejas sin mirar demasiado rato, sale corriendo hacia tu puerta | Échale un ojo a la CAM 10 cada cierto tiempo. Si oyes pasos corriendo, **cierra la puerta** y espera a que se rinda. Con la puerta abierta, te atrapa |
+| **Barcosa** | Se esconde en el salón B (CAM 10). Si lo dejas sin mirar demasiado rato, sale corriendo hacia tu puerta | Échale un ojo a la CAM 10 cada cierto tiempo, **y míralo un momento**: una ojeada rápida no cuenta. Aun así, a veces sale por su cuenta. Si oyes pasos corriendo, **cierra la puerta** y espera a que se rinda. Con la puerta abierta, te atrapa |
 | **Mamador** | Baja de la sala de juntas hasta el cristal y se queda unos segundos revisándolo todo | Ignora la linterna y las cámaras. Cuando llegue, **no tengas abierta la ventana de IA de la PC, no tengas la puerta cerrada y no tengas la baraja de UNO a la vista**. Si no encuentra nada, se va |
 | **Ureña** | Sale de los baños, pasa por un salón y llega al cristal. Es lento | Cuando esté en el cristal, **apúntale con la linterna** hasta que se asuste y se vaya. Si no, entra |
 | **Juan.exe** | Baja de la sala de juntas al cristal | Igual que Ureña: **linterna** en el cristal. No se ve sin ella |
